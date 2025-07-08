@@ -170,6 +170,8 @@ namespace HermesBanking.Infrastructure.Identity
 
             await DefaultRoles.SeedAsync(roleManager);
             await DefaultAdminUser.SeedAsync(userManager);
+            await DefaultCashierUser.SeedAsync(userManager);
+            await DefaultClientUser.SeedAsync(userManager);
         }
 
         #region Private methods

@@ -31,10 +31,9 @@ namespace HermesBanking.Core.Application.ViewModels.User
         public required string ConfirmPassword { get; set; }
 
         [DataType(DataType.Text)]
-        public string? Phone { get; set; }
-
-        [DataType(DataType.Upload)]
-        [Required(ErrorMessage = "You must enter the profile image of user")]
-        public IFormFile? ProfileImageFile { get; set; }
+        [Required(ErrorMessage = "You must enter the identification")]
+        public required string UserId { get; set; }
+        public double? InitialAmount { get; set; }
+        public required bool IsActive { get; set; }
     }
 }

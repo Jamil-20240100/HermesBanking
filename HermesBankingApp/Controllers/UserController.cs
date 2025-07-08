@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace ItlaHermesBanking.Controllers
+namespace HermesBankingApp.Controllers
 {
     [Authorize(Roles = "Admin")]
     public class UserController : Controller
@@ -33,8 +33,9 @@ namespace ItlaHermesBanking.Controllers
                   UserName = s.UserName,
                   LastName = s.LastName,
                   Role = s.Role,
-                  Phone = s.Phone,
-                  ProfileImage = s.ProfileImage
+                  InitialAmount = s.InitialAmount,
+                  UserId = s.UserId,
+                  IsActive = s.IsActive,
               }).ToList();
 
             return View(listEntityVms);
@@ -42,7 +43,7 @@ namespace ItlaHermesBanking.Controllers
         public async Task<IActionResult> Create()
         {
             ViewBag.Roles = await _roleManager.Roles.ToListAsync();
-            return View(new CreateUserViewModel() { Id = 0, Name = "", Email = "", UserName = "", LastName = "", Password = "", ConfirmPassword = "", Role = "" });
+            return View(new CreateUserViewModel() { Id = 0, Name = "", Email = "", UserName = "", LastName = "", Password = "", ConfirmPassword = "", Role = "", UserId = "", IsActive = true, InitialAmount = 0});
         }
 
         [HttpPost]
@@ -65,8 +66,9 @@ namespace ItlaHermesBanking.Controllers
                 LastName = vm.LastName,
                 Password = vm.Password,
                 Role = vm.Role,
-                Phone = vm.Phone,
-                ProfileImage = ""
+                UserId = vm.UserId,
+                InitialAmount = vm.InitialAmount,
+                IsActive = vm.IsActive
             };
 
             RegisterResponseDto? returnUser = await _accountServiceForWebApp.RegisterUser(dto, origin);
@@ -82,7 +84,6 @@ namespace ItlaHermesBanking.Controllers
             if (returnUser != null && !string.IsNullOrWhiteSpace(returnUser.Id))
             {
                 dto.Id = returnUser.Id;
-                dto.ProfileImage = FileManager.Upload(vm.ProfileImageFile, dto.Id, "Users");
                 await _accountServiceForWebApp.EditUser(dto, origin, true);
             }
 
@@ -112,7 +113,9 @@ namespace ItlaHermesBanking.Controllers
                 LastName = dto.LastName,
                 Password = "",
                 Role = dto.Role,
-                Phone = dto.Phone,
+                UserId = dto.UserId,
+                InitialAmount = dto.InitialAmount,
+                IsActive = dto.IsActive,
             };
 
             ViewBag.Roles = await _roleManager.Roles.ToListAsync();
@@ -140,18 +143,13 @@ namespace ItlaHermesBanking.Controllers
                 LastName = vm.LastName,
                 Password = vm.Password ?? "",
                 Role = vm.Role,
-                Phone = vm.Phone,
+                InitialAmount= vm.InitialAmount,
+                UserId= vm.UserId,
+                IsActive = vm.IsActive
             };
 
             var currentDto = await _accountServiceForWebApp.GetUserById(vm.Id);
-            string? currentImagePath = "";
 
-            if (currentDto != null)
-            {
-                currentImagePath = currentDto.ProfileImage;
-            }
-
-            dto.ProfileImage = FileManager.Upload(vm.ProfileImageFile, dto.Id, "Users", true, currentImagePath);
             var returnUser = await _accountServiceForWebApp.EditUser(dto, origin);
             if (returnUser.HasError)
             {

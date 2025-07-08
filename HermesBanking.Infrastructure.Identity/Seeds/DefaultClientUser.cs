@@ -5,18 +5,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HermesBanking.Infrastructure.Identity.Seeds
 {
-    public static class DefaultAdminUser
+    public static class DefaultClientUser
     {
         public static async Task SeedAsync(UserManager<AppUser> userManager)
         {
             AppUser user = new()
             {
-                Name = "Jane",
+                Name = "Peter",
                 LastName = "Doe",
-                Email = "admin@mail.com",
+                Email = "client@mail.com",
                 EmailConfirmed = true,
-                UserName = "JaneDoeAdmin",
-                UserId = "40230098754",
+                UserName = "PeterDoeClient",
+                UserId = "60230098754",
                 IsActive = true,
             };
 
@@ -26,7 +26,7 @@ namespace HermesBanking.Infrastructure.Identity.Seeds
                 if(entityUser == null)
                 {
                     await userManager.CreateAsync(user, "123Pa$$word!");
-                    await userManager.AddToRoleAsync(user, Roles.Admin.ToString());
+                    await userManager.AddToRoleAsync(user, Roles.Client.ToString());
                 }
             }
        

@@ -5,6 +5,7 @@ using HermesBanking.Core.Application.ViewModels.User;
 using HermesBanking.Core.Domain.Common.Enums;
 using HermesBanking.Infrastructure.Identity.Entities;
 using HermesBankingApp.Helpers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -96,11 +97,14 @@ namespace HermesBankingApp.Controllers
             vm.Password = "";
             return View(vm);
         }
+
         public async Task<IActionResult> Logout()
         {
             await _accountServiceForWebApp.SignOutAsync();
             return RedirectToRoute(new { controller = "Login", action = "Index" });
         }
+
+        [Authorize(Roles = "Admin")]
         public IActionResult Register()
         {
             return View(new RegisterUserViewModel()
@@ -111,9 +115,12 @@ namespace HermesBankingApp.Controllers
                 Name = "",
                 Password = "",
                 UserName = "",
+                UserId = "",
+                IsActive = true,
             });
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> Register(RegisterUserViewModel vm)
         {
@@ -138,7 +145,6 @@ namespace HermesBankingApp.Controllers
             if (returnUser != null && !string.IsNullOrWhiteSpace(returnUser.Id))
             {
                 dto.Id = returnUser.Id;
-                dto.ProfileImage = FileManager.Upload(vm.ProfileImageFile, dto.Id, "Users");
                 await _accountServiceForWebApp.EditUser(dto, origin, true);
             }
 
@@ -178,6 +184,7 @@ namespace HermesBankingApp.Controllers
 
             return RedirectToRoute(new { controller = "Login", action = "Index" });
         }
+
         public IActionResult ResetPassword(string userId, string token)
         {
             return View(new ResetPasswordRequestViewModel() { Id = userId, Token = token, Password = "" });

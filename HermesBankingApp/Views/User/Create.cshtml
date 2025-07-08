@@ -1,74 +1,119 @@
 ﻿@model CreateUserViewModel
-@{   
-    ViewData["Title"] = "Create User";
+@{
+    ViewData["Title"] = "Crear Usuario";
 }
 
-<div class="col-12 col-md-6 offset-md-3 ">
+<div class="col-12 col-md-8 offset-md-2">
     <div class="card">
-        <div class="card-header bg-success text-light"><h5 class="text-center">New User</h5></div>
+        <div class="card-header bg-success text-white">
+            <h4 class="text-center"><i class="bi bi-person-plus"></i> Nuevo Usuario</h4>
+        </div>
         <div class="card-body">
             @if (ViewBag.HasError != null && ViewBag.HasError)
             {
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <div class="alert alert-danger alert-dismissible fade show">
                     @foreach (var error in ViewBag.Errors)
                     {
-                        <p class="text-danger">@error</p>
+                        <p>@error</p>
                     }
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             }
+
             <form asp-controller="User" asp-action="Create" method="POST" enctype="multipart/form-data">
-                <div class="mb-3">
-                    <label asp-for="Name" class="form-label">Name:</label>
-                    <input class="form-control" asp-for="Name" />
-                    <span asp-validation-for="Name" class="text-danger"></span>
-                </div>
-                <div class="mb-3">
-                    <label asp-for="LastName" class="form-label">LastName:</label>
-                    <input class="form-control" asp-for="LastName" />
-                    <span asp-validation-for="LastName" class="text-danger"></span>
-                </div>
-                <div class="mb-3">
-                    <label asp-for="Email" class="form-label">Email:</label>
-                    <input class="form-control" asp-for="Email" />
-                    <span asp-validation-for="Email" class="text-danger"></span>
-                </div>
-                <div class="mb-3">
-                    <label asp-for="UserName" class="form-label">UserName:</label>
-                    <input class="form-control" asp-for="UserName" />
-                    <span asp-validation-for="UserName" class="text-danger"></span>
-                </div>
-                <div class="mb-3">
-                    <label asp-for="Password" class="form-label">Password:</label>
-                    <input class="form-control" asp-for="Password" />
-                    <span asp-validation-for="Password" class="text-danger"></span>
-                </div>
-                <div class="mb-3">
-                    <label asp-for="ConfirmPassword" class="form-label">Confirm password:</label>
-                    <input class="form-control" asp-for="ConfirmPassword" />
-                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-                </div>
-                <div class="mb-3">
-                    <label asp-for="Phone" class="form-label">Phone:</label>
-                    <input class="form-control" asp-for="Phone" />      
-                </div>
-                <div class="mb-3">
-                    <label asp-for="ProfileImageFile" class="form-label">Profile Image:</label>
-                    <input class="form-control" asp-for="ProfileImageFile" />
-                    <span asp-validation-for="ProfileImageFile" class="text-danger"></span>
-                </div>
-                <div class="mb-3">
-                    <label asp-for="Role" class="form-label">Role:</label>
-                    <select asp-for="Role" class="form-select" asp-items="@(new SelectList(ViewBag.Roles, "Name", "NormalizedName"))">
-                        <option value="">Select any option</option>              
-                    </select>
-                    <span asp-validation-for="Role" class="text-danger"></span>
-                </div>
-                <div>
-                    <button type="submit" class="btn btn-outline-primary float-end"><i class="bi bi-floppy2"></i> Save</button>
-                    <a asp-controller="User" asp-action="Index" class="btn btn-outline-warning float-end me-2"><i class="bi bi-arrow-left-short"></i> Back to list</a>
+                <table class="table">
+                    <tr>
+                        <td><label asp-for="Name" class="form-label">Nombre</label></td>
+                        <td>
+                            <input class="form-control" asp-for="Name" />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label asp-for="LastName" class="form-label">Apellido</label></td>
+                        <td>
+                            <input class="form-control" asp-for="LastName" />
+                            <span asp-validation-for="LastName" class="text-danger"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label asp-for="UserId" class="form-label">Cédula</label></td>
+                        <td>
+                            <input class="form-control" asp-for="UserId" />
+                            <span asp-validation-for="UserId" class="text-danger"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label asp-for="Email" class="form-label">Correo</label></td>
+                        <td>
+                            <input class="form-control" asp-for="Email" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label asp-for="UserName" class="form-label">Usuario</label></td>
+                        <td>
+                            <input class="form-control" asp-for="UserName" />
+                            <span asp-validation-for="UserName" class="text-danger"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label asp-for="Password" class="form-label">Contraseña</label></td>
+                        <td>
+                            <input type="password" class="form-control" asp-for="Password" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label asp-for="ConfirmPassword" class="form-label">Confirmar Contraseña</label></td>
+                        <td>
+                            <input type="password" class="form-control" asp-for="ConfirmPassword" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label asp-for="Role" class="form-label">Tipo de Usuario</label></td>
+                        <td>
+                            <select asp-for="Role" class="form-select" asp-items="@(new SelectList(ViewBag.Roles, "Name", "Name"))" id="roleSelect">
+                                <option value="">Seleccione</option>
+                            </select>
+                            <span asp-validation-for="Role" class="text-danger"></span>
+                        </td>
+                    </tr>
+                    <tr id="initialAmountRow" style="display:none;">
+                        <td><label asp-for="InitialAmount" class="form-label">Monto Inicial</label></td>
+                        <td>
+                            <input type="number" class="form-control" asp-for="InitialAmount" min="0" />
+                            <span asp-validation-for="InitialAmount" class="text-danger"></span>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="text-end">
+                    <a asp-controller="User" asp-action="Index" class="btn btn-outline-warning me-2">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-save"></i> Guardar
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const roleSelect = document.getElementById("roleSelect");
+            const amountRow = document.getElementById("initialAmountRow");
+
+            function toggleAmountField() {
+                amountRow.style.display = (roleSelect.value === "Client") ? "table-row" : "none";
+            }
+
+            roleSelect.addEventListener("change", toggleAmountField);
+            toggleAmountField();
+        });
+    </script>
+}

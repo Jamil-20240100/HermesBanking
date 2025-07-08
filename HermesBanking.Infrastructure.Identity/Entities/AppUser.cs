@@ -6,6 +6,8 @@ namespace HermesBanking.Infrastructure.Identity.Entities
     {
         public required string Name { get; set; }
         public required string LastName { get; set; }
-        public string? ProfileImage { get; set; }
+        public required string UserId { get; set; } //cedula
+        public double? InitialAmount { get; set; }
+        public required bool IsActive { get; set; }
     }
 }

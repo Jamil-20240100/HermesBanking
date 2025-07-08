@@ -54,9 +54,10 @@ namespace HermesBanking.Infrastructure.Identity.Services
                 LastName = saveDto.LastName,
                 Email = saveDto.Email,
                 UserName = saveDto.UserName,
-                ProfileImage = saveDto.ProfileImage,
                 EmailConfirmed = false,
-                PhoneNumber = saveDto.Phone
+                UserId = saveDto.UserId,
+                InitialAmount = saveDto.InitialAmount,
+                IsActive = true
             };
 
             var result = await _userManager.CreateAsync(user, saveDto.Password);
@@ -145,10 +146,10 @@ namespace HermesBanking.Infrastructure.Identity.Services
             user.Name = saveDto.Name;
             user.LastName = saveDto.LastName;
             user.UserName = saveDto.UserName;
-            user.ProfileImage = string.IsNullOrWhiteSpace(saveDto.ProfileImage) ? user.ProfileImage : saveDto.ProfileImage;
             user.EmailConfirmed = user.EmailConfirmed && user.Email == saveDto.Email;
             user.Email = saveDto.Email;
-            user.PhoneNumber = saveDto.Phone;
+            user.UserId = saveDto.UserId;
+            user.InitialAmount = saveDto.InitialAmount;
 
             if (!string.IsNullOrWhiteSpace(saveDto.Password) && isNotcreated)
             {
@@ -317,10 +318,11 @@ namespace HermesBanking.Infrastructure.Identity.Services
                 LastName = user.LastName,
                 Name = user.Name,
                 UserName = user.UserName ?? "",
-                ProfileImage = user.ProfileImage,
-                Phone = user.PhoneNumber,
                 isVerified = user.EmailConfirmed,
-                Role = rolesList.FirstOrDefault() ?? ""
+                Role = rolesList.FirstOrDefault() ?? "",
+                UserId = user.UserId,
+                InitialAmount = user.InitialAmount,
+                IsActive = user.IsActive,
             };
 
             return userDto;
@@ -343,10 +345,11 @@ namespace HermesBanking.Infrastructure.Identity.Services
                 LastName = user.LastName,
                 Name = user.Name,
                 UserName = user.UserName ?? "",
-                ProfileImage = user.ProfileImage,
-                Phone = user.PhoneNumber,
                 isVerified = user.EmailConfirmed,
-                Role = rolesList.FirstOrDefault() ?? ""
+                Role = rolesList.FirstOrDefault() ?? "",
+                UserId = user.UserId,
+                InitialAmount = user.InitialAmount,
+                IsActive= user.IsActive,
             };
 
             return userDto;
@@ -369,10 +372,11 @@ namespace HermesBanking.Infrastructure.Identity.Services
                 LastName = user.LastName,
                 Name = user.Name,
                 UserName = user.UserName ?? "",
-                ProfileImage = user.ProfileImage,
-                Phone = user.PhoneNumber,
                 isVerified = user.EmailConfirmed,
-                Role = rolesList.FirstOrDefault() ?? ""
+                Role = rolesList.FirstOrDefault() ?? "",
+                UserId = user.UserId,
+                InitialAmount = user.InitialAmount,
+                IsActive = user.IsActive,
             };
 
             return userDto;
@@ -401,10 +405,11 @@ namespace HermesBanking.Infrastructure.Identity.Services
                     LastName = item.LastName,
                     Name = item.Name,
                     UserName = item.UserName ?? "",
-                    ProfileImage = item.ProfileImage,
-                    Phone = item.PhoneNumber,
                     isVerified = item.EmailConfirmed,
-                    Role = roleList.FirstOrDefault() ?? ""
+                    Role = roleList.FirstOrDefault() ?? "",
+                    UserId = item.UserId,
+                    InitialAmount = item.InitialAmount,
+                    IsActive= item.IsActive,
                 });
             }
 

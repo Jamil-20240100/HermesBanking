@@ -1,54 +1,107 @@
-﻿@model List<UserViewModel>;
+﻿@model List<UserViewModel>
 @{
     ViewData["Title"] = "Users";
+    var currentUser = User.Identity?.Name;
+    var roleFilter = ViewBag.RoleFilter as string ?? "";
 }
 
-<div class="row">
-    <div class="text-center">
-        <h1 class="display-4">Users</h1>
-    </div>
-</div>
-
-<div class="row mt-4">
-    <div class="col-12 col-md-3">
-        <a class="btn btn-outline-success" asp-controller="User" asp-action="Create"><i class="bi bi-file-earmark-plus"></i> New user</a>
-    </div>
-
-</div>
-
-<div class="row mt-2">
-    @if (Model.Count == 0)
-    {
-        <div class="text-center">
-            <h4 class="display-4">There aren't users</h4>
+<div class="container mt-4">
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <h2>Gestión de usuarios</h2>
         </div>
+        <div class="col-md-6 text-end">
+            <a asp-controller="User" asp-action="Create" class="btn btn-outline-success">
+                <i class="bi bi-plus-circle"></i> Nuevo Usuario
+            </a>
+        </div>
+    </div>
+
+    <form method="get" asp-controller="User" asp-action="Index" class="row mb-3">
+        <div class="col-md-4">
+            <select name="roleFilter" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Filtrar por rol --</option>
+                <option value="Admin" selected="@("Admin" == roleFilter)">Administrador</option>
+                <option value="Cashier" selected="@("Cashier" == roleFilter)">Cajero</option>
+                <option value="Client" selected="@("Client" == roleFilter)">Cliente</option>
+            </select>
+        </div>
+    </form>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center">No hay usuarios registrados.</div>
     }
     else
     {
-        foreach (var item in Model)
-        {
-            <div class="col-12 col-md-3">
-                <div class="card">
-                    <img src="@item.ProfileImage" class="card-img-top responsive-image" alt="@item.Name">
-                    <div class="card-body">
-                        <h5 class="card-title">@item.Name @item.LastName</h5>
-                    </div>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item">Phone: @item.Phone</li>
-                        <li class="list-group-item">Email: @item.Email</li>
-                        <li class="list-group-item">userName: @item.UserName</li>
-                        <li class="list-group-item">Role: @item.Role</li>
-                    </ul>
-                    <div class="card-body">
-                        <a class="btn btn-outline-warning float-end" asp-controller="User" asp-action="Edit" asp-route-id="@item.Id"><i class="bi bi-pencil-square"></i> Edit</a>
-                        <a class="btn btn-outline-danger float-end me-2" asp-controller="User" asp-action="Delete" asp-route-id="@item.Id"><i class="bi bi-trash"></i> Delete</a>
-                        
-                    </div>
-                </div>
-            </div>
-        }
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Cédula</th>
+                        <th>Nombre completo</th>
+                        <th>Correo</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.UserName</td>
+                            <td>@item.UserId</td>
+                            <td>@item.Name @item.LastName</td>
+                            <td>@item.Email</td>
+                            <td>@item.Role</td>
+                            <td>
+                                @if (item.IsActive)
+                                {
+                                    <span class="badge bg-success">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (currentUser != item.UserName)
+                                {
+                                    <a asp-controller="User" asp-action="Edit" asp-route-id="@item.Id"
+                                       class="btn btn-sm btn-outline-warning me-1">
+                                        <i class="bi bi-pencil-square"></i> Editar
+                                    </a>
+
+                                    <a asp-controller="User" asp-action="Delete" asp-route-id="@item.Id"
+                                       class="btn btn-sm btn-outline-danger me-1">
+                                        <i class="bi bi-trash"></i> Eliminar
+                                    </a>
+
+                                    @* Botón activar/inactivar: ajusta las rutas si tienes acciones específicas *@
+                                    @if (item.IsActive)
+                                    {
+                                        <a href="#" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-slash-circle"></i> Inactivar
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a href="#" class="btn btn-sm btn-outline-success">
+                                            <i class="bi bi-check-circle"></i> Activar
+                                        </a>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">No editable</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     }
 </div>
-
-
-

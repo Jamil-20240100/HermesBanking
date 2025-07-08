@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace HermesBanking.Core.Application.ViewModels.User
 {
@@ -32,14 +31,13 @@ namespace HermesBanking.Core.Application.ViewModels.User
         [DataType(DataType.Password)]
         public required string ConfirmPassword { get; set; }
 
-        [DataType(DataType.Text)]
-        public string? Phone { get; set; }
-
-        [DataType(DataType.Upload)]
-        [Required(ErrorMessage = "You must enter the profile image of user")]
-        public IFormFile? ProfileImageFile { get; set; }
-
         [Required(ErrorMessage = "You must enter the valid role of user")]
         public required string Role { get; set; }
+
+        [Required(ErrorMessage = "You must enter a valid identification")]
+        public required string UserId { get; set; }
+
+        public double? InitialAmount { get; set; }
+        public required bool IsActive { get; set; }
     }
 }
