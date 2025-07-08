@@ -2,7 +2,6 @@
 @{
     ViewData["Title"] = "Users";
     var currentUser = User.Identity?.Name;
-    var roleFilter = ViewBag.RoleFilter as string ?? "";
 }
 
 <div class="container mt-4">
@@ -17,16 +16,16 @@
         </div>
     </div>
 
-    <form method="get" asp-controller="User" asp-action="Index" class="row mb-3">
+    <div class="row mb-3">
         <div class="col-md-4">
-            <select name="roleFilter" class="form-select" onchange="this.form.submit()">
+            <select id="roleFilter" class="form-select">
                 <option value="">-- Filtrar por rol --</option>
-                <option value="Admin" selected="@("Admin" == roleFilter)">Administrador</option>
-                <option value="Cashier" selected="@("Cashier" == roleFilter)">Cajero</option>
-                <option value="Client" selected="@("Client" == roleFilter)">Cliente</option>
+                <option value="Admin">Administrador</option>
+                <option value="Cashier">Cajero</option>
+                <option value="Client">Cliente</option>
             </select>
         </div>
-    </form>
+    </div>
 
     @if (!Model.Any())
     {
@@ -47,7 +46,7 @@
                         <th class="text-center">Acciones</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="userTableBody">
                     @foreach (var item in Model)
                     {
                         <tr>
@@ -79,16 +78,15 @@
                                         <i class="bi bi-trash"></i> Eliminar
                                     </a>
 
-                                    @* Botón activar/inactivar: ajusta las rutas si tienes acciones específicas *@
                                     @if (item.IsActive)
                                     {
-                                        <a href="#" class="btn btn-sm btn-outline-secondary">
+                                        <a asp-controller="User" asp-action="Toggle" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">
                                             <i class="bi bi-slash-circle"></i> Inactivar
                                         </a>
                                     }
                                     else
                                     {
-                                        <a href="#" class="btn btn-sm btn-outline-success">
+                                        <a asp-controller="User" asp-action="Toggle" asp-route-id="@item.Id" class="btn btn-sm btn-outline-success">
                                             <i class="bi bi-check-circle"></i> Activar
                                         </a>
                                     }
@@ -105,3 +103,23 @@
         </div>
     }
 </div>
+
+<script>
+    const roleFilter = document.getElementById("roleFilter");
+    const tbody = document.getElementById("userTableBody");
+
+    roleFilter.addEventListener("change", function () {
+        const selectedRole = this.value.toLowerCase();
+        const rows = tbody.getElementsByTagName("tr");
+
+        for (let row of rows) {
+            const roleCell = row.cells[4].textContent.toLowerCase();
+
+            if (!selectedRole || roleCell.includes(selectedRole)) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        }
+    });
+</script>

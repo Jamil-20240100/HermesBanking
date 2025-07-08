@@ -1,0 +1,31 @@
+﻿@model ToggleUserStateViewModel
+@{
+    ViewData["Title"] = "StateChanges";
+}
+
+<div class="col-12 col-md-6 offset-md-3 ">
+    <div class="card">
+        <div class="card-header bg-danger text-light">
+            <h4 class="text-center"> Are you sure want to change the state of the user - @Model.Name @Model.LastName? </h4>
+        </div>
+        <div class="card-body">
+            <form asp-controller="User" asp-action="Toggle" method="POST">
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="Name" />
+                <input type="hidden" asp-for="LastName" />
+                <input type="hidden" asp-for="Email" />
+                <input type="hidden" asp-for="UserName" />
+                <input type="hidden" asp-for="Role" />
+                <input type="hidden" asp-for="IsActive" />
+                <input type="hidden" asp-for="InitialAmount" />
+                <input type="hidden" asp-for="Password" />
+                <input type="hidden" asp-for="UserId" />
+
+                <div class="d-flex justify-content-center">
+                    <button type="submit" class="btn btn-outline-secondary me-2">Confirm</button>
+                    <a asp-controller="User" asp-action="Index" class="btn btn-outline-warning"><i class="bi bi-arrow-left-short"></i> Back to list</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

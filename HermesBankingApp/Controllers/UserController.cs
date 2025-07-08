@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.Design;
 
 namespace HermesBankingApp.Controllers
 {
@@ -188,6 +189,80 @@ namespace HermesBankingApp.Controllers
 
             await _accountServiceForWebApp.DeleteAsync(vm.Id);
             FileManager.Delete(vm.Id, "Users");
+            return RedirectToRoute(new { controller = "User", action = "Index" });
+        }
+
+        public async Task<IActionResult> Toggle(string id)
+        {
+            var dto = await _accountServiceForWebApp.GetUserById(id);
+         
+            if (dto == null) return RedirectToAction("Index");
+
+            var vm = new ToggleUserStateViewModel
+            {
+                Id = dto.Id,
+                Name = dto.Name,
+                LastName = dto.LastName,
+                Email = dto.Email,
+                UserName = dto.UserName,
+                IsActive = dto.IsActive,
+                Role = dto.Role,
+                InitialAmount = dto.InitialAmount,
+                UserId = dto.UserId,
+            };
+
+            return View("ConfirmAction",vm);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Toggle(ToggleUserStateViewModel vm)
+        {
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Roles = await _roleManager.Roles.ToListAsync();
+                ViewBag.EditMode = true;
+                return View("ConfirmAction", vm);
+            }
+
+            string origin = Request?.Headers?.Origin.ToString() ?? string.Empty;
+
+            var newState = true;
+            if(vm.IsActive == newState)
+            {
+                newState = false;
+            }
+            else
+            {
+                newState = true;
+            }
+
+            SaveUserDto dto = new()
+            {
+                Id = vm.Id,
+                Name = vm.Name ?? "",
+                LastName = vm.LastName ?? "",
+                Email = vm.Email ?? "",
+                UserName = vm.UserName ?? "",
+                Role = vm.Role ?? "",
+                IsActive = newState,
+                InitialAmount = vm.InitialAmount,
+                Password = vm.Password ?? "",
+                UserId = vm.UserId ?? "",
+                
+            };
+
+            //var currentDto = await _accountServiceForWebApp.GetUserById(dto.Id);
+
+            var returnUser = await _accountServiceForWebApp.EditUser(dto, origin);
+            if (returnUser.HasError)
+            {
+                ViewBag.Roles = await _roleManager.Roles.ToListAsync();
+                ViewBag.EditMode = true;
+                ViewBag.HasError = true;
+                ViewBag.Errors = returnUser.Errors;
+                return View(vm);
+            }
+
             return RedirectToRoute(new { controller = "User", action = "Index" });
         }
     }

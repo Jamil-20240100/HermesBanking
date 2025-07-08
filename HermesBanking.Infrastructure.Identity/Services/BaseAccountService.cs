@@ -150,6 +150,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
             user.Email = saveDto.Email;
             user.UserId = saveDto.UserId;
             user.InitialAmount = saveDto.InitialAmount;
+            user.IsActive = saveDto.IsActive;
 
             if (!string.IsNullOrWhiteSpace(saveDto.Password) && isNotcreated)
             {
