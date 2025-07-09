@@ -39,6 +39,8 @@ namespace HermesBanking.Core.Application.ViewModels.User
 
         public double? InitialAmount { get; set; }
 
+        public double? AdditionalAmount { get; set; }
+
         public required bool IsActive { get; set; }
     }
 }

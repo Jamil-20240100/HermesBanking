@@ -1,6 +1,7 @@
 using HermesBanking.Core.Application;
 using HermesBanking.Infrastructure.Shared;
 using HermesBanking.Infrastructure.Identity;
+using HermesBanking.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +14,7 @@ builder.Services.AddSession(opt =>
     opt.Cookie.HttpOnly = true;
 });
 
-//builder.Services.AddPersistenceLayerIoc(builder.Configuration);
+builder.Services.AddPersistenceLayerIoc(builder.Configuration);
 builder.Services.AddApplicationLayerIoc();
 builder.Services.AddIdentityLayerIocForWebApp(builder.Configuration);
 builder.Services.AddSharedLayerIoc(builder.Configuration);
