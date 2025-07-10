@@ -37,7 +37,7 @@ namespace HermesBanking.Core.Application.ViewModels.User
         [Required(ErrorMessage = "You must enter a valid identification")]
         public required string UserId { get; set; }
 
-        public double? InitialAmount { get; set; }
+        public decimal? InitialAmount { get; set; }
         public required bool IsActive { get; set; }
     }
 }

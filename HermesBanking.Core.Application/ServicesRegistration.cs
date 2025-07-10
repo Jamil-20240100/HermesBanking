@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using HermesBanking.Core.Application.Interfaces;
+using HermesBanking.Core.Application.Services;
+using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
 namespace HermesBanking.Core.Application
@@ -13,6 +15,7 @@ namespace HermesBanking.Core.Application
             #endregion
 
             #region Services IOC
+            services.AddScoped<ISavingsAccountService, SavingsAccountService>();
             #endregion
         }
 

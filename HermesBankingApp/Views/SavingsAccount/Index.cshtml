@@ -1,0 +1,79 @@
+﻿@model List<SavingsAccountViewModel>
+
+@{
+    ViewData["Title"] = "Gestión de Cuentas de Ahorro";
+}
+
+<h2 class="mb-4">Cuentas de Ahorro</h2>
+
+<div class="d-flex justify-content-between mb-3">
+    <div>
+        <a asp-action="Create" class="btn btn-primary">Asignar cuenta de ahorro</a>
+    </div>
+    <div class="d-flex gap-2">
+        <input type="text" class="form-control" placeholder="Buscar por cédula..." />
+        <select class="form-select">
+            <option value="">Estado</option>
+            <option value="true">Activa</option>
+            <option value="false">Cancelada</option>
+        </select>
+        <select class="form-select">
+            <option value="">Tipo</option>
+            <option value="0">Principal</option>
+            <option value="1">Secundaria</option>
+        </select>
+    </div>
+</div>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Número de Cuenta</th>
+            <th>Cliente</th>
+            <th>Balance</th>
+            <th>Tipo</th>
+            <th>Estado</th>
+            <th class="text-center">Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.AccountNumber</td>
+                    <td>@item.ClientFullName</td>
+                    <td>@item.Balance.ToString("C")</td>
+                    <td>@(item.AccountType == HermesBanking.Core.Domain.Common.Enums.AccountType.Primary ? "Principal" : "Secundaria")</td>
+                    <td>@(item.IsActive ? "Activa" : "Cancelada")</td>
+                    <td class="text-center">
+                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Detalles</a>
+
+                        @* Solo mostrar botón Cancelar si es secundaria *@
+                        @if (item.AccountType == HermesBanking.Core.Domain.Common.Enums.AccountType.Secondary)
+                        {
+                            <a asp-action="ConfirmDelete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Cancelar</a>
+                        }
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="6" class="text-center">No hay cuentas registradas.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<nav aria-label="Paginación">
+    <ul class="pagination justify-content-center">
+        <li class="page-item disabled"><a class="page-link">Anterior</a></li>
+        <li class="page-item active"><a class="page-link">1</a></li>
+        <li class="page-item"><a class="page-link">2</a></li>
+        <li class="page-item"><a class="page-link">3</a></li>
+        <li class="page-item"><a class="page-link">Siguiente</a></li>
+    </ul>
+</nav>

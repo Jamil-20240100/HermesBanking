@@ -1,8 +1,9 @@
-﻿using HermesBanking.Core.Domain.Common.Enums;
+﻿using HermesBanking.Core.Application.DTOs.User;
+using HermesBanking.Core.Domain.Common.Enums;
 
-namespace HermesBanking.Core.Domain.Entities
+namespace HermesBanking.Core.Application.DTOs.SavingsAccount
 {
-    public class SavingsAccount
+    public class SavingsAccountDTO
     {
         //main info
         public int Id { get; set; }

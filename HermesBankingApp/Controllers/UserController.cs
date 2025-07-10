@@ -1,6 +1,8 @@
+using HermesBanking.Core.Application.DTOs.SavingsAccount;
 using HermesBanking.Core.Application.DTOs.User;
 using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Application.ViewModels.User;
+using HermesBanking.Core.Domain.Common.Enums;
 using HermesBankingApp.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -15,11 +17,13 @@ namespace HermesBankingApp.Controllers
     {
         private readonly IAccountServiceForWebApp _accountServiceForWebApp;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly ISavingsAccountService _savingsAccountService;
 
-        public UserController(IAccountServiceForWebApp accountServiceForWebApp, RoleManager<IdentityRole> roleManager)
+        public UserController(IAccountServiceForWebApp accountServiceForWebApp, RoleManager<IdentityRole> roleManager, ISavingsAccountService savingsAccountService)
         {
             _accountServiceForWebApp = accountServiceForWebApp;
             _roleManager = roleManager;
+            _savingsAccountService = savingsAccountService;
         }
         public async Task<IActionResult> Index()
         {
@@ -41,6 +45,7 @@ namespace HermesBankingApp.Controllers
 
             return View(listEntityVms);
         }
+        
         public async Task<IActionResult> Create()
         {
             ViewBag.Roles = await _roleManager.Roles.ToListAsync();
@@ -88,8 +93,34 @@ namespace HermesBankingApp.Controllers
                 await _accountServiceForWebApp.EditUser(dto, origin, true);
             }
 
+            //
+            // ADDING NEW PRIMARY ACCOUNT
+            //
+
+            if(dto.Role == Roles.Client.ToString())
+            {
+                var newAccount = new SavingsAccountDTO
+                {
+                    Id = 0,
+                    IsActive = true,
+                    AccountNumber = "000000000", //insertar logica para crear 9 digitos
+                    AccountType = AccountType.Primary,
+                    Balance = dto.InitialAmount ?? 0,
+                    ClientFullName = $"{dto.Name} {dto.LastName}",
+                    ClientId = dto.Id,
+                    CreatedAt = DateTime.Now,
+                };
+                
+                await _savingsAccountService.AddAsync(newAccount);
+            }
+
+            //
+            //
+            //
+
             return RedirectToRoute(new { controller = "User", action = "Index" });
         }
+
         public async Task<IActionResult> Edit(string id)
         {
             if (!ModelState.IsValid)
@@ -163,6 +194,7 @@ namespace HermesBankingApp.Controllers
 
             return RedirectToRoute(new { controller = "User", action = "Index" });
         }
+
         public async Task<IActionResult> Delete(string id)
         {
             if (!ModelState.IsValid)

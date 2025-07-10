@@ -1,5 +1,8 @@
 
+using HermesBanking.Core.Application;
 using HermesBanking.Infrastructure.Identity;
+using HermesBanking.Infrastructure.Persistence;
+using HermesBanking.Infrastructure.Shared;
 using System.Text.Json.Serialization;
 
 namespace HermesBankingAPI
@@ -18,9 +21,9 @@ namespace HermesBankingAPI
                     opt.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                 });
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            //builder.Services.AddPersistenceLayerIoc(builder.Configuration);
-            //builder.Services.AddApplicationLayerIoc();
-            //builder.Services.AddSharedLayerIoc(builder.Configuration);
+            builder.Services.AddPersistenceLayerIoc(builder.Configuration);
+            builder.Services.AddApplicationLayerIoc();
+            builder.Services.AddSharedLayerIoc(builder.Configuration);
             builder.Services.AddIdentityLayerIocForWebApi(builder.Configuration);
             builder.Services.AddOpenApi();
             builder.Services.AddEndpointsApiExplorer();

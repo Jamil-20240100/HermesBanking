@@ -1,8 +1,9 @@
-﻿using HermesBanking.Core.Domain.Common.Enums;
+﻿using HermesBanking.Core.Application.ViewModels.User;
+using HermesBanking.Core.Domain.Common.Enums;
 
-namespace HermesBanking.Core.Domain.Entities
+namespace HermesBanking.Core.Application.ViewModels.SavingsAccount
 {
-    public class SavingsAccount
+    public class SavingsAccountViewModel
     {
         //main info
         public int Id { get; set; }

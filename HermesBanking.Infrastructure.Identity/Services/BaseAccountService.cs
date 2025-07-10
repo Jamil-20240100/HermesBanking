@@ -104,6 +104,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
                 return response;
             }
         }
+      
         public virtual async Task<EditResponseDto> EditUser(SaveUserDto saveDto, string? origin, bool? isCreated = false, bool? isApi = false)
         {
             bool isNotcreated = !isCreated ?? false;
@@ -285,6 +286,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
 
             return response;
         }
+        
         public virtual async Task<UserResponseDto> DeleteAsync(string id)
         {
             UserResponseDto response = new() { HasError = false, Errors = [] };
@@ -301,6 +303,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
 
             return response;
         }
+        
         public virtual async Task<UserDto?> GetUserByEmail(string email)
         {
             var user = await _userManager.FindByEmailAsync(email);
@@ -328,6 +331,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
 
             return userDto;
         }
+        
         public virtual async Task<UserDto?> GetUserById(string Id)
         {
             var user = await _userManager.FindByIdAsync(Id);
@@ -355,6 +359,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
 
             return userDto;
         }
+        
         public virtual async Task<UserDto?> GetUserByUserName(string userName)
         {
             var user = await _userManager.FindByNameAsync(userName);
@@ -382,6 +387,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
 
             return userDto;
         }
+        
         public virtual async Task<List<UserDto>> GetAllUser(bool? isActive = true)
         {
             List<UserDto> listUsersDTOs = [];
@@ -416,6 +422,44 @@ namespace HermesBanking.Infrastructure.Identity.Services
 
             return listUsersDTOs;
         }
+
+        public virtual async Task<List<UserDto>> GetAllUserByRole(string role, bool? isActive = true)
+        {
+            List<UserDto> listUsersDTOs = [];
+
+            var users = _userManager.Users;
+
+            if (isActive != null && isActive == true)
+                users = users.Where(w => w.EmailConfirmed);
+
+            var listUser = await users.ToListAsync();
+
+            foreach (var item in listUser)
+            {
+                var roleList = await _userManager.GetRolesAsync(item);
+
+                var actualRole = roleList.FirstOrDefault();
+
+                if (actualRole == role)
+                {
+                    listUsersDTOs.Add(new UserDto()
+                    {
+                        Id = item.Id,
+                        Email = item.Email ?? "",
+                        LastName = item.LastName,
+                        Name = item.Name,
+                        UserName = item.UserName ?? "",
+                        isVerified = item.EmailConfirmed,
+                        Role = actualRole ?? "",
+                        UserId = item.UserId,
+                        InitialAmount = item.InitialAmount,
+                        IsActive = item.IsActive,
+                    });
+                }
+            }
+            return listUsersDTOs;
+        }
+
         public virtual async Task<UserResponseDto> ConfirmAccountAsync(string userId, string token)
         {
             UserResponseDto response = new() { HasError = false, Errors = [] };
@@ -465,6 +509,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
 
             return token;
         }
+     
         protected async Task<string> GetResetPasswordUri(AppUser user, string origin)
         {
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
@@ -484,6 +529,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
 
             return token;
         }
+       
         #endregion
     }
 }

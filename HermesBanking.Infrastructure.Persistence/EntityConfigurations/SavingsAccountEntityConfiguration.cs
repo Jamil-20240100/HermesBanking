@@ -21,6 +21,7 @@ namespace HermesBanking.Infrastructure.Persistence.EntityConfigurations
             builder.Property(sa => sa.IsActive).IsRequired();
             builder.Property(sa => sa.ClientId).IsRequired();
             builder.Property(sa => sa.CreatedAt).IsRequired();
+            builder.Property(sa => sa.ClientFullName).IsRequired();
             #endregion
         }
     }
