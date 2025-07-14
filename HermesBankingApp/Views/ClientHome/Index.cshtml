@@ -1,9 +1,55 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
-    Layout = "_LayoutClient";
+    ViewData["Title"] = "Mi Cuenta";
+    var accounts = ViewBag.Accounts as List<HermesBanking.Core.Domain.Entities.SavingsAccount>;
+    var transactions = ViewBag.Transactions as List<HermesBanking.Core.Domain.Entities.Transaction>;
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome Client</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<h2 class="mb-4">Bienvenido, @User.Identity?.Name</h2>
+
+<h4>Cuentas de Ahorro</h4>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Número</th>
+            <th>Balance</th>
+            <th>Tipo</th>
+            <th>Fecha Creación</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var acc in accounts)
+        {
+            <tr>
+                <td>@acc.AccountNumber</td>
+                <td>RD$ @acc.Balance:N2</td>
+                <td>@acc.AccountType</td>
+                <td>@acc.CreatedAt.ToString("dd/MM/yyyy")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h4 class="mt-4">Últimas Transacciones</h4>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Tipo</th>
+            <th>Monto</th>
+            <th>Origen</th>
+            <th>Beneficiario</th>
+            <th>Fecha</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var t in transactions)
+        {
+            <tr>
+                <td>@t.Type</td>
+                <td>RD$ @t.Amount:N2</td>
+                <td>@t.Origin</td>
+                <td>@t.Beneficiary</td>
+                <td>@t.Date.ToString("g")</td>
+            </tr>
+        }
+    </tbody>
+</table>

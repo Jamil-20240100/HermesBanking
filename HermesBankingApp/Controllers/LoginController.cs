@@ -39,6 +39,11 @@ namespace HermesBankingApp.Controllers
                 {
                     return RedirectToRoute(new { controller = "ClientHome", action = "Index" });
                 }
+                // NOTA: Agregado soporte para redirigir si es cajero
+                else if (user != null && user.Role == Roles.Cashier.ToString())
+                {
+                    return RedirectToRoute(new { controller = "CashierHome", action = "Index" });
+                }
             }
 
             return View(new LoginViewModel() { Password = "", UserName = "" });
@@ -61,6 +66,11 @@ namespace HermesBankingApp.Controllers
                 {
                     return RedirectToRoute(new { controller = "ClientHome", action = "Index" });
                 }
+                // NOTA: Agregado para redirigir si el usuario es cajero
+                else if (user != null && user.Role == Roles.Cashier.ToString())
+                {
+                    return RedirectToRoute(new { controller = "CashierHome", action = "Index" });
+                }
             }
 
             if (!ModelState.IsValid)
@@ -77,14 +87,19 @@ namespace HermesBankingApp.Controllers
 
             if (userDto != null && !userDto.HasError)
             {
-
                 if (userDto.Roles != null && userDto.Roles.Any(r => r == Roles.Admin.ToString()))
                 {
                     return RedirectToRoute(new { controller = "Home", action = "Index" });
                 }
-
-                return RedirectToRoute(new { controller = "ClientHome", action = "Index" });
-
+                // NOTA: Validación para redirigir a cajeros luego del login
+                else if (userDto.Roles != null && userDto.Roles.Any(r => r == Roles.Cashier.ToString()))
+                {
+                    return RedirectToRoute(new { controller = "CashierHome", action = "Index" });
+                }
+                else if (userDto.Roles != null && userDto.Roles.Any(r => r == Roles.Client.ToString()))
+                {
+                    return RedirectToRoute(new { controller = "ClientHome", action = "Index" });
+                }
             }
             else
             {
@@ -130,7 +145,7 @@ namespace HermesBankingApp.Controllers
             }
 
             SaveUserDto dto = _mapper.Map<SaveUserDto>(vm);
-            dto.Role = Roles.Client.ToString();
+            dto.Role = Roles.Client.ToString(); 
             string origin = Request?.Headers?.Origin.ToString() ?? string.Empty;
 
             RegisterResponseDto? returnUser = await _accountServiceForWebApp.RegisterUser(dto, origin);
