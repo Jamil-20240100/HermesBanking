@@ -460,6 +460,43 @@ namespace HermesBanking.Infrastructure.Identity.Services
             return listUsersDTOs;
         }
 
+        public virtual async Task<List<UserDto>> GetAllActiveUserByRole(string role, bool? isActive = true)
+        {
+            List<UserDto> listUsersDTOs = [];
+
+            var users = _userManager.Users;
+
+            if (isActive != null && isActive == true)
+                users = users.Where(w => w.EmailConfirmed && w.IsActive == true);
+
+            var listUser = await users.ToListAsync();
+
+            foreach (var item in listUser)
+            {
+                var roleList = await _userManager.GetRolesAsync(item);
+
+                var actualRole = roleList.FirstOrDefault();
+
+                if (actualRole == role)
+                {
+                    listUsersDTOs.Add(new UserDto()
+                    {
+                        Id = item.Id,
+                        Email = item.Email ?? "",
+                        LastName = item.LastName,
+                        Name = item.Name,
+                        UserName = item.UserName ?? "",
+                        isVerified = item.EmailConfirmed,
+                        Role = actualRole ?? "",
+                        UserId = item.UserId,
+                        InitialAmount = item.InitialAmount,
+                        IsActive = item.IsActive,
+                    });
+                }
+            }
+            return listUsersDTOs;
+        }
+
         public virtual async Task<UserResponseDto> ConfirmAccountAsync(string userId, string token)
         {
             UserResponseDto response = new() { HasError = false, Errors = [] };

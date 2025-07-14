@@ -47,10 +47,75 @@ namespace HermesBanking.Core.Application.Services
                 var user = clientDTOsList.FirstOrDefault(u => u.Id == dto.ClientId);
                 var admin = adminDTOsList.FirstOrDefault(u => u.Id == dto.CreatedByAdminId);
                 if (user != null)
+                {
                     dto.ClientFullName = $"{user.Name} {user.LastName}";
+                    dto.ClientUserId = $"{user.UserId}";
                     dto.AdminFullName = $"{admin?.Name} {admin?.LastName}";
+                }
             }
             return returnDTOsList;
         }
+
+        public async Task<string> GenerateUniqueAccountNumberAsync()
+        {
+            const int maxAttempts = 9999;
+            var random = new Random();
+
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                string candidate = random.Next(100_000_000, 1_000_000_000).ToString();
+
+                var existingAccount = await _repository.GetByAccountNumberAsync(candidate);
+                if (existingAccount == null)
+                {
+                    return candidate; 
+                }
+            }
+
+            throw new Exception("No se pudo generar un número de cuenta único luego de varios intentos.");
+        }
+
+        public async Task CancelAsync(int id)
+        {
+            var account = await _repository.GetById(id);
+            if (account == null) throw new Exception("La cuenta no existe.");
+
+            account.IsActive = false;
+
+            await _repository.UpdateAsync(account.Id, account);
+        }
+
+        public async Task TransferBalanceAndCancelAsync(int accountId)
+        {
+            var account = await _repository.GetById(accountId);
+            if (account == null || account.AccountType != AccountType.Secondary)
+                throw new Exception("Cuenta no válida para transferencia.");
+
+            if (!account.IsActive)
+                throw new Exception("La cuenta ya está inactiva.");
+
+            if (account.Balance > 0)
+            {
+                var allAccounts = await _repository.GetAll();
+
+                var primaryAccount = allAccounts
+                    .FirstOrDefault(a =>
+                        a.ClientId == account.ClientId &&
+                        a.AccountType == AccountType.Primary &&
+                        a.IsActive);
+
+                if (primaryAccount == null)
+                    throw new Exception("Cuenta principal activa no encontrada.");
+
+                primaryAccount.Balance += account.Balance;
+                account.Balance = 0;
+
+                await _repository.UpdateAsync(primaryAccount.Id, primaryAccount);
+            }
+
+            account.IsActive = false;
+            await _repository.UpdateAsync(account.Id, account);
+        }
+
     }
 }

@@ -12,7 +12,7 @@ namespace HermesBanking.Core.Application.Mappings.DTOsAndViewModels
 
             CreateMap<SavingsAccountDTO, SaveSavingsAccountViewModel>().ReverseMap();
 
-            CreateMap<SavingsAccountDTO, DeleteSavingsAccountViewModel>()
+            CreateMap<SavingsAccountDTO, CancelSavingsAccountViewModel>()
                .ReverseMap()
                .ForMember(dest => dest.IsActive, opt => opt.Ignore())
                .ForMember(dest => dest.ClientId, opt => opt.Ignore())

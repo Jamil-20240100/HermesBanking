@@ -49,7 +49,7 @@ namespace HermesBankingApp.Controllers
         public async Task<IActionResult> Create()
         {
             ViewBag.Roles = await _roleManager.Roles.ToListAsync();
-            return View(new CreateUserViewModel() { Id = 0, Name = "", Email = "", UserName = "", LastName = "", Password = "", ConfirmPassword = "", Role = "", UserId = "", IsActive = true, InitialAmount = 0});
+            return View(new CreateUserViewModel() { Id = 0, Name = "", Email = "", UserName = "", LastName = "", Password = "", ConfirmPassword = "", Role = "", UserId = "", IsActive = false, InitialAmount = 0});
         }
 
         [HttpPost]
@@ -99,11 +99,12 @@ namespace HermesBankingApp.Controllers
 
             if(dto.Role == Roles.Client.ToString())
             {
+                var randomNumber = await _savingsAccountService.GenerateUniqueAccountNumberAsync();
                 var newAccount = new SavingsAccountDTO
                 {
                     Id = 0,
                     IsActive = true,
-                    AccountNumber = "000000000", //insertar logica para crear 9 digitos
+                    AccountNumber = randomNumber.ToString(),
                     AccountType = AccountType.Primary,
                     Balance = dto.InitialAmount ?? 0,
                     ClientFullName = $"{dto.Name} {dto.LastName}",

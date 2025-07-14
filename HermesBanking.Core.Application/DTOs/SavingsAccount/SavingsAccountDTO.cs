@@ -7,7 +7,7 @@ namespace HermesBanking.Core.Application.DTOs.SavingsAccount
     {
         //main info
         public int Id { get; set; }
-        public required string AccountNumber { get; set; }
+        public string? AccountNumber { get; set; }
         public required decimal Balance { get; set; }
         public required AccountType AccountType { get; set; }
         public required bool IsActive { get; set; }
@@ -16,6 +16,7 @@ namespace HermesBanking.Core.Application.DTOs.SavingsAccount
         public required DateTime CreatedAt { get; set; }
         public required string ClientId { get; set; }
         public required string ClientFullName { get; set; }
+        public string? ClientUserId { get; set; }
 
         //only for secondary accounts info
         public string? CreatedByAdminId { get; set; }

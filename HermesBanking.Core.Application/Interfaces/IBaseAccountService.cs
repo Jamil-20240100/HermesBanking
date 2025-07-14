@@ -10,6 +10,7 @@ namespace HermesBanking.Core.Application.Interfaces
         Task<UserResponseDto> ForgotPasswordAsync(ForgotPasswordRequestDto request, bool? isApi = false);
         Task<List<UserDto>> GetAllUser(bool? isActive = true);
         Task<List<UserDto>> GetAllUserByRole(string role, bool? isActive = true);
+        Task<List<UserDto>> GetAllActiveUserByRole(string role, bool? isActive = true);
         Task<UserDto?> GetUserByEmail(string email);
         Task<UserDto?> GetUserById(string Id);
         Task<UserDto?> GetUserByUserName(string userName);

@@ -1,6 +1,6 @@
 ﻿namespace HermesBanking.Core.Application.ViewModels.SavingsAccount
 {
-    public class DeleteSavingsAccountViewModel
+    public class CancelSavingsAccountViewModel
     {
         public int Id { get; set; }
     }

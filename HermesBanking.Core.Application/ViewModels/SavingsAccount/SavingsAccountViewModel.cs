@@ -1,5 +1,4 @@
-﻿using HermesBanking.Core.Application.ViewModels.User;
-using HermesBanking.Core.Domain.Common.Enums;
+﻿using HermesBanking.Core.Domain.Common.Enums;
 
 namespace HermesBanking.Core.Application.ViewModels.SavingsAccount
 {
@@ -16,6 +15,7 @@ namespace HermesBanking.Core.Application.ViewModels.SavingsAccount
         public required DateTime CreatedAt { get; set; }
         public required string ClientId { get; set; }
         public required string ClientFullName { get; set; }
+        public string? ClientUserId { get; set; }
 
         //only for secondary accounts info
         public string? CreatedByAdminId { get; set; }

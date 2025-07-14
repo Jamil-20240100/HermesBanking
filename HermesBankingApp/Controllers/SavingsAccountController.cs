@@ -3,6 +3,7 @@ using HermesBanking.Core.Application.DTOs.SavingsAccount;
 using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Application.ViewModels.SavingsAccount;
 using HermesBanking.Core.Application.ViewModels.User;
+using HermesBanking.Core.Domain.Common.Enums;
 using HermesBanking.Infrastructure.Identity.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -65,7 +66,7 @@ namespace HermesBankingApp.Controllers
             //
             //
 
-            var activeClientsDTOs = _accountServiceForWebApp.GetAllUser(true);
+            var activeClientsDTOs = await _accountServiceForWebApp.GetAllActiveUserByRole(Roles.Client.ToString());
             var activeClientsVMs = _mapper.Map<List<UserViewModel>>(activeClientsDTOs);
 
             return View("Save", activeClientsVMs);
@@ -87,7 +88,8 @@ namespace HermesBankingApp.Controllers
             //
             //
             //
-
+            vm.AccountNumber = await _service.GenerateUniqueAccountNumberAsync();
+            vm.CreatedByAdminId = userSession.Id;
             vm.AdminFullName = $"{userSession.Name} {userSession.LastName}";
 
             if (!ModelState.IsValid)
@@ -99,11 +101,44 @@ namespace HermesBankingApp.Controllers
             return RedirectToRoute(new { controller = "SavingsAccount", action = "Index" });
         }
 
+        public async Task<IActionResult> CreateSecondaryForm(string clientId)
+        {
+            //
+            //session verification
+            //
+            AppUser? userSession = await _userManager.GetUserAsync(User);
+            if (userSession == null)
+                return RedirectToRoute(new { controller = "Login", action = "Index" });
+
+            var user = await _accountServiceForWebApp.GetUserByUserName(userSession.UserName ?? "");
+            if (user == null)
+                return RedirectToRoute(new { controller = "Login", action = "Index" });
+            //
+            //
+            //
+            var userDTO = await _accountServiceForWebApp.GetUserById(clientId); //obtain client
+
+            var vm = new SaveSavingsAccountViewModel
+            {
+                Id = 0,
+                AccountNumber = "",
+                ClientId = userDTO.Id,
+                ClientFullName = $"{userDTO.Name} {userDTO.LastName}",
+                AccountType = AccountType.Secondary,
+                CreatedAt = DateTime.Now,
+                IsActive = true,
+                Balance = 0,
+            };
+
+
+            return View("CreateSecondaryForm", vm);
+        }
+
         //
         // FALTA VERIFICAR SI LA CUENTA SECUNDARIA TIENE BALANCE. SI TIENE, SE TRANSFIERE A LA PRINCIPAL
         //
-
-        public async Task<IActionResult> ConfirmDelete(int id)
+        
+        public async Task<IActionResult> ConfirmCancel(int id)
         {
             //
             //session verification
@@ -121,19 +156,29 @@ namespace HermesBankingApp.Controllers
 
             var account = _service.GetById(id);
 
-            var vm = new DeleteSavingsAccountViewModel
+            var vm = new CancelSavingsAccountViewModel
             {
                 Id = account.Id,
             };
             
-            return View("Delete", vm);
+            return View("Cancel", vm);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Cancel(int id)
         {
-            await _service.DeleteAsync(id);
+            try
+            {
+                await _service.TransferBalanceAndCancelAsync(id);
+                TempData["Success"] = "La cuenta fue cancelada correctamente y el balance fue transferido.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = ex.Message;
+            }
+
             return RedirectToAction("Index");
         }
+
     }
 }

@@ -7,7 +7,7 @@ namespace HermesBanking.Core.Application.ViewModels.SavingsAccount
     {
         //main info
         public int Id { get; set; }
-        public required string AccountNumber { get; set; }
+        public string? AccountNumber { get; set; }
 
         [Required(ErrorMessage = "You must add a balance")]
         public required decimal Balance { get; set; }

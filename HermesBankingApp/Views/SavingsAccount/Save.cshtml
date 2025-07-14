@@ -1,0 +1,65 @@
+﻿@model List<UserViewModel>
+@{
+    ViewData["Title"] = "Seleccionar Cliente";
+}
+
+<h2>Seleccionar Cliente para asignar cuenta de ahorro secundaria</h2>
+
+<hr />
+
+<input type="text" id="searchCedula" class="form-control mb-3" placeholder="Buscar por cédula..." />
+
+<form id="selectClientForm" method="get" asp-action="CreateSecondaryForm">
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th></th>
+                <th>Cédula</th>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>Deuda Total</th>
+            </tr>
+        </thead>
+        <tbody id="clientTable">
+            @foreach (var client in Model)
+            {
+                <tr>
+                    <td>
+                        <input type="radio" name="clientId" value="@client.Id" />
+                    </td>
+                    <td class="cedula">@client.UserId</td>
+                    <td>@client.Name @client.LastName</td>
+                    <td>@client.Email</td>
+                    <td>RD$ 0.00</td> 
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="d-flex justify-content-between mt-4">
+        <a asp-action="Index" class="btn btn-secondary">Volver al listado</a>
+        <button type="submit" class="btn btn-primary">Siguiente paso</button>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        document.getElementById("searchCedula").addEventListener("input", function () {
+            const search = this.value.toLowerCase().trim();
+            const rows = document.querySelectorAll("#clientTable tr");
+
+            rows.forEach(row => {
+                const cedula = row.querySelector(".cedula").textContent.toLowerCase();
+                row.style.display = cedula.includes(search) ? "" : "none";
+            });
+        });
+
+        document.getElementById("selectClientForm").addEventListener("submit", function (e) {
+            const selected = document.querySelector("input[name='clientId']:checked");
+            if (!selected) {
+                e.preventDefault();
+                alert("Por favor seleccione un cliente.");
+            }
+        });
+    </script>
+}

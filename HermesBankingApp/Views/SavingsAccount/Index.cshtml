@@ -6,6 +6,15 @@
 
 <h2 class="mb-4">Cuentas de Ahorro</h2>
 
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
 <div class="d-flex justify-content-between mb-3">
     <div>
         <a asp-action="Create" class="btn btn-primary">Asignar cuenta de ahorro</a>
@@ -33,6 +42,7 @@
             <th>Balance</th>
             <th>Tipo</th>
             <th>Estado</th>
+            <th hidden>Cedula</th>
             <th class="text-center">Acciones</th>
         </tr>
     </thead>
@@ -47,13 +57,13 @@
                     <td>@item.Balance.ToString("C")</td>
                     <td>@(item.AccountType == HermesBanking.Core.Domain.Common.Enums.AccountType.Primary ? "Principal" : "Secundaria")</td>
                     <td>@(item.IsActive ? "Activa" : "Cancelada")</td>
+                    <td hidden>@(item.ClientUserId)</td>
                     <td class="text-center">
                         <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Detalles</a>
 
-                        @* Solo mostrar botón Cancelar si es secundaria *@
-                        @if (item.AccountType == HermesBanking.Core.Domain.Common.Enums.AccountType.Secondary)
+                        @if (item.AccountType == HermesBanking.Core.Domain.Common.Enums.AccountType.Secondary && item.IsActive == true)
                         {
-                            <a asp-action="ConfirmDelete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Cancelar</a>
+                            <a asp-action="ConfirmCancel" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Cancelar</a>
                         }
                     </td>
                 </tr>
@@ -77,3 +87,45 @@
         <li class="page-item"><a class="page-link">Siguiente</a></li>
     </ul>
 </nav>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.querySelector('input[placeholder="Buscar por cédula..."]');
+            const estadoSelect = document.querySelector('select.form-select:nth-of-type(1)');
+            const tipoSelect = document.querySelector('select.form-select:nth-of-type(2)');
+            const tableRows = document.querySelectorAll('tbody tr');
+
+            function normalize(text) {
+                return text.toLowerCase().trim();
+            }
+
+            function filterTable() {
+                const cedula = normalize(searchInput.value);
+                const estado = estadoSelect.value;
+                const tipo = tipoSelect.value;
+
+                tableRows.forEach(row => {
+                    const cedulaText = normalize(row.children[5]?.textContent || ''); // columna oculta
+                    const estadoText = normalize(row.children[4]?.textContent || '');
+                    const tipoText = normalize(row.children[3]?.textContent || '');
+
+                    const matchCedula = !cedula || cedulaText.includes(cedula);
+                    const matchEstado = !estado || (estado === "true" ? estadoText.includes("activa") : estadoText.includes("cancelada"));
+                    const matchTipo = !tipo || (tipo === "0" ? tipoText.includes("principal") : tipoText.includes("secundaria"));
+
+                    if (matchCedula && matchEstado && matchTipo) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            // Escuchar cambios
+            searchInput.addEventListener('input', filterTable);
+            estadoSelect.addEventListener('change', filterTable);
+            tipoSelect.addEventListener('change', filterTable);
+        });
+    </script>
+}

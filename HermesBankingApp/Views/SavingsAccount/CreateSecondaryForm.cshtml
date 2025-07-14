@@ -1,0 +1,40 @@
+﻿@model SaveSavingsAccountViewModel
+@{
+    ViewData["Title"] = "Asignar cuenta secundaria";
+}
+
+<h2 class="mb-4">Configurar Cuenta de Ahorro Secundaria</h2>
+
+<hr />
+
+<form asp-action="Create" method="post">
+    <div class="mb-3">
+        <label class="form-label fw-bold">Cliente:</label>
+        <div class="form-control-plaintext">@Model.ClientFullName</div>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Balance" class="form-label">Balance inicial</label>
+        <input asp-for="Balance" class="form-control" type="number" min="0" step="0.01" required />
+        <span asp-validation-for="Balance" class="text-danger"></span>
+    </div>
+
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="AccountNumber" value="" />
+    <input type="hidden" asp-for="AccountType" />
+    <input type="hidden" asp-for="IsActive" />
+    <input type="hidden" asp-for="ClientId" />
+    <input type="hidden" asp-for="ClientFullName" />
+    <input type="hidden" asp-for="CreatedAt" />
+    <input type="hidden" asp-for="CreatedByAdminId" />
+    <input type="hidden" asp-for="AdminFullName" />
+
+    <div class="d-flex justify-content-between mt-4">
+        <a asp-action="Create" class="btn btn-secondary">Seleccionar otro cliente</a>
+        <button type="submit" class="btn btn-success">Confirmar asignación</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
