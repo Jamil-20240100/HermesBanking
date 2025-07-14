@@ -301,10 +301,10 @@ namespace HermesBankingApp.Controllers
             var confirmVm = new ConfirmPagoTarjetaCreditoViewModel
             {
                 AccountNumber = cuenta.AccountNumber,
-                CardNumber = tarjeta.CardNumber,
+                CardNumber = tarjeta.CardId,
                 ClientFullName = clienteNombre,
                 Amount = vm.Amount,
-                DeudaActual = tarjeta.Balance
+                DeudaActual = tarjeta.TotalOwedAmount,
             };
 
             return View("ConfirmCreditCardPayment", confirmVm);

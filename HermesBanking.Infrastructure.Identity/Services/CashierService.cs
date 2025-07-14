@@ -101,7 +101,7 @@ namespace HermesBanking.Infrastructure.Persistence.Services
                 .FirstOrDefault(a => a.AccountNumber == accountNumber && a.IsActive);
 
             var card = _creditCardRepo.GetAllQuery()
-                .FirstOrDefault(c => c.CardNumber == cardNumber && c.IsActive);
+                .FirstOrDefault(c => c.CardId == cardNumber && c.IsActive);
 
             if (account == null || card == null)
                 return (null, null, null);
@@ -263,7 +263,7 @@ namespace HermesBanking.Infrastructure.Persistence.Services
                 .FirstOrDefault(a => a.AccountNumber == accountNumber && a.IsActive);
 
             var tarjeta = _creditCardRepo.GetAllQuery()
-                .FirstOrDefault(t => t.CardNumber == cardNumber && t.IsActive);
+                .FirstOrDefault(t => t.CardId == cardNumber && t.IsActive);
 
             if (cuenta == null || tarjeta == null || cuenta.Balance < amount)
                 return false;
@@ -271,14 +271,14 @@ namespace HermesBanking.Infrastructure.Persistence.Services
             var user = await _userManager.FindByIdAsync(tarjeta.ClientId);
             if (user == null || string.IsNullOrEmpty(user.Email)) return false;
 
-            decimal pagoReal = Math.Min(amount, tarjeta.Balance);
+            decimal pagoReal = Math.Min(amount, tarjeta.CreditLimit);
 
             // Debitar cuenta
             cuenta.Balance -= pagoReal;
             await _accountRepo.UpdateAsync(cuenta.Id, cuenta);
 
             // Reducir deuda tarjeta
-            tarjeta.Balance -= pagoReal;
+            tarjeta.CreditLimit -= pagoReal;
             await _creditCardRepo.UpdateAsync(tarjeta.Id, tarjeta);
 
             // Registrar transacción
@@ -287,18 +287,18 @@ namespace HermesBanking.Infrastructure.Persistence.Services
                 type: "DÉBITO",
                 amount: pagoReal,
                 origin: cuenta.AccountNumber,
-                beneficiary: tarjeta.CardNumber,
+                beneficiary: tarjeta.CardId,
                 cashierId: cashierId
             );
 
             // Email
-            string last4Tarjeta = tarjeta.CardNumber[^4..];
+            string last4Tarjeta = tarjeta.CardId[^4..];
             string last4Cuenta = cuenta.AccountNumber[^4..];
             string subject = $"Pago realizado a la tarjeta {last4Tarjeta}";
 
             string html = $@"
         <h3>Pago exitoso</h3>
-        <p>Has pagado RD$ {pagoReal:N2} desde tu cuenta {cuenta.AccountNumber} a tu tarjeta {tarjeta.CardNumber}.</p>
+        <p>Has pagado RD$ {pagoReal:N2} desde tu cuenta {cuenta.AccountNumber} a tu tarjeta {tarjeta.CardId}.</p>
         <ul>
             <li><strong>Fecha:</strong> {DateTime.Now:dd/MM/yyyy}</li>
             <li><strong>Hora:</strong> {DateTime.Now:hh:mm tt}</li>

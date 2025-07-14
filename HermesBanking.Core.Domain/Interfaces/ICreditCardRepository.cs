@@ -2,6 +2,8 @@
 
 namespace HermesBanking.Core.Domain.Interfaces
 {
+    public interface ICreditCardRepository : IGenericRepository<CreditCard>
     {
+
     }
 }

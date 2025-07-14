@@ -10,12 +10,50 @@ namespace HermesBanking.Infrastructure.Persistence.EntityConfigurations
         {
             #region Basic Configuration
             builder.ToTable("CreditCards");
+            builder.HasKey(cc => cc.Id);
+            #endregion
 
+            #region Properties Configuration
+
+            builder.Property(cc => cc.CardId)
                 .IsRequired()
                 .HasMaxLength(16);
 
-                .IsRequired()
+            builder.Property(cc => cc.ClientId)
+                .IsRequired();
 
+            builder.Property(cc => cc.ClientFullName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            builder.Property(cc => cc.CreditLimit)
+                .IsRequired()
+                .HasColumnType("decimal(18,2)");
+
+            builder.Property(cc => cc.TotalOwedAmount)
+                .IsRequired()
+                .HasColumnType("decimal(18,2)");
+
+            builder.Property(cc => cc.CVC)
+                .IsRequired()
+                .HasMaxLength(4);
+
+            builder.Property(cc => cc.IsActive)
+                .IsRequired();
+
+            builder.Property(cc => cc.ExpirationDate)
+                .IsRequired();
+
+            builder.Property(cc => cc.CreatedAt)
+                .IsRequired();
+
+            builder.Property(cc => cc.CreatedByAdminId)
+                .HasMaxLength(450); // típico largo de GUID de identity user
+
+            builder.Property(cc => cc.AdminFullName)
+                .HasMaxLength(100);
+
+            #endregion
         }
     }
 }
