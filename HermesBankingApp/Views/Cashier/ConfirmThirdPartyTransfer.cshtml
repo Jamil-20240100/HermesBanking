@@ -1,0 +1,24 @@
+﻿@model HermesBanking.Core.Application.ViewModels.Cashier.ConfirmThirdPartyTransferViewModel
+
+@{
+    Layout = "_LayoutCashier"; // Si tienes uno para cajero. Si no, usa "_LayoutClient" o "_Layout"
+    ViewData["Title"] = "Confirmar Transferencia";
+}
+
+<h2>Confirmar Transferencia</h2>
+
+<div class="alert alert-warning">
+    <p><strong>Cuenta origen:</strong> @Model.SourceAccountNumber</p>
+    <p><strong>Cuenta destino:</strong> @Model.DestinationAccountNumber</p>
+    <p><strong>Titular destino:</strong> @Model.DestinationClientFullName</p>
+    <p><strong>Monto:</strong> RD$ @Model.Amount</p>
+</div>
+
+<form asp-action="ExecuteThirdPartyTransfer" method="post">
+    <input type="hidden" name="SourceAccountNumber" value="@Model.SourceAccountNumber" />
+    <input type="hidden" name="DestinationAccountNumber" value="@Model.DestinationAccountNumber" />
+    <input type="hidden" name="Amount" value="@Model.Amount" />
+
+    <button type="submit" class="btn btn-success">Confirmar</button>
+    <a asp-controller="Cashier" asp-action="ThirdPartyTransfer" class="btn btn-secondary">Cancelar</a>
+</form>

@@ -5,6 +5,7 @@ using HermesBanking.Infrastructure.Identity.Contexts;
 using HermesBanking.Infrastructure.Identity.Entities;
 using HermesBanking.Infrastructure.Identity.Seeds;
 using HermesBanking.Infrastructure.Identity.Services;
+using HermesBanking.Infrastructure.Persistence.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -65,6 +66,9 @@ namespace HermesBanking.Infrastructure.Identity
             #endregion
 
             #region Services
+            services.AddScoped<ICashierService, CashierService>();
+            services.AddScoped<ITransactionService, TransactionService>();
+
             services.AddScoped<IAccountServiceForWebApp, AccountServiceForWebApp>();
             #endregion
         }

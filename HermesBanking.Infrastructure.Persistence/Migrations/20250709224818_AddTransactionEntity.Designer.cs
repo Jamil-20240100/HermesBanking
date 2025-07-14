@@ -4,6 +4,7 @@ using HermesBanking.Infrastructure.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HermesBanking.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(HermesBankingContext))]
-    partial class HermesBankingContextModelSnapshot : ModelSnapshot
+    [Migration("20250709224818_AddTransactionEntity")]
+    partial class AddTransactionEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -38,15 +41,8 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                     b.Property<int>("AccountType")
                         .HasColumnType("int");
 
-                    b.Property<string>("AdminFullName")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<decimal>("Balance")
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ClientFullName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ClientId")
                         .IsRequired()
@@ -88,9 +84,6 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("PerformedByCashierId")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("SavingsAccountId")
                         .HasColumnType("int");
 
@@ -106,17 +99,6 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                     b.ToTable("Transactions", (string)null);
                 });
 
-            modelBuilder.Entity("HermesBanking.Core.Domain.Entities.LoanInstallment", b =>
-                {
-                    b.HasOne("HermesBanking.Core.Domain.Entities.Loan", "Loan")
-                        .WithMany("Installments")
-                        .HasForeignKey("LoanId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Loan");
-                });
-
             modelBuilder.Entity("HermesBanking.Core.Domain.Entities.Transaction", b =>
                 {
                     b.HasOne("HermesBanking.Core.Domain.Entities.SavingsAccount", "SavingsAccount")
@@ -126,11 +108,6 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("SavingsAccount");
-                });
-
-            modelBuilder.Entity("HermesBanking.Core.Domain.Entities.Loan", b =>
-                {
-                    b.Navigation("Installments");
                 });
 #pragma warning restore 612, 618
         }

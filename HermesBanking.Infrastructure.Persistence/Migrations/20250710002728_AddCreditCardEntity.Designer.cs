@@ -4,6 +4,7 @@ using HermesBanking.Infrastructure.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HermesBanking.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(HermesBankingContext))]
-    partial class HermesBankingContextModelSnapshot : ModelSnapshot
+    [Migration("20250710002728_AddCreditCardEntity")]
+    partial class AddCreditCardEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,6 +24,38 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("HermesBanking.Core.Domain.Entities.CreditCard", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Balance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("CardNumber")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CreditCards", (string)null);
+                });
 
             modelBuilder.Entity("HermesBanking.Core.Domain.Entities.SavingsAccount", b =>
                 {
@@ -38,15 +73,8 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                     b.Property<int>("AccountType")
                         .HasColumnType("int");
 
-                    b.Property<string>("AdminFullName")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<decimal>("Balance")
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ClientFullName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ClientId")
                         .IsRequired()
@@ -106,17 +134,6 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                     b.ToTable("Transactions", (string)null);
                 });
 
-            modelBuilder.Entity("HermesBanking.Core.Domain.Entities.LoanInstallment", b =>
-                {
-                    b.HasOne("HermesBanking.Core.Domain.Entities.Loan", "Loan")
-                        .WithMany("Installments")
-                        .HasForeignKey("LoanId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Loan");
-                });
-
             modelBuilder.Entity("HermesBanking.Core.Domain.Entities.Transaction", b =>
                 {
                     b.HasOne("HermesBanking.Core.Domain.Entities.SavingsAccount", "SavingsAccount")
@@ -126,11 +143,6 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("SavingsAccount");
-                });
-
-            modelBuilder.Entity("HermesBanking.Core.Domain.Entities.Loan", b =>
-                {
-                    b.Navigation("Installments");
                 });
 #pragma warning restore 612, 618
         }

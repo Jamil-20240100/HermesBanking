@@ -1,0 +1,74 @@
+﻿@model HermesBanking.Core.Application.ViewModels.Cashier.CashierDashboardViewModel
+
+@{
+    Layout = "_LayoutCashier";
+    ViewData["Title"] = "Inicio - Cajero";
+}
+
+<div class="container mt-5">
+    <h2>Panel del Cajero</h2>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card bg-light mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Transacciones totales</h5>
+                    <p class="card-text display-4">@Model.TotalTransactions</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Depósitos</h5>
+                    <p class="card-text display-4">@Model.TotalDeposits</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Retiros</h5>
+                    <p class="card-text display-4">@Model.TotalWithdrawals</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Pagos</h5>
+                    <p class="card-text display-4">@Model.TotalPayments</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr />
+
+    <h3 class="mt-4">Cuentas de ahorro existentes</h3>
+    <table class="table table-striped mt-3">
+        <thead class="table-dark">
+            <tr>
+                <th>Número de cuenta</th>
+                <th>Balance</th>
+                <th>Tipo</th>
+                <th>Activo</th>
+                <th>Cliente ID</th>
+                <th>Fecha de creación</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var account in Model.Accounts)
+            {
+                <tr>
+                    <td>@account.AccountNumber</td>
+                    <td>RD$ @account.Balance:N2</td>
+                    <td>@account.AccountType</td>
+                    <td>@(account.IsActive ? "Sí" : "No")</td>
+                    <td>@account.ClientId</td>
+                    <td>@account.CreatedAt.ToString("dd/MM/yyyy")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

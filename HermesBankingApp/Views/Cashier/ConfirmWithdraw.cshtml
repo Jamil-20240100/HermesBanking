@@ -1,0 +1,22 @@
+﻿@model HermesBanking.Core.Application.ViewModels.Cashier.ConfirmWithdrawViewModel
+
+@{
+    Layout = "_LayoutCashier"; // Si tienes uno para cajero. Si no, usa "_LayoutClient" o "_Layout"
+    ViewData["Title"] = "Confirmar Retiro";
+}
+
+<h2>Confirmar Retiro</h2>
+
+<div class="alert alert-warning">
+    <p><strong>Cuenta:</strong> @Model.AccountNumber</p>
+    <p><strong>Titular:</strong> @Model.ClientFullName</p>
+    <p><strong>Monto:</strong> RD$ @Model.Amount</p>
+</div>
+
+<form asp-action="ExecuteWithdraw" method="post">
+    <input type="hidden" name="accountNumber" value="@Model.AccountNumber" />
+    <input type="hidden" name="amount" value="@Model.Amount" />
+
+    <button type="submit" class="btn btn-danger">Confirmar</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>
