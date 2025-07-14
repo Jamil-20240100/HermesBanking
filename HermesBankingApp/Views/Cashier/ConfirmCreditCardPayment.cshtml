@@ -1,0 +1,21 @@
+﻿@model HermesBanking.Core.Application.ViewModels.Cashier.ConfirmPagoTarjetaCreditoViewModel
+
+@{
+    Layout = "_LayoutCashier"; // Si tienes uno para cajero. Si no, usa "_LayoutClient" o "_Layout"
+    ViewData["Title"] = "Confirmar pago";
+}
+
+<h3>Confirmar pago</h3>
+
+<p><strong>Tarjeta:</strong> @Model.CardNumber</p>
+<p><strong>Cliente:</strong> @Model.ClientFullName</p>
+<p><strong>Monto a pagar:</strong> RD$ @Model.Amount:N2</p>
+<p><strong>Deuda actual:</strong> RD$ @Model.DeudaActual:N2</p>
+
+<form asp-action="ExecuteCreditCardPayment" method="post">
+    <input type="hidden" name="accountNumber" value="@Model.AccountNumber" />
+    <input type="hidden" name="cardNumber" value="@Model.CardNumber" />
+    <input type="hidden" name="amount" value="@Model.Amount" />
+    <button type="submit" class="btn btn-success">Confirmar</button>
+    <a asp-controller="Cashier" asp-action="CreditCardPayment" class="btn btn-secondary">Cancelar</a>
+</form>

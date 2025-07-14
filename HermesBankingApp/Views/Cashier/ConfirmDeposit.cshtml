@@ -1,0 +1,22 @@
+﻿@model HermesBanking.Core.Application.ViewModels.Cashier.ConfirmDepositViewModel
+
+@{
+    Layout = "_LayoutCashier"; // Si tienes uno para cajero. Si no, usa "_LayoutClient" o "_Layout"
+    ViewData["Title"] = "Confirmar Depósito";
+}
+
+<h2>Confirmar Depósito</h2>
+
+<div class="alert alert-info">
+    <p><strong>Cuenta destino:</strong> @Model.AccountNumber</p>
+    <p><strong>Nombre del titular:</strong> @Model.ClientFullName</p>
+    <p><strong>Monto:</strong> RD$ @Model.Amount</p>
+</div>
+
+<form asp-action="ExecuteDeposit" method="post">
+    <input type="hidden" name="AccountNumber" value="@Model.AccountNumber" />
+    <input type="hidden" name="Amount" value="@Model.Amount" />
+
+    <button type="submit" class="btn btn-success">Confirmar</button>
+    <a asp-controller="Cashier" asp-action="Deposit" class="btn btn-secondary">Cancelar</a>
+</form>
