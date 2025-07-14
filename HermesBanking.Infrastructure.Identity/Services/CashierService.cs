@@ -4,11 +4,10 @@ using HermesBanking.Core.Application.ViewModels.Cashier;
 using HermesBanking.Core.Domain.Entities;
 using HermesBanking.Core.Domain.Interfaces;
 using HermesBanking.Infrastructure.Identity.Entities;
-using HermesBanking.Infrastructure.Identity.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace HermesBanking.Infrastructure.Persistence.Services
+namespace HermesBanking.Infrastructure.Identity.Services
 {
     public class CashierService : ICashierService
     {
