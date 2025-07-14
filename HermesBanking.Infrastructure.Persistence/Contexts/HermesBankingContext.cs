@@ -13,6 +13,7 @@ namespace HermesBanking.Infrastructure.Persistence.Contexts
         //
 
         public DbSet<SavingsAccount> SavingsAccount { get; set; }
+        public DbSet<CreditCard> CreditCards { get; set; }
 
         //
         // ENTITY CONFIGURATIONS APPLICATION
