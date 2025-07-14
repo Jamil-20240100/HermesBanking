@@ -35,6 +35,10 @@ namespace HermesBanking.Infrastructure.Persistence
                 #region repositories IOC
                 services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
                 services.AddScoped<ISavingsAccountRepository, SavingsAccountRepository>();
+                services.AddScoped<ITransactionRepository, TransactionRepository>();
+                services.AddScoped<ICreditCardRepository, CreditCardRepository>();
+                services.AddScoped<ILoanRepository, LoanRepository>();
+                services.AddScoped<ILoanInstallmentRepository, LoanInstallmentRepository>();
                 #endregion
             }
         }

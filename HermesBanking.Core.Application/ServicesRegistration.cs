@@ -16,9 +16,7 @@ namespace HermesBanking.Core.Application
 
             #region Services IOC
             services.AddScoped<ISavingsAccountService, SavingsAccountService>();
-            
             #endregion
         }
-
     }
 }
