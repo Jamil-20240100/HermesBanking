@@ -11,7 +11,7 @@ namespace HermesBanking.Core.Application.Services
     {
         private readonly ISavingsAccountRepository _accountRepo;
         private readonly ITransactionService _transactionService;
-        private readonly IUserService _userService;
+        private readonly IAccountServiceForWebApp _userService;
         private readonly IEmailService _emailService;
         private readonly ICreditCardRepository _creditCardRepo;
         private readonly ILoanRepository _loanRepo;
@@ -21,7 +21,7 @@ namespace HermesBanking.Core.Application.Services
         public CashierService(
             ISavingsAccountRepository accountRepo,
             ITransactionService transactionService,
-            IUserService userService,
+            IAccountServiceForWebApp userService,
             IEmailService emailService,
             ICreditCardRepository creditCardRepo,
             ILoanRepository loanRepo,

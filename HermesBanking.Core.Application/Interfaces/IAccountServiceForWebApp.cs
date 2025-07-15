@@ -6,5 +6,8 @@ namespace HermesBanking.Core.Application.Interfaces
     {
         Task<LoginResponseDto> AuthenticateAsync(LoginDto loginDto); 
         Task SignOutAsync();
+        Task<UserDto?> GetUserByIdAsync(string userId);
+        Task<string?> GetUserEmailAsync(string userId);
+        Task<string> GetUserFullNameAsync(string userId);
     }
 }

@@ -8,9 +8,9 @@ namespace HermesBanking.Infrastructure.Application.Services
     public class TransactionService : ITransactionService
     {
         private readonly ITransactionRepository _transactionRepo;
-        private readonly IUserService _userService;
+        private readonly IAccountServiceForWebApp _userService;
 
-        public TransactionService(ITransactionRepository transactionRepo, IUserService userService)
+        public TransactionService(ITransactionRepository transactionRepo, IAccountServiceForWebApp userService)
         {
             _transactionRepo = transactionRepo;
             _userService = userService;
