@@ -133,10 +133,6 @@ namespace HermesBankingApp.Controllers
 
             return View("CreateSecondaryForm", vm);
         }
-
-        //
-        // FALTA VERIFICAR SI LA CUENTA SECUNDARIA TIENE BALANCE. SI TIENE, SE TRANSFIERE A LA PRINCIPAL
-        //
         
         public async Task<IActionResult> ConfirmCancel(int id)
         {

@@ -3,10 +3,23 @@
     ViewData["Title"] = "Editar Límite de Tarjeta";
 }
 
+@if (ViewData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @ViewData["ErrorMessage"]
+    </div>
+}
+
 <h2>Editar Límite de Tarjeta</h2>
 
 <form asp-action="Edit" method="post">
     <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="ClientId" />
+    <input type="hidden" asp-for="ClientFullName" />
+    <input type="hidden" asp-for="CreatedByAdminId" />
+    <input type="hidden" asp-for="AdminFullName" />
+    <input type="hidden" asp-for="CVC" value="000" />
+    <input type="hidden" asp-for="TotalOwedAmount" value="0" />
 
     <div class="mb-3">
         <label asp-for="CreditLimit" class="form-label">Nuevo Límite</label>

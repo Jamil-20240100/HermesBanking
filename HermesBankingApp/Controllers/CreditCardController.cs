@@ -30,6 +30,9 @@ namespace HermesBankingApp.Controllers
 
         public async Task<IActionResult> Index()
         {
+            //
+            // user validation
+            //
             AppUser? userSession = await _userManager.GetUserAsync(User);
             if (userSession == null)
                 return RedirectToRoute(new { controller = "Login", action = "Index" });
@@ -37,6 +40,9 @@ namespace HermesBankingApp.Controllers
             var user = await _accountServiceForWebApp.GetUserByUserName(userSession.UserName ?? "");
             if (user == null)
                 return RedirectToRoute(new { controller = "Login", action = "Index" });
+            //
+            //
+            //
 
             var allCards = await _service.GetAll();
             var vmList = _mapper.Map<List<CreditCardViewModel>>(allCards);
@@ -148,6 +154,76 @@ namespace HermesBankingApp.Controllers
             return RedirectToRoute(new { controller = "CreditCard", action = "Index" });
         }
 
+        public async Task<IActionResult> Edit(int id)
+        {
+           
+            //
+            // user validation
+            //
+            AppUser? userSession = await _userManager.GetUserAsync(User);
+            if (userSession == null)
+                return RedirectToRoute(new { controller = "Login", action = "Index" });
+
+            var user = await _accountServiceForWebApp.GetUserByUserName(userSession.UserName ?? "");
+            if (user == null)
+                return RedirectToRoute(new { controller = "Login", action = "Index" });
+            //
+            //
+            //
+
+            if (!ModelState.IsValid)
+                return RedirectToRoute(new { controller = "CreditCard", action = "Index" });
+            var card = await _service.GetById(id);
+
+            if (card == null)
+                return RedirectToRoute(new { controller = "CreditCard", action = "Index" });
+
+            var vm = _mapper.Map<SaveCreditCardViewModel>(card);
+
+            return View(vm);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Edit(SaveCreditCardViewModel vm)
+        {
+            //
+            // user validation
+            //
+            AppUser? userSession = await _userManager.GetUserAsync(User);
+            if (userSession == null)
+                return RedirectToRoute(new { controller = "Login", action = "Index" });
+
+            var user = await _accountServiceForWebApp.GetUserByUserName(userSession.UserName ?? "");
+            if (user == null)
+                return RedirectToRoute(new { controller = "Login", action = "Index" });
+            //
+            //
+            //
+
+            if(!ModelState.IsValid)
+                return View(vm);
+
+            var checkDTO = await _service.GetById(vm.Id);
+
+            if(checkDTO == null)
+            {
+                ViewData["ErrorMessage"] = "Tarjeta no encontrada.";
+                return View(vm);
+            }
+
+            if (vm.CreditLimit < checkDTO.TotalOwedAmount)
+            {
+                ViewData["ErrorMessage"] = "No se pudo actualizar el límite porque el nuevo valor es menor a la deuda.";
+                return View(vm);
+            }
+
+            checkDTO.CreditLimit = vm.CreditLimit;
+
+            await _service.UpdateAsync(checkDTO, checkDTO.Id);
+
+            return RedirectToRoute(new { controller = "CreditCard", action = "Index" });
+        }
+       
         private string GenerateUniqueCardId()
         {
             Random random = new Random();

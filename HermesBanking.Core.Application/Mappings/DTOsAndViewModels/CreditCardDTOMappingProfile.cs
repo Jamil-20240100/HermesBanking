@@ -14,9 +14,8 @@ namespace HermesBanking.Core.Application.Mappings.DTOsAndViewModels
             CreateMap<SaveCreditCardViewModel, CreditCardDTO>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => true))
-                .ForMember(dest => dest.TotalOwedAmount, opt => opt.MapFrom(src => 0));
-
-            CreateMap<CreditCardDTO, SaveCreditCardViewModel>();
+                .ForMember(dest => dest.TotalOwedAmount, opt => opt.MapFrom(src => 0))
+                .ReverseMap();
 
             CreateMap<SaveCreditCardViewModel, CreditCardDTO>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore());
