@@ -2,10 +2,10 @@
 
 #nullable disable
 
-namespace HermesBanking.Infrastructure.Persistence.Migrations
+namespace HermesBanking.Infrastructure.Identity.Migrations
 {
     /// <inheritdoc />
-    public partial class AddKeyToSavingsAccount : Migration
+    public partial class IdentityMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

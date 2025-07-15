@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace HermesBanking.Core.Application.ViewModels.CreditCard
+﻿namespace HermesBanking.Core.Application.ViewModels.CreditCard
 {
     internal class SaveCreditCardViewModel
     {
