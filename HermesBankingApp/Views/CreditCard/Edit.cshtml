@@ -1,0 +1,21 @@
+﻿@model SaveCreditCardViewModel
+@{
+    ViewData["Title"] = "Editar Límite de Tarjeta";
+}
+
+<h2>Editar Límite de Tarjeta</h2>
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="Id" />
+
+    <div class="mb-3">
+        <label asp-for="CreditLimit" class="form-label">Nuevo Límite</label>
+        <input asp-for="CreditLimit" class="form-control" type="number" step="0.01" required />
+        <span asp-validation-for="CreditLimit" class="text-danger"></span>
+    </div>
+
+    <div class="d-flex justify-content-between">
+        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-success">Guardar cambios</button>
+    </div>
+</form>

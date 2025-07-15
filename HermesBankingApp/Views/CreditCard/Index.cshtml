@@ -1,0 +1,95 @@
+﻿@model List<CreditCardViewModel>
+
+@{
+    ViewData["Title"] = "Gestión de Tarjetas de Crédito";
+    string FormatCurrency(decimal amount)
+    {
+        return amount.ToString("C", new System.Globalization.CultureInfo("es-DO"));
+    }
+}
+
+<h2 class="mb-4">Gestión de Tarjetas de Crédito</h2>
+
+<div class="row mb-4 g-3 align-items-end">
+    <div class="col-md-4">
+        <label for="cedulaSearch" class="form-label">Buscar por cédula</label>
+        <input id="cedulaSearch" class="form-control" placeholder="Ej: 00112345678" />
+    </div>
+    <div class="col-md-3">
+        <label for="statusFilter" class="form-label">Filtrar por estado</label>
+        <select id="statusFilter" class="form-select">
+            <option value="all">Todos</option>
+            <option value="active">Activas</option>
+            <option value="canceled">Canceladas</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button type="button" id="applyFilterBtn" class="btn btn-primary w-100">Filtrar</button>
+    </div>
+    <div class="col-md-3 text-end">
+        <a asp-action="SelectClient" class="btn btn-success w-100">Asignar tarjeta de crédito</a>
+    </div>
+</div>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Número de Tarjeta</th>
+            <th>Cliente</th>
+            <th>Límite</th>
+            <th>Expira</th>
+            <th>Adeudado</th>
+            <th>Estado</th>
+            <th class="text-center">Acciones</th>
+        </tr>
+    </thead>
+    <tbody id="creditCardTableBody">
+        @if (Model != null && Model.Any())
+        {
+            @foreach (var card in Model)
+            {
+                <tr>
+                    <td>@card.CardId</td>
+                    <td>@card.ClientFullName</td>
+                    <td>@FormatCurrency(card.CreditLimit)</td>
+                    <td>@card.ExpirationDate.ToString("MM/yy")</td>
+                    <td>@FormatCurrency(card.TotalOwedAmount)</td>
+                    <td>@(card.IsActive ? "Activa" : "Cancelada")</td>
+                    <td class="text-center">
+                        <a asp-action="Details" asp-route-id="@card.Id" class="btn btn-sm btn-info">Detalles</a>
+                        <a asp-action="Edit" asp-route-id="@card.Id" class="btn btn-sm btn-warning">Editar</a>
+                        <a asp-action="ConfirmCancel" asp-route-id="@card.Id" class="btn btn-sm btn-danger">Cancelar</a>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="7" class="text-center">No hay tarjetas encontradas.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<nav aria-label="Paginación">
+    <ul class="pagination justify-content-center" id="paginationControls">
+        @* Pagination links will be rendered by JavaScript *@
+    </ul>
+</nav>
+
+@section Scripts {
+    <script>
+        const cedulaSearchInput = document.getElementById('cedulaSearch');
+        const statusFilterSelect = document.getElementById('statusFilter');
+        const applyFilterButton = document.getElementById('applyFilterBtn');
+
+        applyFilterButton.addEventListener('click', () => {
+            const cedula = cedulaSearchInput.value.trim();
+            const status = statusFilterSelect.value;
+            // Aquí, en lugar de filtrar en JS, redirigirías a una acción del controlador
+            // que acepte parámetros de filtro y devuelva la vista con datos filtrados.
+            window.location.href = `/CreditCard/Index?cedula=${cedula}&status=${status}`;
+        });
+    </script>
+}
