@@ -7,11 +7,13 @@ namespace HermesBanking.Infrastructure.Application.Services
 {
     public class TransactionService : ITransactionService
     {
-        private readonly ITransactionRepository _transactionRepository;
+        private readonly ITransactionRepository _transactionRepo;
+        private readonly IUserService _userService;
 
-        public TransactionService(ITransactionRepository transactionRepository)
+        public TransactionService(ITransactionRepository transactionRepo, IUserService userService)
         {
-            _transactionRepository = transactionRepository;
+            _transactionRepo = transactionRepo;
+            _userService = userService;
         }
 
         public async Task RegisterTransactionAsync(int savingsAccountId, string type, decimal amount, string origin, string beneficiary, string? cashierId = null)
@@ -27,16 +29,16 @@ namespace HermesBanking.Infrastructure.Application.Services
                 PerformedByCashierId = cashierId
             };
 
-            await _transactionRepository.AddAsync(transaction);
+            await _transactionRepo.AddAsync(transaction);  // Cambiar _transactionRepository a _transactionRepo
         }
 
         public async Task<List<Transaction>> GetTransactionsByCashierAndDateAsync(string cashierId, DateTime date)
         {
-            return await _transactionRepository
+            return await _transactionRepo  // Cambiar _transactionRepository a _transactionRepo
                 .GetAllQuery()
                 .Where(t => t.PerformedByCashierId == cashierId && t.Date.Date == date.Date)
                 .ToListAsync();
         }
-
     }
+
 }
