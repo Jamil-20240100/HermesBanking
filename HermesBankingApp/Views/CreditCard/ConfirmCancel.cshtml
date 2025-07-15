@@ -3,7 +3,14 @@
     ViewData["Title"] = "Cancelar Tarjeta";
 }
 
-<h2 class="text-danger">¿Está seguro que desea cancelar la tarjeta [XXXX]?</h2>
+@if (ViewData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @ViewData["ErrorMessage"]
+    </div>
+}
+
+<h2 class="text-danger">¿Está seguro que desea cancelar la tarjeta [@ViewBag.Last4Digits]?</h2>
 
 <form asp-action="Cancel" method="post">
     <input type="hidden" asp-for="Id" />

@@ -57,8 +57,12 @@
                     <td>@(card.IsActive ? "Activa" : "Cancelada")</td>
                     <td class="text-center">
                         <a asp-action="Details" asp-route-id="@card.Id" class="btn btn-sm btn-info">Detalles</a>
-                        <a asp-action="Edit" asp-route-id="@card.Id" class="btn btn-sm btn-warning">Editar</a>
-                        <a asp-action="ConfirmCancel" asp-route-id="@card.Id" class="btn btn-sm btn-danger">Cancelar</a>
+                        @{
+                            if(card.IsActive == true){
+                                <a asp-action="Edit" asp-route-id="@card.Id" class="btn btn-sm btn-warning">Editar</a>
+                                <a asp-action="ConfirmCancel" asp-route-id="@card.Id" class="btn btn-sm btn-danger">Cancelar</a>
+                            }
+                        }
                     </td>
                 </tr>
             }
@@ -74,7 +78,6 @@
 
 <nav aria-label="Paginación">
     <ul class="pagination justify-content-center" id="paginationControls">
-        @* Pagination links will be rendered by JavaScript *@
     </ul>
 </nav>
 
@@ -87,8 +90,6 @@
         applyFilterButton.addEventListener('click', () => {
             const cedula = cedulaSearchInput.value.trim();
             const status = statusFilterSelect.value;
-            // Aquí, en lugar de filtrar en JS, redirigirías a una acción del controlador
-            // que acepte parámetros de filtro y devuelva la vista con datos filtrados.
             window.location.href = `/CreditCard/Index?cedula=${cedula}&status=${status}`;
         });
     </script>

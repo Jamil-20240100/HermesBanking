@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using HermesBanking.Core.Application.DTOs.CreditCard;
+using HermesBanking.Core.Application.DTOs.Email;
 using HermesBanking.Core.Application.DTOs.SavingsAccount;
 using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Application.ViewModels.CreditCard;
+using HermesBanking.Core.Application.ViewModels.SavingsAccount;
 using HermesBanking.Core.Application.ViewModels.User;
 using HermesBanking.Core.Domain.Common.Enums;
 using HermesBanking.Infrastructure.Identity.Entities;
@@ -19,13 +21,14 @@ namespace HermesBankingApp.Controllers
         private readonly IAccountServiceForWebApp _accountServiceForWebApp;
         private readonly ICreditCardService _service;
         private readonly IMapper _mapper;
-
-        public CreditCardController(ICreditCardService service, IMapper mapper, UserManager<AppUser> userManager, IAccountServiceForWebApp accountServiceForWebApp)
+        private readonly IEmailService _emailService;
+        public CreditCardController(ICreditCardService service, IMapper mapper, UserManager<AppUser> userManager, IAccountServiceForWebApp accountServiceForWebApp, IEmailService emailService)
         {
             _service = service;
             _mapper = mapper;
             _userManager = userManager;
             _accountServiceForWebApp = accountServiceForWebApp;
+            _emailService = emailService;
         }
 
         public async Task<IActionResult> Index()
@@ -220,10 +223,93 @@ namespace HermesBankingApp.Controllers
             checkDTO.CreditLimit = vm.CreditLimit;
 
             await _service.UpdateAsync(checkDTO, checkDTO.Id);
+            var client = await _accountServiceForWebApp.GetUserEmailAsync(checkDTO.ClientId);
+            string last4Digits = checkDTO.CardId.Substring(checkDTO.CardId.Length - 4);
 
+            if (client != null)
+            {
+                await _emailService.SendAsync(new EmailRequestDto()
+                {
+                    To = client,
+                    HtmlBody = $"Su tarjeta terminada en [{last4Digits}] ha presentado una actualización en el límite de crédito disponible.",
+                    Subject = "Límite de Crédito actualizado"
+                });
+            }
+           
             return RedirectToRoute(new { controller = "CreditCard", action = "Index" });
         }
-       
+
+        public async Task<IActionResult> ConfirmCancel(int id)
+        {
+            //
+            //session verification
+            //
+            AppUser? userSession = await _userManager.GetUserAsync(User);
+            if (userSession == null)
+                return RedirectToRoute(new { controller = "Login", action = "Index" });
+
+            var user = await _accountServiceForWebApp.GetUserByUserName(userSession.UserName ?? "");
+            if (user == null)
+                return RedirectToRoute(new { controller = "Login", action = "Index" });
+            //
+            //
+            //
+
+            var card = await _service.GetById(id);
+
+            var vm = new CancelCreditCardViewModel
+            {
+                Id = card.Id,
+            };
+
+            string last4Digits = card.CardId.Substring(card.CardId.Length - 4);
+            ViewBag.Last4Digits = last4Digits;
+
+            return View("ConfirmCancel", vm);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Cancel(int id)
+        {
+            try
+            {
+                var card = await _service.GetById(id);
+                if (card == null)
+                {
+                    ViewData["ErrorMessage"] = "Tarjeta no encontrada.";
+                    return RedirectToRoute(new { controller = "CreditCard", action = "Index" });
+                }
+                if(card.TotalOwedAmount > 0)
+                {
+                    ViewData["ErrorMessage"] = "Para cancelar esta tarjeta, el cliente debe saldar la totalidad de la deuda pendiente.";
+                    return RedirectToRoute(new { controller = "CreditCard", action = "Index" });
+                }
+                //desactivate card
+                card.IsActive = false;
+
+                await _service.UpdateAsync(card, card.Id);
+                var client = await _accountServiceForWebApp.GetUserEmailAsync(card.ClientId);
+                string last4Digits = card.CardId.Substring(card.CardId.Length - 4);
+
+                if (client != null)
+                {
+                    await _emailService.SendAsync(new EmailRequestDto()
+                    {
+                        To = client,
+                        HtmlBody = $"Su tarjeta terminada en [{last4Digits}] ha sido cancelada.",
+                        Subject = "Tarjeta cancelada"
+                    });
+                }
+                TempData["Success"] = "La tarjeta fue cancelada correctamente.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = ex.Message;
+            }
+
+            return RedirectToAction("Index");
+        }
+
         private string GenerateUniqueCardId()
         {
             Random random = new Random();
