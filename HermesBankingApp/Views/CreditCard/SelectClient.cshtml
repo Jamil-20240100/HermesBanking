@@ -1,0 +1,59 @@
+﻿@model List<UserViewModel>
+@{
+    ViewData["Title"] = "Seleccionar Cliente";
+    var cedulaBuscada = Context.Request.Query["cedula"].ToString();
+    var deudaPromedio = ViewBag.DeudaPromedio as decimal? ?? 0;
+}
+
+<h2 class="mb-3">Asignar Tarjeta de Crédito</h2>
+
+<div class="alert alert-info">
+    <strong>Deuda promedio de todos los clientes:</strong> @deudaPromedio.ToString("C")
+</div>
+
+<form method="get" asp-action="SelectClient" class="mb-3">
+    <div class="input-group">
+        <input type="text" name="cedula" class="form-control" placeholder="Buscar por cédula..." value="@cedulaBuscada" />
+        <button type="submit" class="btn btn-primary">Buscar</button>
+    </div>
+</form>
+
+<form asp-action="CreateForm" method="get">
+    <table class="table table-bordered table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th></th>
+                <th>Cédula</th>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Deuda</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var client in Model)
+                {
+                    <tr>
+                        <td><input type="radio" name="clientId" value="@client.Id" /></td>
+                        <td>@client.UserId</td>
+                        <td>@client.Name @client.LastName</td>
+                        <td>@client.Email</td>
+                        <td>@(client.InitialAmount?.ToString("C") ?? "$0.00")</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="5" class="text-center">No se encontraron clientes.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="d-flex justify-content-between mt-4">
+        <a asp-action="Index" class="btn btn-secondary">Volver</a>
+        <button type="submit" class="btn btn-success">Siguiente paso</button>
+    </div>
+</form>

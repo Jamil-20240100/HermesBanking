@@ -35,8 +35,7 @@ namespace HermesBanking.Infrastructure.Persistence.EntityConfigurations
                 .HasColumnType("decimal(18,2)");
 
             builder.Property(cc => cc.CVC)
-                .IsRequired()
-                .HasMaxLength(4);
+                .IsRequired();
 
             builder.Property(cc => cc.IsActive)
                 .IsRequired();
