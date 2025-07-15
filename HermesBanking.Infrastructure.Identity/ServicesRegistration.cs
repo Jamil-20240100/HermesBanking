@@ -1,6 +1,8 @@
-﻿using HermesBanking.Core.Application.DTOs.User;
+﻿using HermesBanking.Application.Services;
+using HermesBanking.Core.Application.DTOs.User;
 using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Domain.Settings;
+using HermesBanking.Infrastructure.Application.Services;
 using HermesBanking.Infrastructure.Identity.Contexts;
 using HermesBanking.Infrastructure.Identity.Entities;
 using HermesBanking.Infrastructure.Identity.Seeds;
@@ -67,7 +69,7 @@ namespace HermesBanking.Infrastructure.Identity
             #region Services
             services.AddScoped<ICashierService, CashierService>();
             services.AddScoped<ITransactionService, TransactionService>();
-
+            services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAccountServiceForWebApp, AccountServiceForWebApp>();
             #endregion
         }

@@ -3,7 +3,9 @@ using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Application.ViewModels.Cashier;
 using HermesBanking.Core.Domain.Entities;
 using HermesBanking.Core.Domain.Interfaces;
-using HermesBanking.Infrastructure.Identity.Entities;
+
+
+
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,7 +15,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
     {
         private readonly ISavingsAccountRepository _accountRepo;
         private readonly ITransactionService _transactionService;
-        private readonly UserManager<AppUser> _userManager;
+        private readonly IUserService _userService;
         private readonly IEmailService _emailService;
         private readonly ICreditCardRepository _creditCardRepo;
         private readonly ILoanRepository _loanRepo;
@@ -23,7 +25,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
         public CashierService(
             ISavingsAccountRepository accountRepo,
             ITransactionService transactionService,
-            UserManager<AppUser> userManager,
+            IUserService userService,
             IEmailService emailService,
             ICreditCardRepository creditCardRepo,
             ILoanRepository loanRepo,
@@ -31,7 +33,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
         {
             _accountRepo = accountRepo;
             _transactionService = transactionService;
-            _userManager = userManager;
+            _userService = userService;
             _emailService = emailService;
             _creditCardRepo = creditCardRepo;
             _loanRepo = loanRepo;
@@ -47,7 +49,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
 
             if (account == null) return false;
 
-            var user = await _userManager.FindByIdAsync(account.ClientId);
+            var user = await _userService.GetUserByIdAsync(account.ClientId);
             if (user == null || string.IsNullOrEmpty(user.Email)) return false;
 
             account.Balance += amount;
@@ -105,7 +107,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
             if (account == null || card == null)
                 return (null, null, null);
 
-            var user = await _userManager.FindByIdAsync(card.ClientId);
+            var user = await _userService.GetUserByIdAsync(card.ClientId);
             string fullName = user != null ? $"{user.Name} {user.LastName}" : null;
 
             return (account, card, fullName);
@@ -119,7 +121,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
 
             if (account == null || account.Balance < amount) return false;
 
-            var user = await _userManager.FindByIdAsync(account.ClientId);
+            var user = await _userService.GetUserByIdAsync(account.ClientId);
             if (user == null || string.IsNullOrEmpty(user.Email)) return false;
 
             account.Balance -= amount;
@@ -175,8 +177,8 @@ namespace HermesBanking.Infrastructure.Identity.Services
             if (sourceAccount == null || destAccount == null) return false;
             if (sourceAccount.Balance < amount) return false;
 
-            var sourceUser = await _userManager.FindByIdAsync(sourceAccount.ClientId);
-            var destUser = await _userManager.FindByIdAsync(destAccount.ClientId);
+            var sourceUser = await _userService.GetUserByIdAsync(sourceAccount.ClientId);
+            var destUser = await _userService.GetUserByIdAsync(destAccount.ClientId);
 
             if (sourceUser == null || destUser == null) return false;
 
@@ -267,7 +269,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
             if (cuenta == null || tarjeta == null || cuenta.Balance < amount)
                 return false;
 
-            var user = await _userManager.FindByIdAsync(tarjeta.ClientId);
+            var user = await _userService.GetUserByIdAsync(tarjeta.ClientId);
             if (user == null || string.IsNullOrEmpty(user.Email)) return false;
 
             decimal pagoReal = Math.Min(amount, tarjeta.CreditLimit);
@@ -321,7 +323,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
 
             if (account == null) return (null, null);
 
-            var user = await _userManager.FindByIdAsync(account.ClientId);
+            var user = await _userService.GetUserByIdAsync(account.ClientId);
 
             if (user == null) return (account, null);
 
@@ -341,7 +343,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
             if (cuenta == null || prestamo == null || cuenta.Balance < amount)
                 return false;
 
-            var cliente = await _userManager.FindByIdAsync(prestamo.ClientId);
+            var cliente = await _userService.GetUserByIdAsync(prestamo.ClientId);
             if (cliente == null || string.IsNullOrEmpty(cliente.Email)) return false;
 
             decimal restante = amount;
@@ -428,7 +430,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
             if (prestamo == null)
                 return (null, "", 0);
 
-            var cliente = await _userManager.FindByIdAsync(prestamo.ClientId);
+            var cliente = await _userService.GetUserByIdAsync(prestamo.ClientId);
             string nombreCompleto = cliente != null ? $"{cliente.Name} {cliente.LastName}" : "";
 
             return (prestamo, nombreCompleto, prestamo.RemainingAmount);
