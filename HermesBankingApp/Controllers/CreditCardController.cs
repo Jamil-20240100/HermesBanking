@@ -8,9 +8,8 @@ using HermesBanking.Core.Domain.Common.Enums;
 using HermesBanking.Infrastructure.Identity.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using System.Security.Cryptography;
-using System.Text; // Needed for serializing data to JSON
+using System.Text;
 
 namespace HermesBankingApp.Controllers
 {
