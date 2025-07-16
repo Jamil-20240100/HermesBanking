@@ -1,10 +1,8 @@
 ﻿using AutoMapper;
 using HermesBanking.Core.Application.DTOs.CreditCard;
 using HermesBanking.Core.Application.DTOs.Email;
-using HermesBanking.Core.Application.DTOs.SavingsAccount;
 using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Application.ViewModels.CreditCard;
-using HermesBanking.Core.Application.ViewModels.SavingsAccount;
 using HermesBanking.Core.Application.ViewModels.User;
 using HermesBanking.Core.Domain.Common.Enums;
 using HermesBanking.Infrastructure.Identity.Entities;
@@ -139,8 +137,8 @@ namespace HermesBankingApp.Controllers
                 return RedirectToRoute(new { controller = "CreditCard", action = "SelectClient" });
             }
 
-            vm.ClientFullName = $"{clientUser.Name} {clientUser.LastName}"; 
-            vm.ExpirationDate = DateTime.Now.AddYears(3); 
+            vm.ClientFullName = $"{clientUser.Name} {clientUser.LastName}";
+            vm.ExpirationDate = DateTime.Now.AddYears(3);
             vm.CardId = GenerateUniqueCardId();
             vm.CVC = GenerateAndEncryptCVC();
             vm.TotalOwedAmount = 0;
@@ -159,7 +157,7 @@ namespace HermesBankingApp.Controllers
 
         public async Task<IActionResult> Edit(int id)
         {
-           
+
             //
             // user validation
             //
@@ -203,12 +201,12 @@ namespace HermesBankingApp.Controllers
             //
             //
 
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
                 return View(vm);
 
             var checkDTO = await _service.GetById(vm.Id);
 
-            if(checkDTO == null)
+            if (checkDTO == null)
             {
                 ViewData["ErrorMessage"] = "Tarjeta no encontrada.";
                 return View(vm);
@@ -235,7 +233,7 @@ namespace HermesBankingApp.Controllers
                     Subject = "Límite de Crédito actualizado"
                 });
             }
-           
+
             return RedirectToRoute(new { controller = "CreditCard", action = "Index" });
         }
 
@@ -279,7 +277,7 @@ namespace HermesBankingApp.Controllers
                     ViewData["ErrorMessage"] = "Tarjeta no encontrada.";
                     return RedirectToRoute(new { controller = "CreditCard", action = "Index" });
                 }
-                if(card.TotalOwedAmount > 0)
+                if (card.TotalOwedAmount > 0)
                 {
                     ViewData["ErrorMessage"] = "Para cancelar esta tarjeta, el cliente debe saldar la totalidad de la deuda pendiente.";
                     return RedirectToRoute(new { controller = "CreditCard", action = "Index" });

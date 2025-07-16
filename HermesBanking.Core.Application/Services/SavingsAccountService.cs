@@ -28,7 +28,7 @@ namespace HermesBanking.Core.Application.Services
 
             //get users' ids
             var clientIds = clientDTOsList.Select(x => x.Id).ToList();
-            var adminIds = adminDTOsList.Select(x => x.Id).ToList(); 
+            var adminIds = adminDTOsList.Select(x => x.Id).ToList();
 
             //get all savings accounts
             var savingsAccountsList = await _repository.GetAll();
@@ -42,7 +42,7 @@ namespace HermesBanking.Core.Application.Services
             var returnDTOsList = _mapper.Map<List<SavingsAccountDTO>>(clientsAccounts);
 
             //add full names
-            foreach(var dto in returnDTOsList)
+            foreach (var dto in returnDTOsList)
             {
                 var user = clientDTOsList.FirstOrDefault(u => u.Id == dto.ClientId);
                 var admin = adminDTOsList.FirstOrDefault(u => u.Id == dto.CreatedByAdminId);
@@ -68,7 +68,7 @@ namespace HermesBanking.Core.Application.Services
                 var existingAccount = await _repository.GetByAccountNumberAsync(candidate);
                 if (existingAccount == null)
                 {
-                    return candidate; 
+                    return candidate;
                 }
             }
 

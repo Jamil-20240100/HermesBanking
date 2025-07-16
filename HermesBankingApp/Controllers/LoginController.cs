@@ -4,7 +4,6 @@ using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Application.ViewModels.User;
 using HermesBanking.Core.Domain.Common.Enums;
 using HermesBanking.Infrastructure.Identity.Entities;
-using HermesBankingApp.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -39,7 +38,6 @@ namespace HermesBankingApp.Controllers
                 {
                     return RedirectToRoute(new { controller = "ClientHome", action = "Index" });
                 }
-                // NOTA: Agregado soporte para redirigir si es cajero
                 else if (user != null && user.Role == Roles.Cashier.ToString())
                 {
                     return RedirectToRoute(new { controller = "CashierHome", action = "Index" });
@@ -66,7 +64,6 @@ namespace HermesBankingApp.Controllers
                 {
                     return RedirectToRoute(new { controller = "ClientHome", action = "Index" });
                 }
-                // NOTA: Agregado para redirigir si el usuario es cajero
                 else if (user != null && user.Role == Roles.Cashier.ToString())
                 {
                     return RedirectToRoute(new { controller = "CashierHome", action = "Index" });
@@ -145,7 +142,7 @@ namespace HermesBankingApp.Controllers
             }
 
             SaveUserDto dto = _mapper.Map<SaveUserDto>(vm);
-            dto.Role = Roles.Client.ToString(); 
+            dto.Role = Roles.Client.ToString();
             string origin = Request?.Headers?.Origin.ToString() ?? string.Empty;
 
             RegisterResponseDto? returnUser = await _accountServiceForWebApp.RegisterUser(dto, origin);

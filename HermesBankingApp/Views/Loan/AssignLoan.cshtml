@@ -1,0 +1,81 @@
+﻿@model AssignLoanPageViewModel
+@{
+    ViewData["Title"] = "Asignar Nuevo Préstamo";
+}
+
+<div class="container mt-4">
+    <h1>Asignar Nuevo Préstamo</h1>
+    <hr />
+
+    <div class="row">
+        <div class="col-md-8">
+            <form asp-action="AssignLoan" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="form-group mb-3">
+                    <label class="form-label">Seleccionar Cliente</label>
+                    @if (Model.Clients != null && Model.Clients.Any())
+                    {
+                        <table class="table table-bordered table-hover mt-2">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th></th> 
+                                    <th>Cédula</th>
+                                    <th>Nombre Completo</th>
+                                    <th>Email</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var client in Model.Clients)
+                                {
+                                    <tr>
+                                        <td>
+                                            <input type="radio" asp-for="LoanData.ClientId" value="@client.Id" />
+                                        </td>
+                                        <td>@client.UserId</td>
+                                        <td>@client.FullName</td>
+                                        <td>@client.Email</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <p class="text-info">No se encontraron clientes activos para asignar préstamos.</p>
+                    }
+                    <span asp-validation-for="LoanData.ClientId" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="LoanData.Amount" class="form-label"></label>
+                    <input asp-for="LoanData.Amount" class="form-control" />
+                    <span asp-validation-for="LoanData.Amount" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="LoanData.InterestRate" class="form-label"></label>
+                    <input asp-for="LoanData.InterestRate" class="form-control" />
+                    <span asp-validation-for="LoanData.InterestRate" class="text-danger"></span>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label asp-for="LoanData.LoanTermMonths" class="form-label"></label>
+                    <input asp-for="LoanData.LoanTermMonths" class="form-control" />
+                    <span asp-validation-for="LoanData.LoanTermMonths" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Asignar Préstamo</button>
+                    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

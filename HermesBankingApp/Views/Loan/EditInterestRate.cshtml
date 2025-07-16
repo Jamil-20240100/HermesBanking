@@ -1,0 +1,36 @@
+﻿@model EditLoanInterestRateViewModel
+
+@{
+    ViewData["Title"] = "Editar Tasa de Interés";
+}
+
+<div class="container mt-4">
+    <h1>Editar Tasa de Interés del Préstamo #@Model.LoanId</h1>
+    <hr />
+
+    <div class="row">
+        <div class="col-md-6">
+            <form asp-action="EditInterestRate" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input type="hidden" asp-for="LoanId" />
+
+                <div class="form-group mb-3">
+                    <label asp-for="NewInterestRate" class="form-label"></label>
+                    <input asp-for="NewInterestRate" class="form-control" />
+                    <span asp-validation-for="NewInterestRate" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    <a asp-action="Details" asp-route-id="@Model.LoanId" class="btn btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

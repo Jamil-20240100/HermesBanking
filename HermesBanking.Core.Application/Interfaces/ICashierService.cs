@@ -1,7 +1,5 @@
 ﻿using HermesBanking.Core.Application.ViewModels.Cashier;
 using HermesBanking.Core.Domain.Entities;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace HermesBanking.Core.Application.Interfaces
 {

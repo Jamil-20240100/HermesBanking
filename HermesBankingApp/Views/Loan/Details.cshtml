@@ -1,0 +1,105 @@
+﻿@model LoanDetailsViewModel
+
+@{
+    ViewData["Title"] = "Detalles del Préstamo";
+}
+
+<div class="container mt-4">
+    <h1>Detalles del Préstamo: @Model.LoanIdentifier</h1>
+    <hr />
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Información General del Préstamo</h4>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-4">ID de Préstamo:</dt>
+                <dd class="col-sm-8">@Model.LoanIdentifier</dd>
+
+                <dt class="col-sm-4">Cliente:</dt>
+                <dd class="col-sm-8">@Model.ClientFullName</dd>
+
+                <dt class="col-sm-4">Monto:</dt>
+                <dd class="col-sm-8">@Model.Amount.ToString("C")</dd>
+
+                <dt class="col-sm-4">Tasa de Interés:</dt>
+                <dd class="col-sm-8">@Model.InterestRate.ToString("F2")%</dd>
+
+                <dt class="col-sm-4">Plazo (Meses):</dt>
+                <dd class="col-sm-8">@Model.LoanTermMonths</dd>
+
+                <dt class="col-sm-4">Valor Cuota Mensual:</dt>
+                <dd class="col-sm-8">@Model.MonthlyInstallmentValue.ToString("C")</dd>
+
+                <dt class="col-sm-4">Fecha de Creación:</dt>
+                <dd class="col-sm-8">@Model.CreatedAt.ToShortDateString()</dd>
+
+                <dt class="col-sm-4">Monto Pendiente:</dt>
+                <dd class="col-sm-8">@Model.PendingAmount.ToString("C")</dd>
+
+                <dt class="col-sm-4">Estado:</dt>
+                <dd class="col-sm-8">@(Model.IsActive ? "Activo" : "Completado")</dd> @* Corregido: Model.IsActive *@
+
+                @if (!Model.IsActive && Model.CompletedAt.HasValue) @* Corregido: Model.IsActive, Model.CompletedAt *@
+                {
+                    <dt class="col-sm-4">Fecha de Completado:</dt>
+                    <dd class="col-sm-8">@Model.CompletedAt.Value.ToShortDateString()</dd> @* Corregido: Model.CompletedAt *@
+                }
+            </dl>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h4>Tabla de Amortización</h4>
+        </div>
+        <div class="card-body">
+            @if (Model.AmortizationSchedule != null && Model.AmortizationSchedule.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th># Cuota</th>
+                                <th>Fecha Pago</th>
+                                <th>Valor Cuota</th>
+                                <th>Capital</th>
+                                <th>Intereses</th>
+                                <th>Balance Pendiente</th>
+                                <th>Pagada</th>
+                                <th>Vencida</th>
+                                <th>Fecha Pagada</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var installment in Model.AmortizationSchedule)
+                            {
+                                <tr class="@(installment.IsOverdue && !installment.IsPaid ? "table-danger" : (installment.IsPaid ? "table-success" : ""))">
+                                    <td>@installment.InstallmentNumber</td>
+                                    <td>@installment.PaymentDate.ToShortDateString()</td>
+                                    <td>@installment.InstallmentValue.ToString("C")</td>
+                                    <td>@installment.PrincipalAmount.ToString("C")</td>
+                                    <td>@installment.InterestAmount.ToString("C")</td>
+                                    <td>@installment.RemainingBalance.ToString("C")</td>
+                                    <td>@(installment.IsPaid ? "Sí" : "No")</td>
+                                    <td>@(installment.IsOverdue && !installment.IsPaid ? "Sí" : "No")</td>
+                                    <td>@(installment.PaidDate?.ToShortDateString() ?? "N/A")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p>No hay tabla de amortización disponible para este préstamo.</p>
+            }
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a asp-action="EditInterestRate" asp-route-id="@Model.Id" class="btn btn-warning">Editar Tasa de Interés</a>
+        <a asp-action="Index" class="btn btn-secondary">Volver a la Lista</a>
+    </div>
+</div>

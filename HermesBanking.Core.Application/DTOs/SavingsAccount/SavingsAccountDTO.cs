@@ -1,5 +1,4 @@
-﻿using HermesBanking.Core.Application.DTOs.User;
-using HermesBanking.Core.Domain.Common.Enums;
+﻿using HermesBanking.Core.Domain.Common.Enums;
 
 namespace HermesBanking.Core.Application.DTOs.SavingsAccount
 {

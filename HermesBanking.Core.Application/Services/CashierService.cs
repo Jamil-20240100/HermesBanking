@@ -1,13 +1,10 @@
-﻿using HermesBanking.Core.Application.DTOs.Email;
-using HermesBanking.Core.Application.Interfaces;
-using HermesBanking.Core.Application.ViewModels.Cashier;
-using HermesBanking.Core.Domain.Entities;
+﻿using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Domain.Interfaces;
-using Microsoft.EntityFrameworkCore;
 
 namespace HermesBanking.Core.Application.Services
 {
-    public class CashierService : ICashierService
+
+    public class CashierService // ICashierService
     {
         private readonly ISavingsAccountRepository _accountRepo;
         private readonly ITransactionService _transactionService;
@@ -15,7 +12,7 @@ namespace HermesBanking.Core.Application.Services
         private readonly IEmailService _emailService;
         private readonly ICreditCardRepository _creditCardRepo;
         private readonly ILoanRepository _loanRepo;
-        private readonly ILoanInstallmentRepository _installmentRepo;
+        private readonly IAmortizationInstallmentRepository _installmentRepo;
 
 
         public CashierService(
@@ -25,7 +22,7 @@ namespace HermesBanking.Core.Application.Services
             IEmailService emailService,
             ICreditCardRepository creditCardRepo,
             ILoanRepository loanRepo,
-            ILoanInstallmentRepository installmentRepo)
+            IAmortizationInstallmentRepository installmentRepo)
         {
             _accountRepo = accountRepo;
             _transactionService = transactionService;
@@ -35,7 +32,7 @@ namespace HermesBanking.Core.Application.Services
             _loanRepo = loanRepo;
             _installmentRepo = installmentRepo;
         }
-
+        /*
 
         public async Task<bool> MakeDepositAsync(string accountNumber, decimal amount, string cashierId)
         {
@@ -45,7 +42,7 @@ namespace HermesBanking.Core.Application.Services
 
             if (account == null) return false;
 
-            var user = await _userService.GetUserByIdAsync(account.ClientId);
+            var user = await _userService.GetUserById(account.ClientId);
             if (user == null || string.IsNullOrEmpty(user.Email)) return false;
 
             account.Balance += amount;
@@ -103,7 +100,7 @@ namespace HermesBanking.Core.Application.Services
             if (account == null || card == null)
                 return (null, null, null);
 
-            var user = await _userService.GetUserByIdAsync(card.ClientId);
+            var user = await _userService.GetUserById(card.ClientId);
             string fullName = user != null ? $"{user.Name} {user.LastName}" : null;
 
             return (account, card, fullName);
@@ -117,7 +114,7 @@ namespace HermesBanking.Core.Application.Services
 
             if (account == null || account.Balance < amount) return false;
 
-            var user = await _userService.GetUserByIdAsync(account.ClientId);
+            var user = await _userService.GetUserById(account.ClientId);
             if (user == null || string.IsNullOrEmpty(user.Email)) return false;
 
             account.Balance -= amount;
@@ -173,8 +170,8 @@ namespace HermesBanking.Core.Application.Services
             if (sourceAccount == null || destAccount == null) return false;
             if (sourceAccount.Balance < amount) return false;
 
-            var sourceUser = await _userService.GetUserByIdAsync(sourceAccount.ClientId);
-            var destUser = await _userService.GetUserByIdAsync(destAccount.ClientId);
+            var sourceUser = await _userService.GetUserById(sourceAccount.ClientId);
+            var destUser = await _userService.GetUserById(destAccount.ClientId);
 
             if (sourceUser == null || destUser == null) return false;
 
@@ -231,7 +228,6 @@ namespace HermesBanking.Core.Application.Services
             return true;
         }
 
-
         public async Task<CashierDashboardViewModel> GetTodaySummaryAsync(string cashierId)
         {
             var today = DateTime.Today;
@@ -265,7 +261,7 @@ namespace HermesBanking.Core.Application.Services
             if (cuenta == null || tarjeta == null || cuenta.Balance < amount)
                 return false;
 
-            var user = await _userService.GetUserByIdAsync(tarjeta.ClientId);
+            var user = await _userService.GetUserById(tarjeta.ClientId);
             if (user == null || string.IsNullOrEmpty(user.Email)) return false;
 
             decimal pagoReal = Math.Min(amount, tarjeta.CreditLimit);
@@ -319,7 +315,7 @@ namespace HermesBanking.Core.Application.Services
 
             if (account == null) return (null, null);
 
-            var user = await _userService.GetUserByIdAsync(account.ClientId);
+            var user = await _userService.GetUserById(account.ClientId);
 
             if (user == null) return (account, null);
 
@@ -339,7 +335,7 @@ namespace HermesBanking.Core.Application.Services
             if (cuenta == null || prestamo == null || cuenta.Balance < amount)
                 return false;
 
-            var cliente = await _userService.GetUserByIdAsync(prestamo.ClientId);
+            var cliente = await _userService.GetUserById(prestamo.ClientId);
             if (cliente == null || string.IsNullOrEmpty(cliente.Email)) return false;
 
             decimal restante = amount;
@@ -426,7 +422,7 @@ namespace HermesBanking.Core.Application.Services
             if (prestamo == null)
                 return (null, "", 0);
 
-            var cliente = await _userService.GetUserByIdAsync(prestamo.ClientId);
+            var cliente = await _userService.GetUserById(prestamo.ClientId);
             string nombreCompleto = cliente != null ? $"{cliente.Name} {cliente.LastName}" : "";
 
             return (prestamo, nombreCompleto, prestamo.RemainingAmount);
@@ -437,5 +433,6 @@ namespace HermesBanking.Core.Application.Services
             return _accountRepo.GetAllQuery().Where(a => a.IsActive).ToList();
         }
 
+        */
     }
 }

@@ -1,7 +1,7 @@
 using HermesBanking.Core.Application;
-using HermesBanking.Infrastructure.Shared;
 using HermesBanking.Infrastructure.Identity;
 using HermesBanking.Infrastructure.Persistence;
+using HermesBanking.Infrastructure.Shared;
 
 var builder = WebApplication.CreateBuilder(args);
 

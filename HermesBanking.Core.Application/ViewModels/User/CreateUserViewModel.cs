@@ -26,7 +26,7 @@ namespace HermesBanking.Core.Application.ViewModels.User
         [DataType(DataType.Password)]
         public required string Password { get; set; }
 
-        [Compare(nameof(Password),ErrorMessage = "Password must match")]
+        [Compare(nameof(Password), ErrorMessage = "Password must match")]
         [Required(ErrorMessage = "You must enter the confirm password")]
         [DataType(DataType.Password)]
         public required string ConfirmPassword { get; set; }

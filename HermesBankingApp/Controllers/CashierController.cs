@@ -20,7 +20,7 @@ namespace HermesBankingApp.Controllers
             _cashierService = cashierService;
             _userManager = userManager;
         }
-
+        /*
         private List<SelectListItem> GetActiveSavingsAccounts(string? excludeAccountNumber = null)
         {
             var accounts = _cashierService.GetAllActiveAccounts();
@@ -244,8 +244,6 @@ namespace HermesBankingApp.Controllers
             return View("ConfirmThirdPartyTransfer", confirmVm); // <-- El tipo correcto
         }
 
-
-
         [HttpPost]
         public async Task<IActionResult> ExecuteThirdPartyTransfer(string sourceAccountNumber, string destinationAccountNumber, decimal amount)
         {
@@ -397,5 +395,6 @@ namespace HermesBankingApp.Controllers
             await HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
             return RedirectToAction("Index", "Login");
         }
+        */
     }
 }

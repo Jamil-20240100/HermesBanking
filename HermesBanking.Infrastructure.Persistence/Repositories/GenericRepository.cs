@@ -1,6 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
-using HermesBanking.Core.Domain.Interfaces;
+﻿using HermesBanking.Core.Domain.Interfaces;
 using HermesBanking.Infrastructure.Persistence.Contexts;
+using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions; // ¡Añadido para Expression<Func<Entity, bool>>!
 
 namespace HermesBanking.Infrastructure.Persistence.Repositories
 {
@@ -13,11 +14,19 @@ namespace HermesBanking.Infrastructure.Persistence.Repositories
             _context = context;
         }
 
-        //METHODS IMPLEMENTATION
+        // --- METHODS IMPLEMENTATION ---
 
         public virtual async Task<Entity?> AddAsync(Entity entity)
         {
             await _context.Set<Entity>().AddAsync(entity);
+            await _context.SaveChangesAsync();
+            return entity;
+        }
+
+        // --- ¡NUEVO: Implementación de UpdateAsync que toma la entidad! ---
+        public virtual async Task<Entity?> UpdateAsync(Entity entity)
+        {
+            _context.Entry(entity).State = EntityState.Modified;
             await _context.SaveChangesAsync();
             return entity;
         }
@@ -33,6 +42,13 @@ namespace HermesBanking.Infrastructure.Persistence.Repositories
                 return entry;
             }
             return null;
+        }
+
+        // --- ¡NUEVO: Implementación de DeleteAsync que toma la entidad! ---
+        public virtual async Task DeleteAsync(Entity entity)
+        {
+            _context.Set<Entity>().Remove(entity);
+            await _context.SaveChangesAsync();
         }
 
         public virtual async Task DeleteAsync(int? id)
@@ -81,6 +97,12 @@ namespace HermesBanking.Infrastructure.Persistence.Repositories
                 query = query.Include(property);
             }
             return query;
+        }
+
+        // --- ¡NUEVO: Implementación de GetByConditionAsync! ---
+        public virtual async Task<IEnumerable<Entity>> GetByConditionAsync(Expression<Func<Entity, bool>> expression)
+        {
+            return await _context.Set<Entity>().Where(expression).ToListAsync();
         }
     }
 }

@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.Design;
 
 namespace HermesBankingApp.Controllers
 {
@@ -45,11 +44,11 @@ namespace HermesBankingApp.Controllers
 
             return View(listEntityVms);
         }
-        
+
         public async Task<IActionResult> Create()
         {
             ViewBag.Roles = await _roleManager.Roles.ToListAsync();
-            return View(new CreateUserViewModel() { Id = 0, Name = "", Email = "", UserName = "", LastName = "", Password = "", ConfirmPassword = "", Role = "", UserId = "", IsActive = false, InitialAmount = 0});
+            return View(new CreateUserViewModel() { Id = 0, Name = "", Email = "", UserName = "", LastName = "", Password = "", ConfirmPassword = "", Role = "", UserId = "", IsActive = false, InitialAmount = 0 });
         }
 
         [HttpPost]
@@ -97,7 +96,7 @@ namespace HermesBankingApp.Controllers
             // ADDING NEW PRIMARY ACCOUNT
             //
 
-            if(dto.Role == Roles.Client.ToString())
+            if (dto.Role == Roles.Client.ToString())
             {
                 var randomNumber = await _savingsAccountService.GenerateUniqueAccountNumberAsync();
                 var newAccount = new SavingsAccountDTO
@@ -111,7 +110,7 @@ namespace HermesBankingApp.Controllers
                     ClientId = dto.Id,
                     CreatedAt = DateTime.Now,
                 };
-                
+
                 await _savingsAccountService.AddAsync(newAccount);
             }
 
@@ -176,8 +175,8 @@ namespace HermesBankingApp.Controllers
                 LastName = vm.LastName,
                 Password = vm.Password ?? "",
                 Role = vm.Role,
-                InitialAmount= vm.InitialAmount,
-                UserId= vm.UserId,
+                InitialAmount = vm.InitialAmount,
+                UserId = vm.UserId,
                 IsActive = vm.IsActive
             };
 
@@ -228,7 +227,7 @@ namespace HermesBankingApp.Controllers
         public async Task<IActionResult> Toggle(string id)
         {
             var dto = await _accountServiceForWebApp.GetUserById(id);
-         
+
             if (dto == null) return RedirectToAction("Index");
 
             var vm = new ToggleUserStateViewModel
@@ -244,7 +243,7 @@ namespace HermesBankingApp.Controllers
                 UserId = dto.UserId,
             };
 
-            return View("ConfirmAction",vm);
+            return View("ConfirmAction", vm);
         }
 
         [HttpPost]
@@ -260,7 +259,7 @@ namespace HermesBankingApp.Controllers
             string origin = Request?.Headers?.Origin.ToString() ?? string.Empty;
 
             var newState = true;
-            if(vm.IsActive == newState)
+            if (vm.IsActive == newState)
             {
                 newState = false;
             }
@@ -281,7 +280,7 @@ namespace HermesBankingApp.Controllers
                 InitialAmount = vm.InitialAmount,
                 Password = vm.Password ?? "",
                 UserId = vm.UserId ?? "",
-                
+
             };
 
             //var currentDto = await _accountServiceForWebApp.GetUserById(dto.Id);

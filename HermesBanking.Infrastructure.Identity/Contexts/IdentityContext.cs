@@ -17,7 +17,7 @@ namespace HermesBanking.Infrastructure.Identity.Contexts
 
             builder.Entity<AppUser>().ToTable("Users");
             builder.Entity<IdentityRole>().ToTable("Roles");
-            builder.Entity<IdentityUserRole<string>>().ToTable("UserRoles"); 
+            builder.Entity<IdentityUserRole<string>>().ToTable("UserRoles");
             builder.Entity<IdentityUserLogin<string>>().ToTable("UserLogins");
         }
     }

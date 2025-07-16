@@ -104,7 +104,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
                 return response;
             }
         }
-      
+
         public virtual async Task<EditResponseDto> EditUser(SaveUserDto saveDto, string? origin, bool? isCreated = false, bool? isApi = false)
         {
             bool isNotcreated = !isCreated ?? false;
@@ -286,7 +286,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
 
             return response;
         }
-        
+
         public virtual async Task<UserResponseDto> DeleteAsync(string id)
         {
             UserResponseDto response = new() { HasError = false, Errors = [] };
@@ -303,7 +303,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
 
             return response;
         }
-        
+
         public virtual async Task<UserDto?> GetUserByEmail(string email)
         {
             var user = await _userManager.FindByEmailAsync(email);
@@ -331,7 +331,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
 
             return userDto;
         }
-        
+
         public virtual async Task<UserDto?> GetUserById(string Id)
         {
             var user = await _userManager.FindByIdAsync(Id);
@@ -354,12 +354,12 @@ namespace HermesBanking.Infrastructure.Identity.Services
                 Role = rolesList.FirstOrDefault() ?? "",
                 UserId = user.UserId,
                 InitialAmount = user.InitialAmount,
-                IsActive= user.IsActive,
+                IsActive = user.IsActive,
             };
 
             return userDto;
         }
-        
+
         public virtual async Task<UserDto?> GetUserByUserName(string userName)
         {
             var user = await _userManager.FindByNameAsync(userName);
@@ -387,7 +387,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
 
             return userDto;
         }
-        
+
         public virtual async Task<List<UserDto>> GetAllUser(bool? isActive = true)
         {
             List<UserDto> listUsersDTOs = [];
@@ -416,7 +416,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
                     Role = roleList.FirstOrDefault() ?? "",
                     UserId = item.UserId,
                     InitialAmount = item.InitialAmount,
-                    IsActive= item.IsActive,
+                    IsActive = item.IsActive,
                 });
             }
 
@@ -515,13 +515,13 @@ namespace HermesBanking.Infrastructure.Identity.Services
             {
                 response.Message = $"Account confirmed for {user.Email}. You can now use the app";
                 response.HasError = false;
-                return response;                
+                return response;
             }
             else
             {
                 response.Message = $"An error occurred while confirming this email {user.Email}";
                 response.HasError = true;
-                return response;                
+                return response;
             }
         }
 
@@ -546,7 +546,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
 
             return token;
         }
-     
+
         protected async Task<string> GetResetPasswordUri(AppUser user, string origin)
         {
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
@@ -566,7 +566,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
 
             return token;
         }
-       
+
         #endregion
     }
 }

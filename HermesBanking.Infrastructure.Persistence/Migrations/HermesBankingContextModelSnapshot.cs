@@ -22,6 +22,51 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("HermesBanking.Core.Domain.Entities.AmortizationInstallment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("InstallmentNumber")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("InstallmentValue")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<decimal>("InterestAmount")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<bool>("IsOverdue")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPaid")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LoanId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PaidDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("PaymentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("PrincipalAmount")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<decimal>("RemainingBalance")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LoanId");
+
+                    b.ToTable("AmortizationInstallments", (string)null);
+                });
+
             modelBuilder.Entity("HermesBanking.Core.Domain.Entities.CreditCard", b =>
                 {
                     b.Property<int>("Id")
@@ -84,64 +129,69 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AdminFullName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<string>("AssignedByAdminId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ClientFullName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
                     b.Property<string>("ClientId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("IsCompleted")
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<decimal>("InterestRate")
+                        .HasColumnType("decimal(5, 4)");
+
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<string>("LoanNumber")
+                    b.Property<bool>("IsOverdue")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LoanIdentifier")
                         .IsRequired()
-                        .HasMaxLength(9)
-                        .HasColumnType("nvarchar(9)");
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
 
-                    b.Property<decimal>("RemainingAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("LoanTermMonths")
+                        .HasColumnType("int");
 
-                    b.Property<decimal>("TotalAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<decimal>("MonthlyInstallmentValue")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<int>("PaidInstallments")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("PendingAmount")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<int>("TotalInstallments")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.ToTable("Loans", (string)null);
-                });
-
-            modelBuilder.Entity("HermesBanking.Core.Domain.Entities.LoanInstallment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("AmountPaid")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("DueDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("LoanId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Number")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LoanId");
-
-                    b.ToTable("LoanInstallments", (string)null);
                 });
 
             modelBuilder.Entity("HermesBanking.Core.Domain.Entities.SavingsAccount", b =>
@@ -228,10 +278,10 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                     b.ToTable("Transactions", (string)null);
                 });
 
-            modelBuilder.Entity("HermesBanking.Core.Domain.Entities.LoanInstallment", b =>
+            modelBuilder.Entity("HermesBanking.Core.Domain.Entities.AmortizationInstallment", b =>
                 {
                     b.HasOne("HermesBanking.Core.Domain.Entities.Loan", "Loan")
-                        .WithMany("Installments")
+                        .WithMany("AmortizationInstallments")
                         .HasForeignKey("LoanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -252,7 +302,7 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("HermesBanking.Core.Domain.Entities.Loan", b =>
                 {
-                    b.Navigation("Installments");
+                    b.Navigation("AmortizationInstallments");
                 });
 #pragma warning restore 612, 618
         }

@@ -2,6 +2,6 @@
 {
     public class ForgotPasswordApiRequestDto
     {
-        public required string UserName { get; set; }       
+        public required string UserName { get; set; }
     }
 }

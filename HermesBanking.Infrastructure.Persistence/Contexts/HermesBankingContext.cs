@@ -1,6 +1,5 @@
 ﻿using HermesBanking.Core.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using System.Diagnostics;
 using System.Reflection;
 
 namespace HermesBanking.Infrastructure.Persistence.Contexts
@@ -16,7 +15,7 @@ namespace HermesBanking.Infrastructure.Persistence.Contexts
         public DbSet<SavingsAccount> SavingsAccount { get; set; }
         public DbSet<CreditCard> CreditCards { get; set; }
         public DbSet<Loan> Loans { get; set; }
-        public DbSet<LoanInstallment> LoanInstallments { get; set; }
+        public DbSet<AmortizationInstallment> AmortizationInstallments { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
 
         //

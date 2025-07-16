@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
-using System.Collections.Generic;
 
 namespace HermesBanking.Core.Application.ViewModels.Cashier
 {

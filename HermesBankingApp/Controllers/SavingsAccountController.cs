@@ -18,7 +18,7 @@ namespace HermesBankingApp.Controllers
         private readonly IAccountServiceForWebApp _accountServiceForWebApp;
         private readonly ISavingsAccountService _service;
         private readonly IMapper _mapper;
-        
+
         public SavingsAccountController(ISavingsAccountService service, IMapper mapper, UserManager<AppUser> userManager, IAccountServiceForWebApp accountServiceForWebApp)
         {
             _service = service;
@@ -35,7 +35,7 @@ namespace HermesBankingApp.Controllers
             AppUser? userSession = await _userManager.GetUserAsync(User);
             if (userSession == null)
                 return RedirectToRoute(new { controller = "Login", action = "Index" });
-            
+
             var user = await _accountServiceForWebApp.GetUserByUserName(userSession.UserName ?? "");
             if (user == null)
                 return RedirectToRoute(new { controller = "Login", action = "Index" });
@@ -133,7 +133,7 @@ namespace HermesBankingApp.Controllers
 
             return View("CreateSecondaryForm", vm);
         }
-        
+
         public async Task<IActionResult> ConfirmCancel(int id)
         {
             //
@@ -156,7 +156,7 @@ namespace HermesBankingApp.Controllers
             {
                 Id = account.Id,
             };
-            
+
             return View("Cancel", vm);
         }
 

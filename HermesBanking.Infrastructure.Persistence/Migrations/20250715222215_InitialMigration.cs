@@ -22,7 +22,7 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                     ClientFullName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     CreditLimit = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TotalOwedAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    CVC = table.Column<string>(type: "nvarchar(4)", maxLength: 4, nullable: false),
+                    CVC = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     ExpirationDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -40,12 +40,22 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    LoanNumber = table.Column<string>(type: "nvarchar(9)", maxLength: 9, nullable: false),
-                    TotalAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    RemainingAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    IsCompleted = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ClientId = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    LoanIdentifier = table.Column<string>(type: "nvarchar(8)", maxLength: 8, nullable: false),
+                    ClientId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    ClientFullName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    InterestRate = table.Column<decimal>(type: "decimal(5,4)", nullable: false),
+                    LoanTermMonths = table.Column<int>(type: "int", nullable: false),
+                    MonthlyInstallmentValue = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TotalInstallments = table.Column<int>(type: "int", nullable: false),
+                    PaidInstallments = table.Column<int>(type: "int", nullable: false),
+                    PendingAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsOverdue = table.Column<bool>(type: "bit", nullable: false),
+                    AssignedByAdminId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
+                    AdminFullName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()"),
+                    CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -74,22 +84,27 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "LoanInstallments",
+                name: "AmortizationInstallments",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     LoanId = table.Column<int>(type: "int", nullable: false),
-                    Number = table.Column<int>(type: "int", nullable: false),
-                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    AmountPaid = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    DueDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    InstallmentNumber = table.Column<int>(type: "int", nullable: false),
+                    PaymentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    InstallmentValue = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PrincipalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    InterestAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    RemainingBalance = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    IsPaid = table.Column<bool>(type: "bit", nullable: false),
+                    IsOverdue = table.Column<bool>(type: "bit", nullable: false),
+                    PaidDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_LoanInstallments", x => x.Id);
+                    table.PrimaryKey("PK_AmortizationInstallments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_LoanInstallments_Loans_LoanId",
+                        name: "FK_AmortizationInstallments_Loans_LoanId",
                         column: x => x.LoanId,
                         principalTable: "Loans",
                         principalColumn: "Id",
@@ -122,8 +137,8 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_LoanInstallments_LoanId",
-                table: "LoanInstallments",
+                name: "IX_AmortizationInstallments_LoanId",
+                table: "AmortizationInstallments",
                 column: "LoanId");
 
             migrationBuilder.CreateIndex(
@@ -136,10 +151,10 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "CreditCards");
+                name: "AmortizationInstallments");
 
             migrationBuilder.DropTable(
-                name: "LoanInstallments");
+                name: "CreditCards");
 
             migrationBuilder.DropTable(
                 name: "Transactions");

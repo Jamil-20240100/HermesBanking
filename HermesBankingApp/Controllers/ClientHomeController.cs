@@ -1,5 +1,4 @@
-﻿using HermesBanking.Core.Domain.Entities;
-using HermesBanking.Core.Domain.Interfaces;
+﻿using HermesBanking.Core.Domain.Interfaces;
 using HermesBanking.Infrastructure.Identity.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;

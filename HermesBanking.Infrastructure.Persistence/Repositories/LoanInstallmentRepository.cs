@@ -4,9 +4,9 @@ using HermesBanking.Infrastructure.Persistence.Contexts;
 
 namespace HermesBanking.Infrastructure.Persistence.Repositories
 {
-    public class LoanInstallmentRepository : GenericRepository<LoanInstallment>, ILoanInstallmentRepository
+    public class AmortizationLInstallmentRepository : GenericRepository<AmortizationInstallment>, IAmortizationInstallmentRepository
     {
-        public LoanInstallmentRepository(HermesBankingContext context) : base(context)
+        public AmortizationLInstallmentRepository(HermesBankingContext context) : base(context)
         {
         }
     }

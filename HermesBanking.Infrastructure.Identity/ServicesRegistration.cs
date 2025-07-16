@@ -23,13 +23,13 @@ namespace HermesBanking.Infrastructure.Identity
     {
         //Extension method - Decorator pattern
         public static void AddIdentityLayerIocForWebApp(this IServiceCollection services, IConfiguration config)
-        {          
+        {
             GeneralConfiguration(services, config);
 
             #region Identity 
             services.Configure<IdentityOptions>(opt =>
             {
-                opt.Password.RequiredLength = 8;             
+                opt.Password.RequiredLength = 8;
                 opt.Password.RequireDigit = true;
                 opt.Password.RequireNonAlphanumeric = true;
                 opt.Password.RequireLowercase = true;
@@ -67,14 +67,14 @@ namespace HermesBanking.Infrastructure.Identity
             #endregion
 
             #region Services
-            services.AddScoped<ICashierService, CashierService>();
+            //services.AddScoped<ICashierService, CashierService>();
             services.AddScoped<ITransactionService, TransactionService>();
             services.AddScoped<IAccountServiceForWebApp, AccountServiceForWebApp>();
             #endregion
         }
 
         public static void AddIdentityLayerIocForWebApi(this IServiceCollection services, IConfiguration config)
-        {       
+        {
             GeneralConfiguration(services, config);
 
             #region Configurations
@@ -121,7 +121,7 @@ namespace HermesBanking.Infrastructure.Identity
                 {
                     ValidateIssuerSigningKey = true,
                     ValidateIssuer = true,
-                    ValidateAudience = true,                    
+                    ValidateAudience = true,
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.FromMinutes(2),
                     ValidIssuer = config["JwtSettings:Issuer"],
@@ -155,7 +155,7 @@ namespace HermesBanking.Infrastructure.Identity
                 };
             }).AddCookie(IdentityConstants.ApplicationScheme, opt =>
             {
-                opt.ExpireTimeSpan = TimeSpan.FromMinutes(180);           
+                opt.ExpireTimeSpan = TimeSpan.FromMinutes(180);
             });
             #endregion
 

@@ -2,7 +2,7 @@
 
 namespace HermesBanking.Core.Domain.Interfaces
 {
-    public interface ILoanInstallmentRepository : IGenericRepository<LoanInstallment>
+    public interface IAmortizationInstallmentRepository : IGenericRepository<AmortizationInstallment>
     {
     }
 }

@@ -1,13 +1,13 @@
-﻿using HermesBanking.Core.Domain.Settings;
+﻿using HermesBanking.Core.Application.DTOs.User;
+using HermesBanking.Core.Application.Interfaces;
+using HermesBanking.Core.Domain.Settings;
 using HermesBanking.Infrastructure.Identity.Entities;
-using HermesBanking.Core.Application.DTOs.User;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using HermesBanking.Core.Application.Interfaces;
 
 namespace HermesBanking.Infrastructure.Identity.Services
 {
@@ -87,7 +87,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
         }
 
         public override async Task<UserResponseDto> ForgotPasswordAsync(ForgotPasswordRequestDto request, bool? isApi = false)
-        { 
+        {
             return await base.ForgotPasswordAsync(request, isApi);
         }
 

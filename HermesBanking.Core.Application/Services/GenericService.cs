@@ -33,7 +33,7 @@ namespace HermesBanking.Core.Application.Services
                 return null;
             }
         }
-       
+
         public virtual async Task<DtoModel?> UpdateAsync(DtoModel dto, int id)
         {
             try
@@ -52,7 +52,7 @@ namespace HermesBanking.Core.Application.Services
                 return null;
             }
         }
-        
+
         public virtual async Task<bool> DeleteAsync(int? id)
         {
             try
@@ -65,7 +65,7 @@ namespace HermesBanking.Core.Application.Services
                 return false;
             }
         }
-        
+
         public virtual async Task<DtoModel?> GetById(int id)
         {
             try
@@ -84,7 +84,7 @@ namespace HermesBanking.Core.Application.Services
                 return null;
             }
         }
-        
+
         public virtual async Task<List<DtoModel>> GetAll()
         {
             try
@@ -101,7 +101,7 @@ namespace HermesBanking.Core.Application.Services
         }
 
         public virtual async Task<List<DtoModel>> GetAllQuery()
-        { 
+        {
             try
             {
                 var listEntities = await _repository.GetAll();
