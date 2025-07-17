@@ -3,6 +3,6 @@
     public enum TransactionType
     {
         CREDITO,
-
+        DEBITO,
     }
 }
