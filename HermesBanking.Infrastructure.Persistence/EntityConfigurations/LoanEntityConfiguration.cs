@@ -12,7 +12,7 @@ namespace HermesBanking.Infrastructure.Persistence.Configurations
 
             builder.Property(l => l.LoanIdentifier)
                    .IsRequired()
-                   .HasMaxLength(8);
+                   .HasMaxLength(9);
 
             builder.Property(l => l.ClientId)
                    .IsRequired()

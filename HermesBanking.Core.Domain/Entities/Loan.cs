@@ -3,7 +3,7 @@
     public class Loan
     {
         public int Id { get; set; }
-        public string LoanIdentifier { get; set; } = Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
+        public string LoanIdentifier { get; set; } = Guid.NewGuid().ToString("N").Substring(0, 9).ToUpper();
 
         public string ClientId { get; set; }
         public string ClientFullName { get; set; }

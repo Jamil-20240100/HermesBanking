@@ -6,7 +6,7 @@ namespace HermesBanking.Core.Application.ViewModels.Loan
     public class LoanDetailsViewModel
     {
         public int Id { get; set; }
-        public string LoanIdentifier { get; set; } = string.Empty; // Asegúrate de inicializar propiedades de tipo string
+        public string LoanIdentifier { get; set; } = string.Empty;
         public string ClientId { get; set; } = string.Empty;
         public string ClientFullName { get; set; } = string.Empty;
         public decimal Amount { get; set; }
