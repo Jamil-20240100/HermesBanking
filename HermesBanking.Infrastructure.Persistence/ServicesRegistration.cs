@@ -39,6 +39,7 @@ namespace HermesBanking.Infrastructure.Persistence
                 services.AddScoped<ICreditCardRepository, CreditCardRepository>();
                 services.AddScoped<ILoanRepository, LoanRepository>();
                 services.AddScoped<IAmortizationInstallmentRepository, AmortizationLInstallmentRepository>();
+                services.AddScoped<IBeneficiaryRepository, BeneficiaryRepository>();
                 #endregion
             }
         }

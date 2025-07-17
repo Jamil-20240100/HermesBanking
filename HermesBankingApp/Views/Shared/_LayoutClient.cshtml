@@ -22,7 +22,16 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">                   
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="InvestmentPortfolio" asp-action="Index">Investment portfolios</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Beneficiary" asp-action="Index">Beneficiaries</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Transaction" asp-action="Index">Transactions</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="CashAdvancement" asp-action="Index">Cash Advancement</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Transfer" asp-action="Index">Transfer Between Accounts</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Login" asp-action="Logout">Log out(@User.Identity?.Name)</a>

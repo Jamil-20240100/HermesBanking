@@ -1,0 +1,68 @@
+﻿@model List<BeneficiaryViewModel>
+@{
+    ViewData["Title"] = "Beneficiarios";
+    Layout = "_LayoutClient";
+    var saveViewModel = ViewBag.SaveViewModel as SaveBeneficiaryViewModel ?? new SaveBeneficiaryViewModel();
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Mis Beneficiarios</h4>
+                    <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#addBeneficiaryModal">
+                        <i class="fa fa-plus me-2"></i> Agregar Beneficiario
+                    </button>
+                </div>
+                <div class="card-body">
+                    @if (!Model.Any())
+                    {
+                        <div class="alert alert-info text-center" role="alert">
+                            <h4 class="alert-heading">¡Aún no tienes beneficiarios!</h4>
+                            <p>Para empezar, haz clic en el botón "Agregar Beneficiario" y registra una cuenta para tus transferencias frecuentes.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <ul class="list-group">
+                            @foreach (var item in Model)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-1">@item.Name @item.LastName</h5>
+                                        <small class="text-muted">Número de Cuenta: @item.BeneficiaryAccountNumber</small>
+                                    </div>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-outline-danger btn-sm">Eliminar<i class="fa fa-trash"></i>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addBeneficiaryModal" tabindex="-1" aria-labelledby="addBeneficiaryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            @* Aquí se renderiza la vista parcial, pasándole el modelo correcto *@
+            <partial name="_AddBeneficiaryModal" model="saveViewModel" />
+        </div>
+    </div>
+</div>
+@section Scripts {
+    @{
+        if (saveViewModel.HasError)
+        {
+            <script type="text/javascript">
+                document.addEventListener('DOMContentLoaded', function () {
+                    var addBeneficiaryModal = new bootstrap.Modal(document.getElementById('addBeneficiaryModal'));
+                    addBeneficiaryModal.show();
+                });
+            </script>
+        }
+    }
+}

@@ -117,5 +117,41 @@ namespace HermesBanking.Core.Application.Services
             await _repository.UpdateAsync(account.Id, account);
         }
 
+        public async Task<SavingsAccountDTO?> GetByAccountNumberAsync(string beneficiaryAccountNumber)
+        {
+            var clientDTOsList = await _accountServiceForWebApp.GetAllUserByRole(Roles.Client.ToString());
+            var adminDTOsList = await _accountServiceForWebApp.GetAllUserByRole(Roles.Admin.ToString());
+
+            var clientIds = clientDTOsList.Select(x => x.Id).ToList();
+            var adminIds = adminDTOsList.Select(x => x.Id).ToList();
+
+            var savingsAccountsList = await _repository.GetAll();
+
+            var clientAccounts = savingsAccountsList
+                .Where(sa =>
+                    (clientIds.Contains(sa.ClientId) || adminIds.Contains(sa.CreatedByAdminId ?? "")) &&
+                    sa.AccountType == AccountType.Primary &&
+                    sa.AccountNumber == beneficiaryAccountNumber)
+                .ToList();
+
+            var targetAccount = clientAccounts.FirstOrDefault();
+            if (targetAccount == null)
+                return null;
+
+            var dto = _mapper.Map<SavingsAccountDTO>(targetAccount);
+
+            var user = clientDTOsList.FirstOrDefault(u => u.Id == dto.ClientId);
+            var admin = adminDTOsList.FirstOrDefault(u => u.Id == dto.CreatedByAdminId);
+
+            if (user != null)
+            {
+                dto.ClientFullName = $"{user.Name} {user.LastName}";
+                dto.ClientUserId = user.UserId;
+                dto.AdminFullName = admin != null ? $"{admin.Name} {admin.LastName}" : null;
+            }
+
+            return dto;
+        }
+
     }
 }

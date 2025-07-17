@@ -2,7 +2,6 @@
 using HermesBanking.Core.Application.DTOs.CreditCard;
 using HermesBanking.Core.Application.DTOs.Email;
 using HermesBanking.Core.Application.Interfaces;
-using HermesBanking.Core.Application.Services;
 using HermesBanking.Core.Application.ViewModels.CreditCard;
 using HermesBanking.Core.Application.ViewModels.User;
 using HermesBanking.Core.Domain.Common.Enums;
