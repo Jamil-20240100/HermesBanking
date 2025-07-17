@@ -11,6 +11,12 @@
 <h2 class="mb-4">Gestión de Tarjetas de Crédito</h2>
 
 <div class="row mb-4 g-3 align-items-end">
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["ErrorMessage"]
+        </div>
+    }
     <div class="col-md-4">
         <label for="cedulaSearch" class="form-label">Buscar por cédula</label>
         <input id="cedulaSearch" class="form-control" placeholder="Ej: 00112345678" />

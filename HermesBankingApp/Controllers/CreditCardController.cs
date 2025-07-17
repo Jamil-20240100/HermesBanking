@@ -89,9 +89,6 @@ namespace HermesBankingApp.Controllers
             return View(vms);
         }
 
-
-
-
         [HttpPost]
         public async Task<IActionResult> SelectClient(string? clientId, string? cedula)
         {
@@ -284,14 +281,16 @@ namespace HermesBankingApp.Controllers
                 var card = await _service.GetById(id);
                 if (card == null)
                 {
-                    ViewData["ErrorMessage"] = "Tarjeta no encontrada.";
+                    TempData["ErrorMessage"] = "Tarjeta no encontrada.";
                     return RedirectToRoute(new { controller = "CreditCard", action = "Index" });
                 }
+
                 if (card.TotalOwedAmount > 0)
                 {
-                    ViewData["ErrorMessage"] = "Para cancelar esta tarjeta, el cliente debe saldar la totalidad de la deuda pendiente.";
+                    TempData["ErrorMessage"] = "Para cancelar esta tarjeta, el cliente debe saldar la totalidad de la deuda pendiente.";
                     return RedirectToRoute(new { controller = "CreditCard", action = "Index" });
                 }
+
                 //desactivate card
                 card.IsActive = false;
 
