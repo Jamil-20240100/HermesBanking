@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using HermesBanking.Core.Application.DTOs.Loan;
+using HermesBanking.Core.Application.DTOs.SavingsAccount;
 using HermesBanking.Core.Application.Interfaces;
+using HermesBanking.Core.Domain.Common.Enums;
 using HermesBanking.Core.Domain.Entities;
 using HermesBanking.Core.Domain.Interfaces;
 
@@ -8,24 +10,26 @@ namespace HermesBanking.Core.Application.Services
 {
     public class LoanService : ILoanService
     {
-        private readonly IGenericRepository<Loan> _loanRepository;
-        private readonly IGenericRepository<AmortizationInstallment> _installmentRepository;
+        private readonly ILoanRepository _loanRepository;
+        private readonly IAmortizationInstallmentRepository _installmentRepository;
         private readonly IAccountServiceForWebApp _accountServiceForWebApp;
         private readonly IEmailService _emailService;
         private readonly IMapper _mapper;
+        private readonly ISavingsAccountRepository _savingsAccountRepository;
 
         public LoanService(
-            IGenericRepository<Loan> loanRepository,
-            IGenericRepository<AmortizationInstallment> installmentRepository,
+            ILoanRepository loanRepository,
+            IAmortizationInstallmentRepository installmentRepository,
             IAccountServiceForWebApp accountServiceForWebApp,
             IEmailService emailService,
-            IMapper mapper)
+            IMapper mapper, ISavingsAccountRepository savingsAccountRepository)
         {
             _loanRepository = loanRepository;
             _installmentRepository = installmentRepository;
             _accountServiceForWebApp = accountServiceForWebApp;
             _emailService = emailService;
             _mapper = mapper;
+            _savingsAccountRepository = savingsAccountRepository;
         }
 
         public async Task<List<LoanDTO>> GetAllLoansAsync(string? cedula, string? status)
@@ -102,7 +106,22 @@ namespace HermesBanking.Core.Application.Services
 
             await _accountServiceForWebApp.UpdateSavingsAccountBalance(loan.ClientId, loan.Amount);
 
-          
+            //
+            //assign loan to savings account
+            //
+
+            var accounts = await _savingsAccountRepository
+                .GetByConditionAsync(sa => sa.ClientId == loan.ClientId && sa.AccountType == AccountType.Primary);
+
+            var account = accounts.FirstOrDefault();
+
+            if (account == null)
+                throw new InvalidOperationException("No se encontró una cuenta de ahorro principal para este cliente.");
+
+            account.Balance += loan.Amount;
+
+            await _savingsAccountRepository.UpdateAsync(account);
+
             if (client.Email != null)
             {
                 await _emailService.SendLoanApprovedEmail(
@@ -292,6 +311,22 @@ namespace HermesBanking.Core.Application.Services
                 });
             }
             return installments;
+        }
+
+        public async Task<decimal> GetCurrentDebtForClient(string clientId)
+        {
+            var loans = await _loanRepository.GetByConditionAsync(l => l.ClientId == clientId && l.IsActive);
+            decimal totalDeuda = 0;
+
+            foreach (var loan in loans)
+            {
+                var cuotasPendientes = await _installmentRepository
+                    .GetByConditionAsync(c => c.LoanId == loan.Id && !c.IsPaid);
+
+                totalDeuda += cuotasPendientes.Sum(c => c.InstallmentValue);
+            }
+
+            return totalDeuda;
         }
     }
 }

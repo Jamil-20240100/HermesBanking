@@ -15,5 +15,6 @@ namespace HermesBanking.Core.Application.Interfaces
             decimal loanAmount, decimal annualInterestRate, int loanTermMonths, DateTime startDate);
         Task CheckOverdueInstallmentsAsync();
         Task<decimal> CalculateLoanTotalInterestAmount(decimal loanAmount, decimal annualInterestRate, int loanTermMonths);
+        Task<decimal> GetCurrentDebtForClient(string clientId);
     }
 }

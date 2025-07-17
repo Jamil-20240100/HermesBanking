@@ -2,13 +2,13 @@
 @{
     ViewData["Title"] = "Seleccionar Cliente";
     var cedulaBuscada = Context.Request.Query["cedula"].ToString();
-    var deudaPromedio = ViewBag.DeudaPromedio as decimal? ?? 0;
+    decimal deudaPromedio = ViewBag.DeudaPromedio ?? 0m;
 }
 
 <h2 class="mb-3">Asignar Tarjeta de Crédito</h2>
 
 <div class="alert alert-info">
-    <strong>Deuda promedio de todos los clientes:</strong> @deudaPromedio.ToString("C")
+    <strong>Deuda promedio de todos los clientes:</strong> @deudaPromedio.ToString("C", new System.Globalization.CultureInfo("es-DO"))
 </div>
 
 <form method="get" asp-action="SelectClient" class="mb-3">
@@ -39,7 +39,7 @@
                         <td>@client.UserId</td>
                         <td>@client.Name @client.LastName</td>
                         <td>@client.Email</td>
-                        <td>@(client.InitialAmount?.ToString("C") ?? "$0.00")</td>
+                        <td>@client.TotalDebt.ToString("C", new System.Globalization.CultureInfo("es-DO"))</td>
                     </tr>
                 }
             }

@@ -2,6 +2,7 @@
 using HermesBanking.Core.Application.DTOs.CreditCard;
 using HermesBanking.Core.Application.DTOs.Email;
 using HermesBanking.Core.Application.Interfaces;
+using HermesBanking.Core.Application.Services;
 using HermesBanking.Core.Application.ViewModels.CreditCard;
 using HermesBanking.Core.Application.ViewModels.User;
 using HermesBanking.Core.Domain.Common.Enums;
@@ -20,13 +21,15 @@ namespace HermesBankingApp.Controllers
         private readonly ICreditCardService _service;
         private readonly IMapper _mapper;
         private readonly IEmailService _emailService;
-        public CreditCardController(ICreditCardService service, IMapper mapper, UserManager<AppUser> userManager, IAccountServiceForWebApp accountServiceForWebApp, IEmailService emailService)
+        private readonly ILoanService _loanService;
+        public CreditCardController(ICreditCardService service, IMapper mapper, UserManager<AppUser> userManager, IAccountServiceForWebApp accountServiceForWebApp, IEmailService emailService, ILoanService loanService)
         {
             _service = service;
             _mapper = mapper;
             _userManager = userManager;
             _accountServiceForWebApp = accountServiceForWebApp;
             _emailService = emailService;
+            _loanService = loanService;
         }
 
         public async Task<IActionResult> Index()
@@ -72,8 +75,13 @@ namespace HermesBankingApp.Controllers
             if (!string.IsNullOrWhiteSpace(cedula))
                 clients = clients.Where(c => c.UserId.Contains(cedula)).ToList();
 
+            foreach (var client in clients)
+            {
+                client.TotalDebt = await _loanService.GetCurrentDebtForClient(client.Id);
+            }
+
             decimal deudaPromedio = clients.Any()
-                ? clients.Average(c => c.InitialAmount ?? 0)
+                ? clients.Average(c => c.TotalDebt)
                 : 0;
 
             ViewBag.DeudaPromedio = deudaPromedio;
@@ -81,6 +89,9 @@ namespace HermesBankingApp.Controllers
             var vms = _mapper.Map<List<UserViewModel>>(clients);
             return View(vms);
         }
+
+
+
 
         [HttpPost]
         public async Task<IActionResult> SelectClient(string? clientId, string? cedula)

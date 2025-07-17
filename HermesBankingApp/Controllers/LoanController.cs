@@ -1,6 +1,4 @@
-﻿// src/HermesBankingApp/Controllers/LoanController.cs
-
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Application.DTOs.Loan;
 using HermesBanking.Core.Application.ViewModels.Loan;
@@ -40,7 +38,7 @@ namespace HermesBankingApp.Controllers
             {
                 ViewBag.SuccessMessage = TempData["SuccessMessage"];
             }
-            if (TempData["ErrorMessage"] != null) // Asegúrate de leer este TempData también en Index
+            if (TempData["ErrorMessage"] != null)
             {
                 ViewBag.ErrorMessage = TempData["ErrorMessage"];
             }
@@ -118,16 +116,12 @@ namespace HermesBankingApp.Controllers
                 var loanDTO = _mapper.Map<CreateLoanDTO>(loanModel);
                 await _loanService.AddLoanAsync(loanDTO, loanDTO.AssignedByAdminId, loanDTO.AdminFullName);
                 TempData["SuccessMessage"] = "Préstamo asignado exitosamente.";
-                // ⚠️ CAMBIO AQUÍ: Redirige al Index en caso de éxito
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                // ⚠️ CAMBIO AQUÍ: Usa TempData para mensajes de error que persistan en la redirección
                 TempData["ErrorMessage"] = $"Error al asignar el préstamo: {ex.Message}";
 
-                // No necesitas recargar los clientes aquí si vas a redirigir al Index.
-                // Los datos de ModelState.AddModelError no persistirán después del RedirectToRoute.
                 return RedirectToRoute(new { controller = "Loan", action = "Index" });
             }
         }
