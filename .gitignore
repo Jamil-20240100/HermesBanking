@@ -362,3 +362,6 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /HermesBankingApp/appsettings.json
+/HermesBankingApp/appsettings.json
+/HermesBankingAPI/appsettings.json
+/HermesBankingApp/appsettings.Development.json
