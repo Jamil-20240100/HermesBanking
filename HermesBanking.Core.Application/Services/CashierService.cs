@@ -1,11 +1,24 @@
-﻿using HermesBanking.Core.Application.Interfaces;
+﻿using AutoMapper;
+using HermesBanking.Core.Application.DTOs.CreditCard;
+using HermesBanking.Core.Application.DTOs.Email;
+using HermesBanking.Core.Application.DTOs.Loan;
+using HermesBanking.Core.Application.DTOs.Transaction;
+using HermesBanking.Core.Application.Interfaces;
+using HermesBanking.Core.Application.ViewModels.Cashier;
+using HermesBanking.Core.Domain.Common.Enums;
+using HermesBanking.Core.Domain.Entities;
 using HermesBanking.Core.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
 
 namespace HermesBanking.Core.Application.Services
 {
 
-    public class CashierService // ICashierService
+    public class CashierService : ICashierService
     {
+        private readonly ILoanService _loanService;
+        private readonly IMapper _mapper;
         private readonly ISavingsAccountRepository _accountRepo;
         private readonly ITransactionService _transactionService;
         private readonly IAccountServiceForWebApp _userService;
@@ -13,26 +26,33 @@ namespace HermesBanking.Core.Application.Services
         private readonly ICreditCardRepository _creditCardRepo;
         private readonly ILoanRepository _loanRepo;
         private readonly IAmortizationInstallmentRepository _installmentRepo;
+        private readonly ILogger<CashierService> _logger;
 
 
         public CashierService(
             ISavingsAccountRepository accountRepo,
+            ILoanService loanService,
+            IMapper mapper,
             ITransactionService transactionService,
             IAccountServiceForWebApp userService,
             IEmailService emailService,
             ICreditCardRepository creditCardRepo,
             ILoanRepository loanRepo,
-            IAmortizationInstallmentRepository installmentRepo)
+            IAmortizationInstallmentRepository installmentRepo,
+            ILogger<CashierService> logger)
         {
             _accountRepo = accountRepo;
+            _loanService = loanService;
+            _mapper = mapper;
             _transactionService = transactionService;
             _userService = userService;
             _emailService = emailService;
             _creditCardRepo = creditCardRepo;
             _loanRepo = loanRepo;
             _installmentRepo = installmentRepo;
+            _logger = logger;
         }
-        /*
+        
 
         public async Task<bool> MakeDepositAsync(string accountNumber, decimal amount, string cashierId)
         {
@@ -182,23 +202,27 @@ namespace HermesBanking.Core.Application.Services
             await _accountRepo.UpdateAsync(sourceAccount.Id, sourceAccount);
             await _accountRepo.UpdateAsync(destAccount.Id, destAccount);
 
-            await _transactionService.RegisterTransactionAsync(
-                savingsAccountId: sourceAccount.Id,
-                type: "DÉBITO",
-                amount: amount,
-                origin: sourceAccount.AccountNumber,
-                beneficiary: destAccount.AccountNumber,
-                cashierId: cashierId
-            );
+            await _transactionService.RegisterTransactionAsync(new Transaction
+            {
+                SavingsAccountId = sourceAccount.Id,
+                Type = "DÉBITO",
+                Amount = amount,
+                Origin = sourceAccount.AccountNumber,
+                Beneficiary = destAccount.AccountNumber,
+                PerformedByCashierId = cashierId,
+                Date = DateTime.Now
+            });
+
 
             await _transactionService.RegisterTransactionAsync(
-                savingsAccountId: destAccount.Id,
-                type: "CRÉDITO",
-                amount: amount,
-                origin: sourceAccount.AccountNumber,
-                beneficiary: destAccount.AccountNumber,
-                cashierId: cashierId
+                destAccount.Id,
+                "CRÉDITO",
+                amount,
+                sourceAccount.AccountNumber,
+                destAccount.AccountNumber,
+                cashierId
             );
+
 
 
             // Correos electrónicos
@@ -236,76 +260,95 @@ namespace HermesBanking.Core.Application.Services
 
             var allToday = await _transactionService.GetTransactionsByCashierAndDateAsync(cashierId, today);
 
-
             var dashboard = new CashierDashboardViewModel
             {
                 TotalTransactions = allToday.Count,
                 TotalDeposits = allToday.Count(t => t.Origin == "DEPÓSITO"),
                 TotalWithdrawals = allToday.Count(t => t.Beneficiary == "RETIRO"),
+
+                // CORRECCIÓN: Pago debe contar bien según el campo Type, Origin o Beneficiary, aquí te pongo Type
                 TotalPayments = allToday.Count(t =>
-                    t.Origin.StartsWith("TC") || t.Origin.StartsWith("PRÉSTAMO")),
+                    !string.IsNullOrEmpty(t.Type) &&
+                    (t.Type.StartsWith("TC") || t.Type.StartsWith("PRÉSTAMO") || t.Type.StartsWith("PAGO"))),
+
                 Accounts = allAccounts
             };
 
             return dashboard;
         }
 
+
+
         public async Task<bool> MakeCreditCardPaymentAsync(string accountNumber, string cardNumber, decimal amount, string cashierId)
         {
-            var cuenta = _accountRepo.GetAllQuery()
-                .FirstOrDefault(a => a.AccountNumber == accountNumber && a.IsActive);
+            // Obtener cuenta activada
+            var cuenta = await _accountRepo.GetAllQuery()
+                .FirstOrDefaultAsync(a => a.AccountNumber == accountNumber && a.IsActive);
 
-            var tarjeta = _creditCardRepo.GetAllQuery()
-                .FirstOrDefault(t => t.CardId == cardNumber && t.IsActive);
+            // Obtener tarjeta activada
+            var tarjeta = await _creditCardRepo.GetAllQuery()
+                .FirstOrDefaultAsync(t => t.CardId == cardNumber && t.IsActive);
 
+            // Validar existencia de cuenta y tarjeta y que el balance sea suficiente
             if (cuenta == null || tarjeta == null || cuenta.Balance < amount)
                 return false;
 
-            var user = await _userService.GetUserById(tarjeta.ClientId);
-            if (user == null || string.IsNullOrEmpty(user.Email)) return false;
+            // Verificar la deuda pendiente y pagar hasta el monto disponible
+            decimal pagoReal = Math.Min(amount, tarjeta.TotalOwedAmount);  // Paga hasta la deuda pendiente
 
-            decimal pagoReal = Math.Min(amount, tarjeta.CreditLimit);
-
-            // Debitar cuenta
+            // Debitar la cuenta del cajero
             cuenta.Balance -= pagoReal;
             await _accountRepo.UpdateAsync(cuenta.Id, cuenta);
 
-            // Reducir deuda tarjeta
-            tarjeta.CreditLimit -= pagoReal;
+            // Reducir la deuda de la tarjeta
+            tarjeta.TotalOwedAmount -= pagoReal;
             await _creditCardRepo.UpdateAsync(tarjeta.Id, tarjeta);
 
-            // Registrar transacción
-            await _transactionService.RegisterTransactionAsync(
-                savingsAccountId: cuenta.Id,
-                type: "DÉBITO",
-                amount: pagoReal,
-                origin: cuenta.AccountNumber,
-                beneficiary: tarjeta.CardId,
-                cashierId: cashierId
-            );
+            // Registrar transacción de débito en la cuenta
+            await _transactionService.RegisterTransactionAsync(new Transaction
+            {
+                SavingsAccountId = cuenta.Id,
+                Type = "PAGO TARJETA DE CRÉDITO", // Tipo de transacción
+                Amount = pagoReal,
+                Origin = cuenta.AccountNumber,
+                Beneficiary = tarjeta.CardId,
+                PerformedByCashierId = cashierId,
+                Date = DateTime.Now
+            });
 
-            // Email
-            string last4Tarjeta = tarjeta.CardId[^4..];
-            string last4Cuenta = cuenta.AccountNumber[^4..];
+            // Enviar correo al cliente
+            string last4Tarjeta = tarjeta.CardId[^4..];  // Últimos 4 dígitos de la tarjeta
+            string last4Cuenta = cuenta.AccountNumber[^4..]; // Últimos 4 dígitos de la cuenta
             string subject = $"Pago realizado a la tarjeta {last4Tarjeta}";
 
             string html = $@"
-        <h3>Pago exitoso</h3>
-        <p>Has pagado RD$ {pagoReal:N2} desde tu cuenta {cuenta.AccountNumber} a tu tarjeta {tarjeta.CardId}.</p>
-        <ul>
-            <li><strong>Fecha:</strong> {DateTime.Now:dd/MM/yyyy}</li>
-            <li><strong>Hora:</strong> {DateTime.Now:hh:mm tt}</li>
-        </ul>";
+<h3>Pago exitoso</h3>
+<p>Has pagado RD$ {pagoReal:N2} desde tu cuenta {cuenta.AccountNumber} a tu tarjeta {tarjeta.CardId}.</p>
+<ul>
+    <li><strong>Fecha:</strong> {DateTime.Now:dd/MM/yyyy}</li>
+    <li><strong>Hora:</strong> {DateTime.Now:hh:mm tt}</li>
+</ul>";
 
-            await _emailService.SendAsync(new EmailRequestDto
+            var email = new EmailRequestDto
             {
-                To = user.Email,
+                To = await _userService.GetUserEmailAsync(tarjeta.ClientId), // Asegúrate de que el servicio devuelva el correo del cliente
                 Subject = subject,
                 HtmlBody = html
-            });
+            };
+
+            await _emailService.SendAsync(email);
 
             return true;
         }
+
+
+
+        public async Task<string> GetUserEmailByClientIdAsync(string clientId)
+        {
+            var user = await _userService.GetUserById(clientId);
+            return user?.Email ?? string.Empty;
+        }
+
 
         public async Task<(SavingsAccount? account, string? clientFullName)> GetAccountWithClientNameAsync(string accountNumber)
         {
@@ -324,115 +367,71 @@ namespace HermesBanking.Core.Application.Services
             return (account, fullName);
         }
 
-        public async Task<bool> MakeLoanPaymentAsync(string accountNumber, string loanNumber, decimal amount, string cashierId)
+        public async Task<bool> MakeLoanPaymentAsync(string loanIdentifier, string cashierId)
         {
-            var cuenta = _accountRepo.GetAllQuery()
-                .FirstOrDefault(a => a.AccountNumber == accountNumber && a.IsActive);
+            var loans = await _loanService.GetAllLoansAsync(null, "active");
+            var loan = loans.FirstOrDefault(l => l.LoanIdentifier == loanIdentifier);
 
-            var prestamo = _loanRepo.GetAllQueryWithInclude(["Installments"])
-                .FirstOrDefault(p => p.LoanNumber == loanNumber && !p.IsCompleted);
-
-            if (cuenta == null || prestamo == null || cuenta.Balance < amount)
+            if (loan == null || !loan.IsActive)
                 return false;
 
-            var cliente = await _userService.GetUserById(prestamo.ClientId);
-            if (cliente == null || string.IsNullOrEmpty(cliente.Email)) return false;
+            var amortizationSchedule = await _loanService.GetAmortizationTableByLoanIdAsync(loan.Id);
+            var nextInstallment = amortizationSchedule
+                .Where(i => !i.IsPaid)
+                .OrderBy(i => i.InstallmentNumber)
+                .FirstOrDefault();
 
-            decimal restante = amount;
-
-            // Ordenar cuotas pendientes
-            var cuotas = prestamo.Installments
-                .Where(c => !c.IsPaid)
-                .OrderBy(c => c.DueDate)
-                .ToList();
-
-            foreach (var cuota in cuotas)
-            {
-                decimal faltante = cuota.Amount - cuota.AmountPaid;
-                if (restante <= 0) break;
-
-                if (restante >= faltante)
-                {
-                    cuota.AmountPaid += faltante;
-                    restante -= faltante;
-                }
-                else
-                {
-                    cuota.AmountPaid += restante;
-                    restante = 0;
-                }
-
-                await _installmentRepo.UpdateAsync(cuota.Id, cuota);
-            }
-
-            // Actualizar saldo de cuenta y préstamo
-            decimal pagado = amount - restante;
-            cuenta.Balance -= pagado;
-            await _accountRepo.UpdateAsync(cuenta.Id, cuenta);
-
-            prestamo.RemainingAmount -= pagado;
-            prestamo.IsCompleted = prestamo.RemainingAmount <= 0;
-            await _loanRepo.UpdateAsync(prestamo.Id, prestamo);
-
-            // Si sobró dinero, devolverlo a cuenta
-            if (restante > 0)
-            {
-                cuenta.Balance += restante;
-                await _accountRepo.UpdateAsync(cuenta.Id, cuenta);
-            }
+            if (nextInstallment == null)
+                return false;
 
             // Registrar transacción
-            await _transactionService.RegisterTransactionAsync(
-                savingsAccountId: cuenta.Id,
-                type: "DÉBITO",
-                amount: pagado,
-                origin: cuenta.AccountNumber,
-                beneficiary: loanNumber,
-                cashierId: cashierId
-            );
-
-            // Email
-            string last4Cuenta = cuenta.AccountNumber[^4..];
-            string subject = $"Pago realizado al préstamo {loanNumber}";
-
-            string htmlBody = $@"
-        <h3>Pago aplicado</h3>
-        <p>Has realizado un pago al préstamo <strong>{loanNumber}</strong>.</p>
-        <ul>
-            <li><strong>Monto:</strong> RD$ {pagado:N2}</li>
-            <li><strong>Cuenta usada:</strong> {cuenta.AccountNumber}</li>
-            <li><strong>Fecha:</strong> {DateTime.Now:dd/MM/yyyy}</li>
-            <li><strong>Hora:</strong> {DateTime.Now:hh:mm tt}</li>
-        </ul>";
-
-            await _emailService.SendAsync(new EmailRequestDto
+            await _transactionService.RegisterTransactionAsync(new()
             {
-                To = cliente.Email,
-                Subject = subject,
-                HtmlBody = htmlBody
+                Amount = nextInstallment.InstallmentValue,
+                Date = DateTime.Now,
+                Description = $"Pago cuota préstamo #{loan.LoanIdentifier}",
+                CashierId = cashierId,
+                ClientId = loan.ClientId,
+                TransactionType = Domain.Common.Enums.TransactionType.LoanPayment
             });
+
+            // Actualizar cuota como pagada (suponiendo que LoanService no tiene un método para esto aún)
+            nextInstallment.IsPaid = true;
+            nextInstallment.PaidDate = DateTime.Now;
+
+            // Se debe tener un método en el repositorio de cuotas para hacer esto:
+            await _installmentRepo.UpdateAsync(_mapper.Map<AmortizationInstallment>(nextInstallment));
+
+            // Verificar si ya pagó todas las cuotas
+            if (loan.PaidInstallments + 1 >= loan.TotalInstallments)
+            {
+                var loanEntity = _mapper.Map<Loan>(loan);
+                loanEntity.IsActive = false;
+                loanEntity.CompletedAt = DateTime.Now;
+                await _loanRepo.UpdateAsync(loanEntity);
+            }
 
             return true;
         }
 
-        public async Task<(Loan? loan, string clientFullName, decimal remainingDebt)> GetLoanInfoAsync(string loanNumber)
+
+        public async Task<(LoanDTO? loan, string clientFullName, decimal remainingDebt)> GetLoanInfoAsync(string loanIdentifier)
         {
-            var prestamo = _loanRepo.GetAllQuery().FirstOrDefault(p => p.LoanNumber == loanNumber && !p.IsCompleted);
+            var loans = await _loanService.GetAllLoansAsync(null, "active");
+            var loan = loans.FirstOrDefault(l => l.LoanIdentifier == loanIdentifier);
 
-            if (prestamo == null)
-                return (null, "", 0);
+            if (loan == null)
+                return (null, string.Empty, 0m);
 
-            var cliente = await _userService.GetUserById(prestamo.ClientId);
-            string nombreCompleto = cliente != null ? $"{cliente.Name} {cliente.LastName}" : "";
-
-            return (prestamo, nombreCompleto, prestamo.RemainingAmount);
+            return (loan, loan.ClientFullName, loan.PendingAmount);
         }
+
 
         public List<SavingsAccount> GetAllActiveAccounts()
         {
             return _accountRepo.GetAllQuery().Where(a => a.IsActive).ToList();
         }
 
-        */
+        
     }
 }

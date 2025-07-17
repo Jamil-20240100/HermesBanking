@@ -1,20 +1,32 @@
 ﻿@model HermesBanking.Core.Application.ViewModels.Cashier.ConfirmPagoPrestamoViewModel
 
 @{
-    Layout = "_LayoutCashier"; // Si tienes uno para cajero. Si no, usa "_LayoutClient" o "_Layout"
+    Layout = "_LayoutCashier";
     ViewData["Title"] = "Confirmar pago a prestamo";
+}
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+    </div>
+}
+
+@if (TempData["Debug"] != null)
+{
+    <div class="alert alert-info">@TempData["Debug"]</div>
 }
 
 <h3>Confirmar pago a préstamo</h3>
 
 <p><strong>Cliente:</strong> @Model.ClientFullName</p>
-<p><strong>Préstamo:</strong> @Model.LoanNumber</p>
+<p><strong>Préstamo:</strong> @Model.LoanIdentifier</p>
 <p><strong>Deuda actual:</strong> RD$ @Model.DeudaActual:N2</p>
 <p><strong>Monto a pagar:</strong> RD$ @Model.Amount:N2</p>
 
 <form asp-action="ExecuteLoanPayment" method="post">
     <input type="hidden" name="accountNumber" value="@Model.AccountNumber" />
-    <input type="hidden" name="loanNumber" value="@Model.LoanNumber" />
+    <input type="hidden" name="loanIdentifier" value="@Model.LoanIdentifier" />
     <input type="hidden" name="amount" value="@Model.Amount" />
     <button type="submit" class="btn btn-success">Confirmar</button>
     <a asp-controller="Cashier" asp-action="LoanPayment" class="btn btn-secondary">Cancelar</a>

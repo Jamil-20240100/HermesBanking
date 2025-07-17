@@ -9,7 +9,7 @@ namespace HermesBanking.Infrastructure.Persistence.EntityConfigurations
         public void Configure(EntityTypeBuilder<SavingsAccount> builder)
         {
             #region basic configuration
-            builder.ToTable("SavingsAccounts");
+            builder.ToTable("SavingsAccount");
             builder.HasKey(sa => sa.Id);
             #endregion
 

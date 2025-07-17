@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HermesBanking.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(HermesBankingContext))]
-    [Migration("20250715222215_InitialMigration")]
-    partial class InitialMigration
+    [Migration("20250717205518_UpdateTransactionTypeLength")]
+    partial class UpdateTransactionTypeLength
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -164,7 +164,7 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                         .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<decimal>("InterestRate")
-                        .HasColumnType("decimal(5, 4)");
+                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -238,7 +238,7 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SavingsAccounts", (string)null);
+                    b.ToTable("SavingsAccount", (string)null);
                 });
 
             modelBuilder.Entity("HermesBanking.Core.Domain.Entities.Transaction", b =>
@@ -256,8 +256,17 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("CashierId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClientId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Origin")
                         .IsRequired()
@@ -266,13 +275,16 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                     b.Property<string>("PerformedByCashierId")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("SavingsAccountId")
+                    b.Property<int?>("SavingsAccountId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TransactionType")
                         .HasColumnType("int");
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
@@ -296,9 +308,7 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("HermesBanking.Core.Domain.Entities.SavingsAccount", "SavingsAccount")
                         .WithMany()
-                        .HasForeignKey("SavingsAccountId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("SavingsAccountId");
 
                     b.Navigation("SavingsAccount");
                 });

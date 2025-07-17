@@ -19,6 +19,6 @@ namespace HermesBanking.Core.Application.ViewModels.Cashier
         [StringLength(9, MinimumLength = 9, ErrorMessage = "Debe contener 9 dígitos")]
         public string LoanNumber { get; set; } = null!;
 
-        public List<SelectListItem>? SavingsAccounts { get; set; } = new();
+        public List<SelectListItem>? SavingsAccount { get; set; } = new();
     }
 }

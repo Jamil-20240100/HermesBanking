@@ -14,6 +14,6 @@ namespace HermesBanking.Core.Application.ViewModels.Cashier
         [Display(Name = "Monto")]
         public decimal Amount { get; set; }
 
-        public List<SelectListItem>? SavingsAccounts { get; set; } = new();
+        public List<SelectListItem>? SavingsAccount { get; set; } = new();
     }
 }

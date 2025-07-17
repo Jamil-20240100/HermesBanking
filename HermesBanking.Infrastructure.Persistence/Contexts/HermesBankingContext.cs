@@ -27,6 +27,10 @@ namespace HermesBanking.Infrastructure.Persistence.Contexts
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+            modelBuilder.Entity<Transaction>()
+            .Property(t => t.Type)
+            .HasMaxLength(100);  // Aumenta el tamaño según tus necesidades, en este caso a 100 caracteres
         }
     }
 }

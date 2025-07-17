@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HermesBanking.Core.Application.DTOs.Loan;
+using System;
 using System.Collections.Generic;
 
 namespace HermesBanking.Core.Application.ViewModels.Loan
@@ -25,5 +26,8 @@ namespace HermesBanking.Core.Application.ViewModels.Loan
 
         // Colección para la tabla de amortización
         public ICollection<AmortizationInstallmentViewModel> AmortizationSchedule { get; set; } = new List<AmortizationInstallmentViewModel>();
+
+        public LoanDTO Loan { get; set; }          
+        public decimal RemainingDebt { get; set; } 
     }
 }

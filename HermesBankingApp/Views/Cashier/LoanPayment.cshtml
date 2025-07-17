@@ -1,7 +1,7 @@
 ﻿@model HermesBanking.Core.Application.ViewModels.Cashier.PagoPrestamoViewModel
 
 @{
-    Layout = "_LayoutCashier"; // Si tienes uno para cajero. Si no, usa "_LayoutClient" o "_Layout"
+    Layout = "_LayoutCashier";
     ViewData["Title"] = "Prestamo";
 }
 
@@ -12,7 +12,6 @@
         <label asp-for="AccountNumber"></label>
         <input asp-for="AccountNumber" class="form-control" />
         <span asp-validation-for="AccountNumber" class="text-danger"></span>
-        <span asp-validation-for="AccountNumber" class="text-danger"></span>
     </div>
 
     <div class="form-group">
@@ -20,10 +19,12 @@
         <input asp-for="LoanNumber" class="form-control" />
         <span asp-validation-for="LoanNumber" class="text-danger"></span>
     </div>
+
     <div class="form-group">
         <label asp-for="Amount"></label>
         <input asp-for="Amount" class="form-control" />
         <span asp-validation-for="Amount" class="text-danger"></span>
     </div>
+
     <button type="submit" class="btn btn-primary">Continuar</button>
 </form>

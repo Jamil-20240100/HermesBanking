@@ -3,6 +3,7 @@
     public class ConfirmPagoPrestamoViewModel
     {
         public string AccountNumber { get; set; } = null!;
+        public string LoanIdentifier { get; set; }
         public string LoanNumber { get; set; } = null!;
         public string ClientFullName { get; set; } = null!;
         public decimal Amount { get; set; }

@@ -12,6 +12,6 @@ namespace HermesBanking.Core.Application.ViewModels.Cashier
         [Range(1, double.MaxValue, ErrorMessage = "El monto debe ser mayor que cero.")]
         public decimal Amount { get; set; }
 
-        public List<SelectListItem>? SavingsAccounts { get; set; } = new();
+        public List<SelectListItem>? SavingsAccount { get; set; } = new();
     }
 }

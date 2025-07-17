@@ -13,5 +13,7 @@ namespace HermesBanking.Core.Application.Interfaces
         Task<List<ClientSelectionViewModel>> GetClientDetailsForLoanAssignment(string? cedula);
         Task UpdateSavingsAccountBalance(string clientId, decimal amount);
         Task<UserDto?> GetUserByIdentificationNumber(string identificationNumber);
+        Task<string> GetUserEmailByClientIdAsync(string clientId);
+
     }
 }

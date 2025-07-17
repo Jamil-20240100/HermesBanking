@@ -188,5 +188,12 @@ namespace HermesBanking.Infrastructure.Identity.Services
             Console.WriteLine($"Simulando actualización de balance para cliente {client.UserName}: Se añadieron {amount:C}");
             await Task.CompletedTask;
         }
+
+        public async Task<string> GetUserEmailByClientIdAsync(string clientId)
+        {
+            var user = await _userManager.FindByIdAsync(clientId); // Asumiendo que usas UserManager para acceder a los datos del usuario
+            return user?.Email ?? string.Empty; // Devuelve el email o una cadena vacía si no se encuentra
+        }
+
     }
 }

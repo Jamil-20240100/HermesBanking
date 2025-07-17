@@ -18,7 +18,7 @@ namespace HermesBanking.Core.Application
             #region Services IOC
             services.AddScoped<ISavingsAccountService, SavingsAccountService>();
             services.AddScoped<ICreditCardService, CreditCardService>();
-           // services.AddScoped<ICashierService, CashierService>();
+            services.AddScoped<ICashierService, CashierService>();
             services.AddScoped<ITransactionService, TransactionService>();
             services.AddScoped<ILoanService, LoanService>();
             #endregion
