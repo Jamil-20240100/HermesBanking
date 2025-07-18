@@ -1,5 +1,4 @@
-﻿using AutoMapper; 
-using HermesBanking.Core.Application.DTOs.User;
+﻿using HermesBanking.Core.Application.DTOs.User;
 using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Application.ViewModels.Loan;
 using HermesBanking.Infrastructure.Identity.Entities;
@@ -12,17 +11,14 @@ namespace HermesBanking.Infrastructure.Identity.Services
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly SignInManager<AppUser> _signInManager;
-        private readonly IMapper _mapper; 
         public AccountServiceForWebApp(
             UserManager<AppUser> userManager,
             SignInManager<AppUser> signInManager,
-            IEmailService emailService,
-            IMapper mapper)
+            IEmailService emailService)
             : base(userManager, emailService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
-            _mapper = mapper;
         }
 
         public async Task<LoginResponseDto> AuthenticateAsync(LoginDto loginDto)

@@ -1,34 +1,58 @@
+using HermesAPI.Extensions;
+using HermesBanking.Infrastructure.Identity;
+using HermesBanking.Core.Application;
+using HermesBanking.Infrastructure.Persistence;
+using HermesBanking.Infrastructure.Shared;
+using System.Text.Json.Serialization;
 
-namespace HermesAPI
-{
-    public class Program
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+
+builder.Services.AddControllers()
+    .AddJsonOptions(opt =>
     {
-        public static void Main(string[] args)
-        {
-            var builder = WebApplication.CreateBuilder(args);
+        opt.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
+// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 
-            // Add services to the container.
+//
+// LAYERS
+//
 
-            builder.Services.AddControllers();
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
+builder.Services.AddPersistenceLayerIoc(builder.Configuration);
+builder.Services.AddApplicationLayerIoc();
+builder.Services.AddSharedLayerIoc(builder.Configuration);
+builder.Services.AddIdentityLayerIocForWebApi(builder.Configuration);
 
-            var app = builder.Build();
+//
+// CONFIGURATIONS
+//
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.MapOpenApi();
-            }
+builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHealthChecks();
+builder.Services.AddAppiVersioningExtension();
+builder.Services.AddSwaggerExtension();
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession();
 
-            app.UseHttpsRedirection();
+var app = builder.Build();
+await app.Services.RunIdentitySeedAsync();
 
-            app.UseAuthorization();
-
-
-            app.MapControllers();
-
-            app.Run();
-        }
-    }
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwaggerExtension(app);
+    app.MapOpenApi();
 }
+
+app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseHealthChecks("/health");
+
+app.MapControllers();
+
+await app.RunAsync();

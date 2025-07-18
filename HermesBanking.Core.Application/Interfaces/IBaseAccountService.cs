@@ -16,5 +16,8 @@ namespace HermesBanking.Core.Application.Interfaces
         Task<UserDto?> GetUserByUserName(string userName);
         Task<RegisterResponseDto> RegisterUser(SaveUserDto saveDto, string? origin, bool? isApi = false);
         Task<UserResponseDto> ResetPasswordAsync(ResetPasswordRequestDto request);
+        Task<UserResponseDto> ChangeStatusAsync(string userId, bool status);
+        Task<PaginationDto<UserDto>> GetPagedUsersAsync(int page = 1, int pageSize = 20, string? rol = null);
+        Task<PaginationDto<UserDto>> GetPagedCommerceUsersAsync(int page = 1, int pageSize = 20, string? rol = null);
     }
 }

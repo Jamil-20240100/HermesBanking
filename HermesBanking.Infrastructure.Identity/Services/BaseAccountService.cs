@@ -525,6 +525,142 @@ namespace HermesBanking.Infrastructure.Identity.Services
             }
         }
 
+        public virtual async Task<UserResponseDto> ChangeStatusAsync(string userId, bool status)
+        {
+            UserResponseDto response = new() { HasError = false, Errors = [] };
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                response.HasError = true;
+                response.Errors.Add($"User with ID {userId} not found.");
+                return response;
+            }
+
+            user.IsActive = status;
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
+            {
+                response.HasError = true;
+                response.Errors.AddRange(result.Errors.Select(s => s.Description).ToList());
+            }
+
+            return response;
+        }
+
+        public virtual async Task<PaginationDto<UserDto>> GetPagedUsersAsync(int page = 1, int pageSize = 20, string? rol = null)
+        {
+            var query = _userManager.Users.AsQueryable();
+
+            var usersWithRoles = await _userManager.Users.ToListAsync();
+            var filteredUsers = new List<AppUser>();
+
+            foreach (var user in usersWithRoles)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                if (!roles.Contains("comercio") && (rol == null || roles.Contains(rol)))
+                {
+                    filteredUsers.Add(user);
+                }
+            }
+
+            var orderedUsers = filteredUsers.OrderByDescending(u => u.Id).ToList();
+
+            int totalUsers = orderedUsers.Count;
+            int totalPages = (int)Math.Ceiling(totalUsers / (double)pageSize);
+            page = Math.Clamp(page, 1, totalPages);
+
+            var usersPage = orderedUsers.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            var userDtos = new List<UserDto>();
+            foreach (var user in usersPage)
+            {
+                var rolesList = await _userManager.GetRolesAsync(user);
+                userDtos.Add(new UserDto
+                {
+                    Id = user.Id,
+                    UserName = user.UserName ?? "",
+                    Name = user.Name,
+                    LastName = user.LastName,
+                    Email = user.Email ?? "",
+                    Role = rolesList.FirstOrDefault() ?? "",
+                    UserId = user.UserId,
+                    IsActive = user.IsActive,
+                    isVerified = user.EmailConfirmed
+                });
+            }
+
+            return new PaginationDto<UserDto>
+            {
+                Data = userDtos,
+                Paginacion = new PaginationInfoDto
+                {
+                    PaginaActual = page,
+                    TotalPaginas = totalPages,
+                    TotalUsuarios = totalUsers
+                }
+            };
+        }
+
+        public async Task<PaginationDto<UserDto>> GetPagedCommerceUsersAsync(int page = 1, int pageSize = 20, string? rol = null)
+        {
+            var usersWithRoles = await _userManager.Users.ToListAsync();
+            var filteredUsers = new List<AppUser>();
+
+            foreach (var user in usersWithRoles)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                if (roles.Contains("comercio") && (rol == null || roles.Contains(rol)))
+                {
+                    filteredUsers.Add(user);
+                }
+            }
+
+            var orderedUsers = filteredUsers.OrderByDescending(u => u.Id).ToList();
+
+            int totalUsers = orderedUsers.Count;
+            int totalPages = (int)Math.Ceiling(totalUsers / (double)pageSize);
+
+            if (totalPages == 0)
+                totalPages = 1;
+
+            page = Math.Clamp(page, 1, totalPages);
+
+            var usersPage = orderedUsers.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            var userDtos = new List<UserDto>();
+            foreach (var user in usersPage)
+            {
+                var rolesList = await _userManager.GetRolesAsync(user);
+                userDtos.Add(new UserDto
+                {
+                    Id = user.Id,
+                    UserName = user.UserName ?? "",
+                    Name = user.Name,
+                    LastName = user.LastName,
+                    Email = user.Email ?? "",
+                    Role = rolesList.FirstOrDefault() ?? "",
+                    UserId = user.UserId,
+                    IsActive = user.IsActive,
+                    isVerified = user.EmailConfirmed
+                });
+            }
+
+            return new PaginationDto<UserDto>
+            {
+                Data = userDtos,
+                Paginacion = new PaginationInfoDto
+                {
+                    PaginaActual = page,
+                    TotalPaginas = totalPages,
+                    TotalUsuarios = totalUsers
+                }
+            };
+        }
+
+
+
         #region "Protected methods"
 
         protected async Task<string> GetVerificationEmailUri(AppUser user, string origin)

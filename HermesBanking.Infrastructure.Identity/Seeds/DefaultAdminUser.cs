@@ -1,35 +1,32 @@
 ﻿using HermesBanking.Core.Domain.Common.Enums;
 using HermesBanking.Infrastructure.Identity.Entities;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
-namespace HermesBanking.Infrastructure.Identity.Seeds
+public static class DefaultAdminUser
 {
-    public static class DefaultAdminUser
+    public static async Task SeedAsync(UserManager<AppUser> userManager)
     {
-        public static async Task SeedAsync(UserManager<AppUser> userManager)
+        var email = "admin@mail.com";
+        var user = await userManager.FindByEmailAsync(email);
+
+        if (user == null)
         {
-            AppUser user = new()
+            AppUser admin = new()
             {
                 Name = "Jane",
                 LastName = "Doe",
-                Email = "admin@mail.com",
-                EmailConfirmed = true,
+                Email = email,
+                EmailConfirmed = false,
                 UserName = "JaneDoeAdmin",
                 UserId = "40230098754",
-                IsActive = true,
+                IsActive = true
             };
 
-            if (await userManager.Users.AllAsync(u => u.Id != user.Id))
-            {
-                var entityUser = await userManager.FindByEmailAsync(user.Email);
-                if (entityUser == null)
-                {
-                    await userManager.CreateAsync(user, "123Pa$$word!");
-                    await userManager.AddToRoleAsync(user, Roles.Admin.ToString());
-                }
-            }
+            await userManager.CreateAsync(admin, "123Pa$$word!");
+            await userManager.AddToRoleAsync(admin, Roles.Admin.ToString());
 
+            var token = await userManager.GenerateEmailConfirmationTokenAsync(admin);
+            Console.WriteLine($"[ADMIN] Token de confirmación: {token}");
         }
     }
 }

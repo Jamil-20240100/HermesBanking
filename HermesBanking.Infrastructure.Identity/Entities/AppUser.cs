@@ -9,5 +9,6 @@ namespace HermesBanking.Infrastructure.Identity.Entities
         public required string UserId { get; set; } //cedula
         public decimal? InitialAmount { get; set; }
         public required bool IsActive { get; set; }
+        public string? CommerceId { get; set; }
     }
 }

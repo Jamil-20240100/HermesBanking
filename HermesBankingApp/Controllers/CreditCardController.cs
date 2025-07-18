@@ -80,7 +80,7 @@ namespace HermesBankingApp.Controllers
             }
 
             decimal deudaPromedio = clients.Any()
-                ? clients.Average(c => c.TotalDebt)
+                ? clients.Average(c => c.TotalDebt ?? 0)
                 : 0;
 
             ViewBag.DeudaPromedio = deudaPromedio;
