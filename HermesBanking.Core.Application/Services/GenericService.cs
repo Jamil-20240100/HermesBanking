@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace HermesBanking.Core.Application.Services
 {

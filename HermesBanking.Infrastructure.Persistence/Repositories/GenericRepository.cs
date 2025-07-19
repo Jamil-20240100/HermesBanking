@@ -16,6 +16,11 @@ namespace HermesBanking.Infrastructure.Persistence.Repositories
 
         // --- METHODS IMPLEMENTATION ---
 
+        public async Task<bool> ExistsAsync(Expression<Func<Entity, bool>> predicate)
+        {
+            return await _context.Set<Entity>().AnyAsync(predicate);
+        }
+
         public virtual async Task<Entity?> AddAsync(Entity entity)
         {
             await _context.Set<Entity>().AddAsync(entity);

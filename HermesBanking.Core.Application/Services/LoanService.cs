@@ -5,6 +5,7 @@ using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Domain.Common.Enums;
 using HermesBanking.Core.Domain.Entities;
 using HermesBanking.Core.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace HermesBanking.Core.Application.Services
 {
@@ -68,6 +69,113 @@ namespace HermesBanking.Core.Application.Services
             return _mapper.Map<List<LoanDTO>>(loans);
         }
 
+        public async Task<object> GetAllLoansAsync(string? cedula, string? status, int page = 1, int pageSize = 10)
+        {
+            var loans = await _loanRepository.GetAll();
+
+            if (!string.IsNullOrWhiteSpace(cedula))
+            {
+                var user = await _accountServiceForWebApp.GetUserByIdentificationNumber(cedula);
+                if (user != null)
+                {
+                    loans = loans.Where(l => l.ClientId == user.Id).ToList();
+                }
+                else
+                {
+                    return new
+                    {
+                        data = new List<object>(),
+                        paginacion = new { paginaActual = page, totalPaginas = 0 }
+                    };
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                if (status.ToLower() == "activos")
+                {
+                    loans = loans.Where(l => l.IsActive).ToList();
+                }
+                else if (status.ToLower() == "completados")
+                {
+                    loans = loans.Where(l => !l.IsActive).ToList();
+                }
+            }
+
+            loans = loans.OrderByDescending(l => l.IsActive)
+                         .ThenByDescending(l => l.CreatedAt)
+                         .ToList();
+
+            int totalItems = loans.Count;
+            int totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+            page = Math.Max(1, Math.Min(page, totalPages));
+            var loansPage = loans.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            var result = new List<object>();
+
+            foreach (var loan in loansPage)
+            {
+                var client = await _accountServiceForWebApp.GetUserById(loan.ClientId);
+                var cuotasPagadas = await _installmentRepository.GetByConditionAsync(i => i.LoanId == loan.Id && i.IsPaid);
+                var cuotasPendientes = await _installmentRepository.GetByConditionAsync(i => i.LoanId == loan.Id && !i.IsPaid);
+
+                string estadoPago = "al_dia";
+                if (cuotasPendientes.Any(i => i.IsOverdue))
+                {
+                    estadoPago = "atrasado";
+                }
+
+                result.Add(new
+                {
+                    id = loan.Id.ToString("D9"),
+                    cliente = $"{client?.Name} {client?.LastName}",
+                    cedula = client?.UserId,
+                    monto = loan.Amount,
+                    cuotasTotales = loan.TotalInstallments,
+                    cuotasPagadas = cuotasPagadas.Count(),
+                    pendiente = cuotasPendientes.Sum(i => i.InstallmentValue),
+                    interes = loan.InterestRate,
+                    plazo = loan.LoanTermMonths,
+                    estadoPago = estadoPago
+                });
+            }
+
+            return new
+            {
+                data = result,
+                paginacion = new
+                {
+                    paginaActual = page,
+                    totalPaginas = totalPages
+                }
+            };
+        }
+
+        public async Task<LoanDetailDTO?> GetLoanDetailWithAmortizationAsync(string loanId)
+        {
+            var loan = (await _loanRepository.GetByConditionAsync(l => l.LoanIdentifier == loanId)).FirstOrDefault();
+            if (loan == null) return null;
+
+            var installments = await _installmentRepository.GetByConditionAsync(i => i.LoanId == loan.Id);
+
+            var today = DateTime.Today;
+
+            foreach (var installment in installments)
+            {
+                installment.IsOverdue = !installment.IsPaid && installment.PaymentDate.Date < today;
+            }
+
+            var installmentsDto = _mapper.Map<List<AmortizationInstallmentDTO>>(installments);
+
+            return new LoanDetailDTO
+            {
+                PrestamoId = loan.LoanIdentifier,
+                TablaAmortizacion = installmentsDto
+                    .OrderBy(x => x.InstallmentNumber)
+                    .ToList()
+            };
+        }
+
         public async Task<LoanDTO> GetLoanByIdAsync(int loanId)
         {
             var loan = await _loanRepository.GetById(loanId);
@@ -126,6 +234,46 @@ namespace HermesBanking.Core.Application.Services
             {
                 await _emailService.SendLoanApprovedEmail(
                     client.Email, loan.Amount, loan.LoanTermMonths, loan.InterestRate, loan.MonthlyInstallmentValue);
+            }
+        }
+
+        public async Task<(int StatusCode, string? Error)> CreateLoanForClientAsync(CreateLoanDTO dto, string adminId, string adminFullName)
+        {
+            if (string.IsNullOrWhiteSpace(dto.ClientId)
+                || dto.Amount <= 0
+                || dto.InterestRate <= 0
+                || dto.LoanTermMonths <= 0)
+            {
+                return (400, "Todos los campos son requeridos y deben ser mayores que cero.");
+            }
+
+            if (await HasActiveLoanAsync(dto.ClientId))
+            {
+                return (400, "El cliente ya tiene un préstamo activo.");
+            }
+
+            var averageDebt = await CalculateAverageClientDebtAsync();
+            var client = await _accountServiceForWebApp.GetUserById(dto.ClientId);
+            if (client != null)
+            {
+                if (averageDebt < client.TotalDebt)
+                {
+                    return (409, "El cliente es de alto riesgo.");
+                }
+            }
+
+            try
+            {
+                await AddLoanAsync(dto, adminId, adminFullName);
+                return (201, null);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return (400, ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return (500, "Error inesperado: " + ex.Message);
             }
         }
 
@@ -328,5 +476,13 @@ namespace HermesBanking.Core.Application.Services
 
             return totalDeuda;
         }
+
+        public async Task<LoanDTO?> GetLoanByIdentifierAsync(string loanIdentifier)
+        {
+            var entities = await _loanRepository.GetAllQuery().FirstOrDefaultAsync(l => l.LoanIdentifier == loanIdentifier);
+            var dtos = _mapper.Map<LoanDTO>(entities);
+            return dtos;
+        }
+
     }
 }

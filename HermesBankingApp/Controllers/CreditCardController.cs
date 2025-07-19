@@ -146,8 +146,8 @@ namespace HermesBankingApp.Controllers
 
             vm.ClientFullName = $"{clientUser.Name} {clientUser.LastName}";
             vm.ExpirationDate = DateTime.Now.AddYears(3);
-            vm.CardId = GenerateUniqueCardId();
-            vm.CVC = GenerateAndEncryptCVC();
+            vm.CardId = _service.GenerateUniqueCardId();
+            vm.CVC = _service.GenerateAndEncryptCVC();
             vm.TotalOwedAmount = 0;
             vm.IsActive = true;
 
@@ -317,38 +317,6 @@ namespace HermesBankingApp.Controllers
             return RedirectToAction("Index");
         }
 
-        private string GenerateUniqueCardId()
-        {
-            Random random = new Random();
-            string cardId;
-            do
-            {
-                cardId = "";
-                for (int i = 0; i < 16; i++)
-                {
-                    cardId += random.Next(0, 10).ToString();
-                }
-            } while (false);
-            return cardId;
-        }
-
-        private string GenerateAndEncryptCVC()
-        {
-            Random random = new Random();
-
-            string cvc = random.Next(100, 1000).ToString();
-
-            using (SHA256 sha256Hash = SHA256.Create())
-            {
-                byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(cvc));
-
-                StringBuilder builder = new StringBuilder();
-                for (int i = 0; i < bytes.Length; i++)
-                {
-                    builder.Append(bytes[i].ToString("x2"));
-                }
-                return builder.ToString();
-            }
-        }
+        
     }
 }

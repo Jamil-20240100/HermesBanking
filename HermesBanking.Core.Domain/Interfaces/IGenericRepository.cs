@@ -17,7 +17,7 @@ namespace HermesBanking.Core.Domain.Interfaces
         Task<List<Entity>> GetAllWithInclude(List<string> properties);
         IQueryable<Entity> GetAllQuery();
         IQueryable<Entity> GetAllQueryWithInclude(List<string> properties);
-
+        Task<bool> ExistsAsync(Expression<Func<Entity, bool>> predicate);
         Task<IEnumerable<Entity>> GetByConditionAsync(Expression<Func<Entity, bool>> expression);
     }
 }
