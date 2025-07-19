@@ -20,13 +20,15 @@ namespace HermesBankingApp.Controllers
         private readonly ICreditCardService _service;
         private readonly IMapper _mapper;
         private readonly IEmailService _emailService;
-        public CreditCardController(ICreditCardService service, IMapper mapper, UserManager<AppUser> userManager, IAccountServiceForWebApp accountServiceForWebApp, IEmailService emailService)
+        private readonly ILoanService _loanService;
+        public CreditCardController(ICreditCardService service, IMapper mapper, UserManager<AppUser> userManager, IAccountServiceForWebApp accountServiceForWebApp, IEmailService emailService, ILoanService loanService)
         {
             _service = service;
             _mapper = mapper;
             _userManager = userManager;
             _accountServiceForWebApp = accountServiceForWebApp;
             _emailService = emailService;
+            _loanService = loanService;
         }
 
         public async Task<IActionResult> Index()
@@ -72,8 +74,13 @@ namespace HermesBankingApp.Controllers
             if (!string.IsNullOrWhiteSpace(cedula))
                 clients = clients.Where(c => c.UserId.Contains(cedula)).ToList();
 
+            foreach (var client in clients)
+            {
+                client.TotalDebt = await _loanService.GetCurrentDebtForClient(client.Id);
+            }
+
             decimal deudaPromedio = clients.Any()
-                ? clients.Average(c => c.InitialAmount ?? 0)
+                ? clients.Average(c => c.TotalDebt)
                 : 0;
 
             ViewBag.DeudaPromedio = deudaPromedio;
@@ -274,14 +281,16 @@ namespace HermesBankingApp.Controllers
                 var card = await _service.GetById(id);
                 if (card == null)
                 {
-                    ViewData["ErrorMessage"] = "Tarjeta no encontrada.";
+                    TempData["ErrorMessage"] = "Tarjeta no encontrada.";
                     return RedirectToRoute(new { controller = "CreditCard", action = "Index" });
                 }
+
                 if (card.TotalOwedAmount > 0)
                 {
-                    ViewData["ErrorMessage"] = "Para cancelar esta tarjeta, el cliente debe saldar la totalidad de la deuda pendiente.";
+                    TempData["ErrorMessage"] = "Para cancelar esta tarjeta, el cliente debe saldar la totalidad de la deuda pendiente.";
                     return RedirectToRoute(new { controller = "CreditCard", action = "Index" });
                 }
+
                 //desactivate card
                 card.IsActive = false;
 

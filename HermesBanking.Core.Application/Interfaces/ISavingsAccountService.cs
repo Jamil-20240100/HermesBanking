@@ -8,5 +8,6 @@ namespace HermesBanking.Core.Application.Interfaces
         public Task<string> GenerateUniqueAccountNumberAsync();
         Task CancelAsync(int id);
         Task TransferBalanceAndCancelAsync(int accountId);
+        Task<SavingsAccountDTO?> GetByAccountNumberAsync(string beneficiaryAccountNumber);
     }
 }

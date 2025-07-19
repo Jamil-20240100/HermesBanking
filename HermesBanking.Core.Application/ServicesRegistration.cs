@@ -21,6 +21,8 @@ namespace HermesBanking.Core.Application
             services.AddScoped<ICashierService, CashierService>();
             services.AddScoped<ITransactionService, TransactionService>();
             services.AddScoped<ILoanService, LoanService>();
+            services.AddScoped<IBeneficiaryService, BeneficiaryService>();
+            services.AddScoped<ICashAdvanceService, CashAdvanceService>();
             #endregion
         }
     }

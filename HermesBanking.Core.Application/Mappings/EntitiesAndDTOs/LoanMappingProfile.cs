@@ -24,7 +24,7 @@ namespace HermesBanking.Core.Application.Mappings.EntitiesAndDTOs
 
             CreateMap<CreateLoanDTO, Loan>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.LoanIdentifier, opt => opt.MapFrom(src => Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper()))
+                .ForMember(dest => dest.LoanIdentifier, opt => opt.MapFrom(src => Guid.NewGuid().ToString("N").Substring(0, 9).ToUpper()))
                 .ForMember(dest => dest.PaidInstallments, opt => opt.MapFrom(src => 0))
                 .ForMember(dest => dest.PendingAmount, opt => opt.MapFrom(src => src.Amount))
                 .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => true))

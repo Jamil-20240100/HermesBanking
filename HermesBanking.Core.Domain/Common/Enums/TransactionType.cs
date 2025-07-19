@@ -13,8 +13,11 @@
 
         [System.ComponentModel.Description("PAGO DE PRÉSTAMO")]
         LoanPayment,
+        
 
         [System.ComponentModel.Description("PAGO DE TARJETA")]
-        CreditCardPayment
+        CreditCardPayment,
+
+        CREDITO,
     }
 }

@@ -1,5 +1,6 @@
 ﻿@{
     ViewData["Title"] = "Mi Cuenta";
+    Layout = "_LayoutClient";
     var accounts = ViewBag.Accounts as List<HermesBanking.Core.Domain.Entities.SavingsAccount>;
     var transactions = ViewBag.Transactions as List<HermesBanking.Core.Domain.Entities.Transaction>;
 }

@@ -11,7 +11,8 @@ namespace HermesBanking.Core.Application.Interfaces
         Task<bool> MakeThirdPartyTransferAsync(string sourceAccountNumber, string destinationAccountNumber, decimal amount, string cashierId);
 
         Task<bool> MakeCreditCardPaymentAsync(string accountNumber, string cardNumber, decimal amount, string cashierId);
-        Task<bool> MakeLoanPaymentAsync(string loanIdentifier, string cashierId);
+        Task<bool> MakeLoanPaymentAsync(string loanIdentifier, string accountNumber, decimal amount, string cashierId);
+
 
         SavingsAccount? GetSavingsAccountByNumber(string accountNumber);
         Task<(SavingsAccount? account, CreditCard? card, string? clientFullName)> GetAccountCardAndClientNameAsync(string accountNumber, string cardNumber);

@@ -4,19 +4,16 @@ using HermesBanking.Infrastructure.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace HermesBanking.Infrastructure.Persistence.Migrations
+namespace HermesBanking.Infrastructure.Persistence.Persistence.Migrations
 {
     [DbContext(typeof(HermesBankingContext))]
-    [Migration("20250717205518_UpdateTransactionTypeLength")]
-    partial class UpdateTransactionTypeLength
+    partial class HermesBankingContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -68,6 +65,41 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                     b.HasIndex("LoanId");
 
                     b.ToTable("AmortizationInstallments", (string)null);
+                });
+
+            modelBuilder.Entity("HermesBanking.Core.Domain.Entities.Beneficiary", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BeneficiaryAccountNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Beneficiaries", (string)null);
                 });
 
             modelBuilder.Entity("HermesBanking.Core.Domain.Entities.CreditCard", b =>
@@ -174,8 +206,8 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("LoanIdentifier")
                         .IsRequired()
-                        .HasMaxLength(8)
-                        .HasColumnType("nvarchar(8)");
+                        .HasMaxLength(9)
+                        .HasColumnType("nvarchar(9)");
 
                     b.Property<int>("LoanTermMonths")
                         .HasColumnType("int");
@@ -262,6 +294,9 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                     b.Property<string>("ClientId")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("CreditCardId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
@@ -276,6 +311,9 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("SavingsAccountId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Status")
                         .HasColumnType("int");
 
                     b.Property<int?>("TransactionType")

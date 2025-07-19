@@ -23,7 +23,6 @@ namespace HermesBanking.Infrastructure.Persistence.Repositories
             return entity;
         }
 
-        // --- ¡NUEVO: Implementación de UpdateAsync que toma la entidad! ---
         public virtual async Task<Entity?> UpdateAsync(Entity entity)
         {
             _context.Entry(entity).State = EntityState.Modified;
@@ -44,7 +43,6 @@ namespace HermesBanking.Infrastructure.Persistence.Repositories
             return null;
         }
 
-        // --- ¡NUEVO: Implementación de DeleteAsync que toma la entidad! ---
         public virtual async Task DeleteAsync(Entity entity)
         {
             _context.Set<Entity>().Remove(entity);
@@ -99,7 +97,6 @@ namespace HermesBanking.Infrastructure.Persistence.Repositories
             return query;
         }
 
-        // --- ¡NUEVO: Implementación de GetByConditionAsync! ---
         public virtual async Task<IEnumerable<Entity>> GetByConditionAsync(Expression<Func<Entity, bool>> expression)
         {
             return await _context.Set<Entity>().Where(expression).ToListAsync();

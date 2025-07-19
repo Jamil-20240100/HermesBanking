@@ -7,7 +7,22 @@
 
 <h3>Pago a préstamo</h3>
 
-<form asp-action="ConfirmLoanPayment" method="post">
+<!-- Mostrar el mensaje de error si existe en TempData -->
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+<!-- Mostrar el mensaje de éxito si existe en TempData -->
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+<form asp-action="PayLoan" method="post">
     <div class="form-group">
         <label asp-for="AccountNumber"></label>
         <input asp-for="AccountNumber" class="form-control" />
@@ -28,3 +43,4 @@
 
     <button type="submit" class="btn btn-primary">Continuar</button>
 </form>
+

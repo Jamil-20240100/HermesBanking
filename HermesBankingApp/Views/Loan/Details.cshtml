@@ -3,17 +3,17 @@
 @{
     ViewData["Title"] = "Detalles del Préstamo";
 }
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger">@TempData["Error"]</div>
-}
-
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">@TempData["Success"]</div>
-}
 
 <div class="container mt-4">
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
     <h1>Detalles del Préstamo: @Model.LoanIdentifier</h1>
     <hr />
 
@@ -30,7 +30,7 @@
                 <dd class="col-sm-8">@Model.ClientFullName</dd>
 
                 <dt class="col-sm-4">Monto:</dt>
-                <dd class="col-sm-8">@Model.Amount.ToString("C")</dd>
+                <dd class="col-sm-8">@Model.Amount.ToString("C", new System.Globalization.CultureInfo("es-DO"))</dd>
 
                 <dt class="col-sm-4">Tasa de Interés:</dt>
                 <dd class="col-sm-8">@Model.InterestRate.ToString("F2")%</dd>
@@ -39,21 +39,21 @@
                 <dd class="col-sm-8">@Model.LoanTermMonths</dd>
 
                 <dt class="col-sm-4">Valor Cuota Mensual:</dt>
-                <dd class="col-sm-8">@Model.MonthlyInstallmentValue.ToString("C")</dd>
+                <dd class="col-sm-8">@Model.MonthlyInstallmentValue.ToString("C", new System.Globalization.CultureInfo("es-DO"))</dd>
 
                 <dt class="col-sm-4">Fecha de Creación:</dt>
                 <dd class="col-sm-8">@Model.CreatedAt.ToShortDateString()</dd>
 
                 <dt class="col-sm-4">Monto Pendiente:</dt>
-                <dd class="col-sm-8">@Model.PendingAmount.ToString("C")</dd>
+                <dd class="col-sm-8">@Model.PendingAmount.ToString("C", new System.Globalization.CultureInfo("es-DO"))</dd>
 
                 <dt class="col-sm-4">Estado:</dt>
-                <dd class="col-sm-8">@(Model.IsActive ? "Activo" : "Completado")</dd> @* Corregido: Model.IsActive *@
+                <dd class="col-sm-8">@(Model.IsActive ? "Activo" : "Completado")</dd>
 
-                @if (!Model.IsActive && Model.CompletedAt.HasValue) @* Corregido: Model.IsActive, Model.CompletedAt *@
+                @if (!Model.IsActive && Model.CompletedAt.HasValue)
                 {
                     <dt class="col-sm-4">Fecha de Completado:</dt>
-                    <dd class="col-sm-8">@Model.CompletedAt.Value.ToShortDateString()</dd> @* Corregido: Model.CompletedAt *@
+                    <dd class="col-sm-8">@Model.CompletedAt.Value.ToShortDateString()</dd>
                 }
             </dl>
         </div>
@@ -87,10 +87,10 @@
                                 <tr class="@(installment.IsOverdue && !installment.IsPaid ? "table-danger" : (installment.IsPaid ? "table-success" : ""))">
                                     <td>@installment.InstallmentNumber</td>
                                     <td>@installment.PaymentDate.ToShortDateString()</td>
-                                    <td>@installment.InstallmentValue.ToString("C")</td>
-                                    <td>@installment.PrincipalAmount.ToString("C")</td>
-                                    <td>@installment.InterestAmount.ToString("C")</td>
-                                    <td>@installment.RemainingBalance.ToString("C")</td>
+                                    <td>@installment.InstallmentValue.ToString("C", new System.Globalization.CultureInfo("es-DO"))</td>
+                                    <td>@installment.PrincipalAmount.ToString("C", new System.Globalization.CultureInfo("es-DO"))</td>
+                                    <td>@installment.InterestAmount.ToString("C", new System.Globalization.CultureInfo("es-DO"))</td>
+                                    <td>@installment.RemainingBalance.ToString("C", new System.Globalization.CultureInfo("es-DO"))</td>
                                     <td>@(installment.IsPaid ? "Sí" : "No")</td>
                                     <td>@(installment.IsOverdue && !installment.IsPaid ? "Sí" : "No")</td>
                                     <td>@(installment.PaidDate?.ToShortDateString() ?? "N/A")</td>

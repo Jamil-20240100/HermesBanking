@@ -1,0 +1,34 @@
+﻿@model HermesBanking.Core.Application.ViewModels.Beneficiary.DeleteBeneficiaryViewModel
+
+@{
+    ViewData["Title"] = "Confirmar Eliminación";
+    Layout = "_LayoutClient";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">Confirmar Eliminación</h4>
+            </div>
+            <div class="card-body">
+                <p>¿Estás seguro de que deseas eliminar al siguiente beneficiario de tu lista?</p>
+                <div class="alert alert-warning">
+                    <h5 class="alert-heading">@Model.Name @Model.LastName</h5>
+                    <p class="mb-0"><strong>Número de Cuenta:</strong> @Model.AccountNumber</p>
+                </div>
+                <p class="text-muted">Esta acción no se puede deshacer.</p>
+
+                <form asp-action="DeletePost" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-danger">Sí, Eliminar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

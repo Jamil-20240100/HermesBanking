@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using HermesBanking.Core.Application.DTOs.SavingsAccount;
 using HermesBanking.Core.Application.Interfaces;
+using HermesBanking.Core.Application.Services;
 using HermesBanking.Core.Application.ViewModels.SavingsAccount;
 using HermesBanking.Core.Application.ViewModels.User;
 using HermesBanking.Core.Domain.Common.Enums;
@@ -18,13 +19,15 @@ namespace HermesBankingApp.Controllers
         private readonly IAccountServiceForWebApp _accountServiceForWebApp;
         private readonly ISavingsAccountService _service;
         private readonly IMapper _mapper;
+        private readonly ILoanService _loanService;
 
-        public SavingsAccountController(ISavingsAccountService service, IMapper mapper, UserManager<AppUser> userManager, IAccountServiceForWebApp accountServiceForWebApp)
+        public SavingsAccountController(ISavingsAccountService service, IMapper mapper, UserManager<AppUser> userManager, IAccountServiceForWebApp accountServiceForWebApp, ILoanService loanService)
         {
             _service = service;
             _mapper = mapper;
             _userManager = userManager;
             _accountServiceForWebApp = accountServiceForWebApp;
+            _loanService = loanService;
         }
 
         public async Task<IActionResult> Index()
@@ -62,15 +65,23 @@ namespace HermesBankingApp.Controllers
             var user = await _accountServiceForWebApp.GetUserByUserName(userSession.UserName ?? "");
             if (user == null)
                 return RedirectToRoute(new { controller = "Login", action = "Index" });
-            //
-            //
-            //
 
-            var activeClientsDTOs = await _accountServiceForWebApp.GetAllActiveUserByRole(Roles.Client.ToString());
-            var activeClientsVMs = _mapper.Map<List<UserViewModel>>(activeClientsDTOs);
+            //
+            // Get active clients and assign debt
+            //
+            var clients = await _accountServiceForWebApp.GetAllActiveUserByRole(Roles.Client.ToString());
+
+            foreach (var client in clients)
+            {
+                client.TotalDebt = await _loanService.GetCurrentDebtForClient(client.Id);
+            }
+
+            // Map the already enriched list
+            var activeClientsVMs = _mapper.Map<List<UserViewModel>>(clients);
 
             return View("Save", activeClientsVMs);
         }
+
 
         [HttpPost]
         public async Task<IActionResult> Create(SaveSavingsAccountViewModel vm)

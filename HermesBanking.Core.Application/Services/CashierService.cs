@@ -367,13 +367,18 @@ namespace HermesBanking.Core.Application.Services
             return (account, fullName);
         }
 
-        public async Task<bool> MakeLoanPaymentAsync(string loanIdentifier, string cashierId)
+        public async Task<bool> MakeLoanPaymentAsync(string loanIdentifier, string accountNumber, decimal amount, string cashierId)
         {
+            var account = _accountRepo
+                .GetAllQuery()
+                .FirstOrDefault(a => a.AccountNumber == accountNumber && a.IsActive);
+
+            if (account == null || account.Balance < amount) return false;
+
             var loans = await _loanService.GetAllLoansAsync(null, "active");
             var loan = loans.FirstOrDefault(l => l.LoanIdentifier == loanIdentifier);
 
-            if (loan == null || !loan.IsActive)
-                return false;
+            if (loan == null || !loan.IsActive) return false;
 
             var amortizationSchedule = await _loanService.GetAmortizationTableByLoanIdAsync(loan.Id);
             var nextInstallment = amortizationSchedule
@@ -381,8 +386,12 @@ namespace HermesBanking.Core.Application.Services
                 .OrderBy(i => i.InstallmentNumber)
                 .FirstOrDefault();
 
-            if (nextInstallment == null)
+            if (nextInstallment == null || amount < nextInstallment.InstallmentValue)
                 return false;
+
+            // Descontar dinero de la cuenta
+            account.Balance -= nextInstallment.InstallmentValue;
+            await _accountRepo.UpdateAsync(account.Id, account);
 
             // Registrar transacción
             await _transactionService.RegisterTransactionAsync(new()
@@ -395,14 +404,10 @@ namespace HermesBanking.Core.Application.Services
                 TransactionType = Domain.Common.Enums.TransactionType.LoanPayment
             });
 
-            // Actualizar cuota como pagada (suponiendo que LoanService no tiene un método para esto aún)
             nextInstallment.IsPaid = true;
             nextInstallment.PaidDate = DateTime.Now;
-
-            // Se debe tener un método en el repositorio de cuotas para hacer esto:
             await _installmentRepo.UpdateAsync(_mapper.Map<AmortizationInstallment>(nextInstallment));
 
-            // Verificar si ya pagó todas las cuotas
             if (loan.PaidInstallments + 1 >= loan.TotalInstallments)
             {
                 var loanEntity = _mapper.Map<Loan>(loan);
@@ -413,6 +418,7 @@ namespace HermesBanking.Core.Application.Services
 
             return true;
         }
+
 
 
         public async Task<(LoanDTO? loan, string clientFullName, decimal remainingDebt)> GetLoanInfoAsync(string loanIdentifier)

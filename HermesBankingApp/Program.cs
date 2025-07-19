@@ -6,7 +6,8 @@ using HermesBanking.Infrastructure.Shared;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddSessionStateTempDataProvider();  // Añadir el proveedor de TempData
 
 builder.Services.AddSession(opt =>
 {
@@ -34,7 +35,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
-app.UseSession();
+app.UseSession();  // Asegúrate de tener este middleware para usar TempData
 
 app.UseAuthentication();
 app.UseAuthorization();
