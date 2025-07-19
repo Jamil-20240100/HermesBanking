@@ -7,7 +7,7 @@ namespace HermesBanking.Core.Application.ViewModels.Cashier
     {
         [Required(ErrorMessage = "El número de cuenta es obligatorio.")]
         [Display(Name = "Número de Cuenta")]
-        public string AccountNumber { get; set; }
+        public string? AccountNumber { get; set; }
 
         [Required(ErrorMessage = "El monto es obligatorio.")]
         [Range(1, double.MaxValue, ErrorMessage = "El monto debe ser mayor que cero.")]

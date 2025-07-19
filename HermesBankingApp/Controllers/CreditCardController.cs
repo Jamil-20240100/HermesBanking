@@ -79,7 +79,7 @@ namespace HermesBankingApp.Controllers
                 client.TotalDebt = await _loanService.GetCurrentDebtForClient(client.Id);
             }
 
-            decimal deudaPromedio = clients.Any()
+            decimal deudaPromedio = clients.Count != 0
                 ? clients.Average(c => c.TotalDebt ?? 0)
                 : 0;
 
@@ -104,7 +104,7 @@ namespace HermesBankingApp.Controllers
                 if (!string.IsNullOrWhiteSpace(cedula))
                     clients = clients.Where(c => c.UserId.Contains(cedula)).ToList();
 
-                decimal deudaPromedio = clients.Any()
+                decimal deudaPromedio = clients.Count != 0
                     ? clients.Average(c => c.InitialAmount ?? 0)
                     : 0;
 
@@ -114,7 +114,7 @@ namespace HermesBankingApp.Controllers
                 return View(vms);
             }
 
-            return RedirectToAction("CreateForm", new { clientId = clientId });
+            return RedirectToAction("CreateForm", new { clientId });
         }
 
         [HttpPost]

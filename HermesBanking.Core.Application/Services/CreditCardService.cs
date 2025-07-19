@@ -134,7 +134,7 @@ namespace HermesBanking.Core.Application.Services
 
         public string GenerateUniqueCardId()
         {
-            Random random = new Random();
+            Random random = new();
             string cardId;
             do
             {
@@ -149,21 +149,17 @@ namespace HermesBanking.Core.Application.Services
 
         public string GenerateAndEncryptCVC()
         {
-            Random random = new Random();
+            Random random = new();
 
             string cvc = random.Next(100, 1000).ToString();
+            byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(cvc));
 
-            using (SHA256 sha256Hash = SHA256.Create())
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < bytes.Length; i++)
             {
-                byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(cvc));
-
-                StringBuilder builder = new StringBuilder();
-                for (int i = 0; i < bytes.Length; i++)
-                {
-                    builder.Append(bytes[i].ToString("x2"));
-                }
-                return builder.ToString();
+                builder.Append(bytes[i].ToString("x2"));
             }
+            return builder.ToString();
         }
     }
 }

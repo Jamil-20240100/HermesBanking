@@ -2,7 +2,7 @@
 {
     public class CreditCardPagedResponseDTO
     {
-        public List<CreditCardDTO> Data { get; set; }
-        public PaginationDTO Paginacion { get; set; }
+        public List<CreditCardDTO>? Data { get; set; }
+        public PaginationDTO? Paginacion { get; set; }
     }
 }

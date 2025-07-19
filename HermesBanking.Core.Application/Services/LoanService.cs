@@ -46,13 +46,13 @@ namespace HermesBanking.Core.Application.Services
                 }
                 else
                 {
-                    return new List<LoanDTO>();
+                    return [];
                 }
             }
 
             if (!string.IsNullOrWhiteSpace(status) && status != "all")
             {
-                if (status.ToLower() == "active")
+                if (status.Equals("active", StringComparison.CurrentCultureIgnoreCase))
                 {
                     loans = loans.Where(l => l.IsActive).ToList();
                 }
@@ -92,11 +92,11 @@ namespace HermesBanking.Core.Application.Services
 
             if (!string.IsNullOrWhiteSpace(status))
             {
-                if (status.ToLower() == "activos")
+                if (status.Equals("activos", StringComparison.CurrentCultureIgnoreCase))
                 {
                     loans = loans.Where(l => l.IsActive).ToList();
                 }
-                else if (status.ToLower() == "completados")
+                else if (status.Equals("completados", StringComparison.CurrentCultureIgnoreCase))
                 {
                     loans = loans.Where(l => !l.IsActive).ToList();
                 }
