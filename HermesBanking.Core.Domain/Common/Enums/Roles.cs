@@ -4,6 +4,7 @@
     {
         Admin = 1,
         Client,
-        Cashier
+        Cashier,
+        Commerce
     }
 }

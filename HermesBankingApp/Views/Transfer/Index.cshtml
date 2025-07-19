@@ -1,0 +1,63 @@
+﻿@model HermesBanking.Core.Application.ViewModels.Transfer.TransferViewModel
+@using HermesBanking.Core.Application.ViewModels.SavingsAccount
+
+@{
+    ViewData["Title"] = "Transferencia Entre Cuentas";
+    Layout = "_LayoutClient";
+    var accountsList = Model.AvailableAccounts ?? new List<SavingsAccountViewModel>();
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h3 class="mb-0">Transferencia entre Cuentas Propias</h3>
+                </div>
+                <div class="card-body">
+                    <p>Mueva fondos de forma segura entre sus cuentas de ahorro.</p>
+
+                    @if (Model.HasError)
+                    {
+                        <div class="alert alert-danger">
+                            @Model.ErrorMessage
+                        </div>
+                    }
+
+                    <form asp-action="Index" method="post">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="SourceAccountId" class="form-label fw-bold">Cuenta de Origen</label>
+                            <select asp-for="SourceAccountId" class="form-select" 
+                                    asp-items="@(new SelectList(accountsList, "Id", "AccountNumber"))">
+                                <option value="">-- Seleccione una cuenta --</option>
+                            </select>
+                            <span asp-validation-for="SourceAccountId" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="DestinationAccountId" class="form-label fw-bold">Cuenta de Destino</label>
+                            <select asp-for="DestinationAccountId" class="form-select"
+                                     asp-items="@(new SelectList(accountsList, "Id", "AccountNumber"))">
+                                <option value="">-- Seleccione una cuenta --</option>
+                            </select>
+                            <span asp-validation-for="DestinationAccountId" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label asp-for="Amount" class="form-label fw-bold">Monto a Transferir (RD$)</label>
+                            <input asp-for="Amount" class="form-control" type="number" step="0.01" placeholder="Ej: 1500.00" />
+                            <span asp-validation-for="Amount" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg">Realizar Transferencia</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -68,7 +68,6 @@ namespace HermesBanking.Infrastructure.Identity
             #endregion
 
             #region Services
-            //services.AddScoped<ICashierService, CashierService>();
             services.AddScoped<ITransactionService, TransactionService>();
             services.AddScoped<IAccountServiceForWebApp, AccountServiceForWebApp>();
             #endregion
@@ -161,8 +160,11 @@ namespace HermesBanking.Infrastructure.Identity
             #endregion
 
             #region Services
+            services.AddScoped<IAccountServiceForWebApp, AccountServiceForWebApp>();
+            services.AddScoped<ISavingsAccountService, SavingsAccountService>();
             services.AddScoped<IAccountServiceForWebApi, AccountServiceForWebApi>();
             #endregion
+
         }
 
         public static async Task RunIdentitySeedAsync(this IServiceProvider service)
@@ -177,7 +179,9 @@ namespace HermesBanking.Infrastructure.Identity
             await DefaultAdminUser.SeedAsync(userManager);
             await DefaultCashierUser.SeedAsync(userManager);
             await DefaultClientUser.SeedAsync(userManager);
+            await DefaultCommerceUser.SeedAsync(userManager);
         }
+
 
         #region Private methods
         private static void GeneralConfiguration(IServiceCollection services, IConfiguration config)

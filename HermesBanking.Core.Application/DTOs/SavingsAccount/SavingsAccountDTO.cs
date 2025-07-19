@@ -7,7 +7,7 @@ namespace HermesBanking.Core.Application.DTOs.SavingsAccount
         //main info
         public int Id { get; set; }
         public string? AccountNumber { get; set; }
-        public required decimal Balance { get; set; }
+        public required decimal? Balance { get; set; }
         public required AccountType AccountType { get; set; }
         public required bool IsActive { get; set; }
 

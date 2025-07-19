@@ -7,9 +7,13 @@ namespace HermesBanking.Infrastructure.Identity.Seeds
     {
         public static async Task SeedAsync(RoleManager<IdentityRole> roleManager)
         {
-            await roleManager.CreateAsync(new IdentityRole(Roles.Admin.ToString()));
-            await roleManager.CreateAsync(new IdentityRole(Roles.Client.ToString()));
-            await roleManager.CreateAsync(new IdentityRole(Roles.Cashier.ToString()));
+            foreach (var roleName in new[] { Roles.Admin.ToString(), Roles.Commerce.ToString(), Roles.Client.ToString(), Roles.Cashier.ToString() })
+            {
+                if (!await roleManager.RoleExistsAsync(roleName))
+                {
+                    await roleManager.CreateAsync(new IdentityRole(roleName));
+                }
+            }
         }
     }
 }

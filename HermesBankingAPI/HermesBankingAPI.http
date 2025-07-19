@@ -1,6 +1,0 @@
-@HermesBankingAPI_HostAddress = http://localhost:5034
-
-GET {{HermesBankingAPI_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

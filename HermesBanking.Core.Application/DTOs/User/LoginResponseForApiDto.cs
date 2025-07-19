@@ -1,11 +1,7 @@
 ﻿namespace HermesBanking.Core.Application.DTOs.User
 {
-    public class LoginResponseForApiDto
+    public class LoginResponseForApiDTO
     {
-        public required string Name { get; set; }
-        public required string LastName { get; set; }
-        public bool HasError { get; set; }
-        public required List<string> Errors { get; set; }
-        public string? AccessToken { get; set; }
+        public required string Jwt { get; set; }
     }
 }

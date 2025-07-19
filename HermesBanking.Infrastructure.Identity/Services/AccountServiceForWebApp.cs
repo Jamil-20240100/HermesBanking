@@ -39,38 +39,10 @@ namespace HermesBanking.Infrastructure.Identity.Services
             _emailService = emailService;
         }
 
-        public async Task<IEnumerable<SavingsAccount>> GetActiveAccountsAsync(string clientId)
-        {
-            var accounts = await _savingsAccountRepository.GetAccountsByClientIdAsync(clientId);
-            var activeAccounts = accounts.Where(account => account.IsActive).ToList();
-            Console.WriteLine($"Active Accounts for Client {clientId}: {string.Join(", ", activeAccounts.Select(a => a.AccountNumber))}");
-            return activeAccounts;
-        }
-
-        public async Task<CreditCard?> GetCreditCardByNumberAsync(string cardNumber)
-        {
-            return await _creditCardRepository.GetByCardNumberAsync(cardNumber);
-        }
-
-        public async Task<SavingsAccount?> GetSavingsAccountByNumberAsync(string accountNumber)
-        {
-            return await _savingsAccountRepository.GetByAccountNumberAsync(accountNumber);
-        }
-
-        public async Task<Loan?> GetLoanInfoAsync(string loanIdentifier)
-        {
-            return await _loanRepository.GetLoanByIdentifierAsync(loanIdentifier);
-        }
-
-        public async Task<List<SavingsAccount>> GetAllActiveAccounts(string clientId)
-        {
-            var accounts = await _savingsAccountRepository.GetAccountsByClientIdAsync(clientId);
-            return accounts.Where(account => account.IsActive).ToList();
-        }
-
+        // Authenticate a user
         public async Task<LoginResponseDto> AuthenticateAsync(LoginDto loginDto)
         {
-            LoginResponseDto response = new()
+            var response = new LoginResponseDto
             {
                 Email = "",
                 Id = "",
@@ -105,8 +77,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
                 if (result.IsLockedOut)
                 {
                     response.Errors.Add($"Your account {loginDto.UserName} has been locked due to multiple failed attempts." +
-                                        $" Please try again in 10 minutes. If you don’t remember your password, you can go through the password " +
-                                        $"reset process.");
+                                         " Please try again in 10 minutes. If you don’t remember your password, you can go through the password reset process.");
                 }
                 else
                 {
@@ -131,19 +102,19 @@ namespace HermesBanking.Infrastructure.Identity.Services
             return response;
         }
 
+        // Sign out a user
         public async Task SignOutAsync()
         {
             await _signInManager.SignOutAsync();
         }
 
+        // Get user by ID
         public async Task<UserDto?> GetUserById(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
 
             if (user == null)
-            {
-                return null; // Return null if user is not found
-            }
+                return null;
 
             var roles = await _userManager.GetRolesAsync(user);
 
@@ -151,35 +122,38 @@ namespace HermesBanking.Infrastructure.Identity.Services
             {
                 Id = user.Id,
                 UserId = user.Id,
-                UserName = user.UserName ?? "Unknown",  // Avoid null values with default values
-                Name = user.Name ?? "Unknown",         // Avoid null values with default values
-                LastName = user.LastName ?? "Unknown", // Avoid null values with default values
-                Email = user.Email ?? "Unknown",       // Avoid null values with default values
-                Role = roles.FirstOrDefault() ?? "Unknown", // If no roles, assign a default value
+                UserName = user.UserName ?? "Unknown",
+                Name = user.Name ?? "Unknown",
+                LastName = user.LastName ?? "Unknown",
+                Email = user.Email ?? "Unknown",
+                Role = roles.FirstOrDefault() ?? "Unknown",
                 IsActive = user.IsActive,
                 isVerified = user.EmailConfirmed,
                 InitialAmount = null
             };
         }
 
+        // Get user by Username
         public async Task<AppUser?> GetUserByUserName(string userName)
         {
-            var user = await _userManager.FindByNameAsync(userName);
-            return user;
+            return await _userManager.FindByNameAsync(userName);
         }
 
+        // Get user's email by user ID
         public async Task<string?> GetUserEmailAsync(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
             return user?.Email;
         }
 
+        // Get user's full name by user ID
         public async Task<string> GetUserFullNameAsync(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
             return user == null ? "" : $"{user.Name} {user.LastName}";
         }
 
+        // Get client details for loan assignment
         public async Task<List<ClientSelectionViewModel>> GetClientDetailsForLoanAssignment(string? identificationNumber)
         {
             var clients = await _userManager.GetUsersInRoleAsync("Client");
@@ -201,13 +175,13 @@ namespace HermesBanking.Infrastructure.Identity.Services
             }).ToList();
         }
 
+        // Get user by identification number
         public async Task<UserDto?> GetUserByIdentificationNumber(string identificationNumber)
         {
             var user = await _userManager.Users.FirstOrDefaultAsync(u => u.UserId == identificationNumber);
             if (user == null)
-            {
                 return null;
-            }
+
             var roles = await _userManager.GetRolesAsync(user);
 
             return new UserDto
@@ -225,6 +199,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
             };
         }
 
+        // Update savings account balance
         public async Task UpdateSavingsAccountBalance(string clientId, decimal amount)
         {
             var client = await _userManager.FindByIdAsync(clientId);
@@ -238,17 +213,41 @@ namespace HermesBanking.Infrastructure.Identity.Services
             await Task.CompletedTask;
         }
 
-        public async Task<string> GetUserEmailByClientIdAsync(string clientId)
+        // Get active accounts for a client
+        public async Task<IEnumerable<SavingsAccount>> GetActiveAccountsAsync(string clientId)
         {
-            var user = await _userManager.FindByIdAsync(clientId); // Assuming UserManager is used for accessing user data
-            return user?.Email ?? string.Empty; // Return email or an empty string if not found
+            var accounts = await _savingsAccountRepository.GetAccountsByClientIdAsync(clientId);
+            var activeAccounts = accounts.Where(account => account.IsActive).ToList();
+            Console.WriteLine($"Active Accounts for Client {clientId}: {string.Join(", ", activeAccounts.Select(a => a.AccountNumber))}");
+            return activeAccounts;
         }
 
-        public async Task<SavingsAccount?> GetAccountByNumberAsync(string accountNumber)
+        // Get credit card by number
+        public async Task<CreditCard?> GetCreditCardByNumberAsync(string cardNumber)
+        {
+            return await _creditCardRepository.GetByCardNumberAsync(cardNumber);
+        }
+
+        // Get savings account by number
+        public async Task<SavingsAccount?> GetSavingsAccountByNumberAsync(string accountNumber)
         {
             return await _savingsAccountRepository.GetByAccountNumberAsync(accountNumber);
         }
 
+        // Get loan information by identifier
+        public async Task<Loan?> GetLoanInfoAsync(string loanIdentifier)
+        {
+            return await _loanRepository.GetLoanByIdentifierAsync(loanIdentifier);
+        }
+
+        // Get user email by client ID
+        public async Task<string> GetUserEmailByClientIdAsync(string clientId)
+        {
+            var user = await _userManager.FindByIdAsync(clientId);
+            return user?.Email ?? string.Empty;
+        }
+
+        // Update savings account details
         public async Task UpdateAsync(SavingsAccount account)
         {
             await _savingsAccountRepository.UpdateAsync(account.Id, account);

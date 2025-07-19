@@ -283,8 +283,6 @@ namespace HermesBankingApp.Controllers
 
             };
 
-            //var currentDto = await _accountServiceForWebApp.GetUserById(dto.Id);
-
             var returnUser = await _accountServiceForWebApp.EditUser(dto, origin);
             if (returnUser.HasError)
             {

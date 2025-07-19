@@ -12,6 +12,6 @@
         public required string UserId { get; set; }
         public decimal? InitialAmount { get; set; }
         public required bool IsActive { get; set; }
-        public decimal TotalDebt { get; set; }
+        public decimal? TotalDebt { get; set; }
     }
 }

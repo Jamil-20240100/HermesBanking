@@ -12,5 +12,7 @@
         public required string UserId { get; set; }
         public decimal? InitialAmount { get; set; }
         public required bool IsActive { get; set; }
+        public string? CommerceId { get; set; }
+        public decimal? AdditionalAmount { get; set; }
     }
 }
