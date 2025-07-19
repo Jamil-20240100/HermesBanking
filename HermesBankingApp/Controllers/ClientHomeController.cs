@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace HermesBankingApp.Controllers
 {
@@ -34,11 +33,9 @@ namespace HermesBankingApp.Controllers
                 .Where(a => a.ClientId == userId && a.IsActive)
                 .ToListAsync();
 
-            var accountIds = accounts.Select(a => a.Id).ToList();
-
             var transactions = await _transactionRepo
                 .GetAllQuery()
-                .Where(t => t.SavingsAccountId.HasValue && accountIds.Contains(t.SavingsAccountId.Value))
+                .Where(t => accounts.Select(a => a.Id).Contains(t.SavingsAccountId))
                 .OrderByDescending(t => t.Date)
                 .Take(20)
                 .ToListAsync();

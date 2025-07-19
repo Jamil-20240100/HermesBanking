@@ -12,5 +12,6 @@
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\HermesBanking.Core.Domain\HermesBanking.Core.Domain.csproj" />
+	  <ProjectReference Include="..\HermesBanking.Infrastructure.Identity\HermesBanking.Infrastructure.Identity.csproj" />
 	</ItemGroup>
 </Project>

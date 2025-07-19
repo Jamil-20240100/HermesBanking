@@ -25,16 +25,22 @@ namespace HermesBankingApp.Controllers
             _userManager = userManager;
             _mapper = mapper;
         }
-        
-        private List<SelectListItem> GetActiveSavingsAccounts(string? excludeAccountNumber = null)
-        {
-            var accounts = _cashierService.GetAllActiveAccounts();
 
+        private async Task<List<SelectListItem>> GetActiveSavingsAccounts(string? excludeAccountNumber = null)
+        {
+            // Obtener el clientId del cajero logueado
+            var cashierId = _userManager.GetUserId(User);
+
+            // Esperar la tarea y obtener las cuentas activas
+            var accounts = await _cashierService.GetAllActiveAccounts(cashierId);
+
+            // Excluir la cuenta si es necesario
             if (!string.IsNullOrEmpty(excludeAccountNumber))
             {
                 accounts = accounts.Where(a => a.AccountNumber != excludeAccountNumber).ToList();
             }
 
+            // Mapear las cuentas a SelectListItem
             return accounts.Select(a => new SelectListItem
             {
                 Value = a.AccountNumber,
@@ -43,11 +49,11 @@ namespace HermesBankingApp.Controllers
         }
 
         [HttpGet]
-        public IActionResult Deposit()
+        public async Task<IActionResult> Deposit()
         {
             var vm = new DepositViewModel
             {
-                SavingsAccount = GetActiveSavingsAccounts()
+                SavingsAccount = await GetActiveSavingsAccounts()  // Añadido 'await' aquí
             };
             return View(vm);
         }
@@ -57,18 +63,17 @@ namespace HermesBankingApp.Controllers
         {
             if (!ModelState.IsValid)
             {
-                vm.SavingsAccount = GetActiveSavingsAccounts(); // Recarga lista si hay error
+                vm.SavingsAccount = await GetActiveSavingsAccounts(); // Recarga lista si hay error
                 return View(vm);
             }
 
             var cashierId = _userManager.GetUserId(User)!;
             var success = await _cashierService.MakeDepositAsync(vm.AccountNumber, vm.Amount, cashierId);
 
-
             if (!success)
             {
                 ModelState.AddModelError("", "Cuenta no encontrada o inactiva.");
-                vm.SavingsAccount = GetActiveSavingsAccounts();
+                vm.SavingsAccount = await GetActiveSavingsAccounts(); // Recarga lista si hay error
                 return View(vm);
             }
 
@@ -81,7 +86,7 @@ namespace HermesBankingApp.Controllers
         {
             if (!ModelState.IsValid)
             {
-                vm.SavingsAccount = GetActiveSavingsAccounts();
+                vm.SavingsAccount = await GetActiveSavingsAccounts(); // Recarga lista si hay error
                 return View("Deposit", vm);
             }
 
@@ -90,7 +95,7 @@ namespace HermesBankingApp.Controllers
             if (account == null || string.IsNullOrEmpty(fullName))
             {
                 ModelState.AddModelError("", "La cuenta no existe o el usuario no está disponible.");
-                vm.SavingsAccount = GetActiveSavingsAccounts();
+                vm.SavingsAccount = await GetActiveSavingsAccounts(); // Recarga lista si hay error
                 return View("Deposit", vm);
             }
 
@@ -122,11 +127,11 @@ namespace HermesBankingApp.Controllers
         }
 
         [HttpGet]
-        public IActionResult Withdraw()
+        public async Task<IActionResult> Withdraw()
         {
             var vm = new WithdrawViewModel
             {
-                SavingsAccount = GetActiveSavingsAccounts()
+                SavingsAccount = await GetActiveSavingsAccounts() // Añadido 'await' aquí
             };
             return View(vm);
         }
@@ -136,7 +141,7 @@ namespace HermesBankingApp.Controllers
         {
             if (!ModelState.IsValid)
             {
-                vm.SavingsAccount = GetActiveSavingsAccounts();
+                vm.SavingsAccount = await GetActiveSavingsAccounts(); // Recarga lista si hay error
                 return View("Withdraw", vm);
             }
 
@@ -145,14 +150,14 @@ namespace HermesBankingApp.Controllers
             if (account == null)
             {
                 ModelState.AddModelError("", "La cuenta no existe o está inactiva.");
-                vm.SavingsAccount = GetActiveSavingsAccounts();
+                vm.SavingsAccount = await GetActiveSavingsAccounts(); // Recarga lista si hay error
                 return View("Withdraw", vm);
             }
 
             if (account.Balance < vm.Amount)
             {
                 ModelState.AddModelError("", "La cuenta no tiene fondos suficientes.");
-                vm.SavingsAccount = GetActiveSavingsAccounts();
+                vm.SavingsAccount = await GetActiveSavingsAccounts(); // Recarga lista si hay error
                 return View("Withdraw", vm);
             }
 
@@ -184,9 +189,10 @@ namespace HermesBankingApp.Controllers
         }
 
         [HttpGet]
-        public IActionResult ThirdPartyTransfer()
+        public async Task<IActionResult> ThirdPartyTransfer()
         {
-            var accounts = _cashierService.GetAllActiveAccounts();
+            // Esperar a obtener la lista de cuentas activas de forma asincrónica
+            var accounts = await _cashierService.GetAllActiveAccounts(User.Identity.Name);
 
             var items = accounts.Select(a => new SelectListItem
             {
@@ -210,7 +216,7 @@ namespace HermesBankingApp.Controllers
             if (!ModelState.IsValid)
             {
                 // Recarga las listas por si vuelves a la vista original
-                var accounts = _cashierService.GetAllActiveAccounts();
+                var accounts = await _cashierService.GetAllActiveAccounts(User.Identity.Name);
                 var items = accounts.Select(a => new SelectListItem
                 {
                     Value = a.AccountNumber,
@@ -237,7 +243,6 @@ namespace HermesBankingApp.Controllers
                 return RedirectToAction("ThirdPartyTransfer");
             }
 
-            // ✅ Aquí estás pasando el ViewModel correcto a la vista de confirmación
             var confirmVm = new ConfirmThirdPartyTransferViewModel
             {
                 SourceAccountNumber = sourceAccount.AccountNumber,
@@ -246,7 +251,7 @@ namespace HermesBankingApp.Controllers
                 Amount = vm.Amount
             };
 
-            return View("ConfirmThirdPartyTransfer", confirmVm); // <-- El tipo correcto
+            return View("ConfirmThirdPartyTransfer", confirmVm);
         }
 
         [HttpPost]
@@ -267,14 +272,15 @@ namespace HermesBankingApp.Controllers
         }
 
         [HttpGet]
-        public IActionResult CreditCardPayment()
+        public async Task<IActionResult> CreditCardPayment()
         {
             var vm = new PagoTarjetaCreditoViewModel
             {
-                SavingsAccount = GetActiveSavingsAccounts()
+                SavingsAccount = await GetActiveSavingsAccounts() // Añadido 'await' aquí
             };
             return View(vm);
         }
+
 
         [HttpPost]
         public async Task<IActionResult> PayCreditCard(CreditCardPaymentDto paymentDto)
@@ -315,7 +321,7 @@ namespace HermesBankingApp.Controllers
         {
             if (!ModelState.IsValid)
             {
-                vm.SavingsAccount = GetActiveSavingsAccounts();
+                vm.SavingsAccount = await GetActiveSavingsAccounts(); // Recarga lista si hay error
                 return View("CreditCardPayment", vm);  // Regresa a la vista original si hay error
             }
 
@@ -324,14 +330,14 @@ namespace HermesBankingApp.Controllers
             if (cuenta == null || tarjeta == null)
             {
                 ModelState.AddModelError("", "Cuenta o tarjeta no válida.");
-                vm.SavingsAccount = GetActiveSavingsAccounts();
+                vm.SavingsAccount = await GetActiveSavingsAccounts(); // Recarga lista si hay error
                 return View("CreditCardPayment", vm);  // Regresa a la vista original si hay error
             }
 
             if (cuenta.Balance < vm.Amount)
             {
                 ModelState.AddModelError("", "Fondos insuficientes.");
-                vm.SavingsAccount = GetActiveSavingsAccounts();
+                vm.SavingsAccount = await GetActiveSavingsAccounts(); // Recarga lista si hay error
                 return View("CreditCardPayment", vm);  // Regresa a la vista original si hay error
             }
 
@@ -344,7 +350,7 @@ namespace HermesBankingApp.Controllers
                 DeudaActual = tarjeta.TotalOwedAmount,
             };
 
-            return View("ConfirmCreditCardPayment", confirmVm);  // Esta es la vista a la que deberías ir después de la validación
+            return View("ConfirmCreditCardPayment", confirmVm);  // Vista de confirmación después de validaciones
         }
 
 
@@ -382,11 +388,11 @@ namespace HermesBankingApp.Controllers
 
 
         [HttpGet]
-        public IActionResult LoanPayment()
+        public async Task<IActionResult> LoanPayment()
         {
             var vm = new PagoPrestamoViewModel
             {
-                SavingsAccount = GetActiveSavingsAccounts()
+                SavingsAccount = await GetActiveSavingsAccounts() // Añadido 'await' aquí
             };
             return View(vm);
         }
@@ -396,7 +402,7 @@ namespace HermesBankingApp.Controllers
         {
             if (!ModelState.IsValid)
             {
-                vm.SavingsAccount = GetActiveSavingsAccounts();  // Si hay error, recarga las cuentas activas
+                vm.SavingsAccount = await GetActiveSavingsAccounts(); // Recarga lista si hay error
                 return View("LoanPayment", vm);  // Devuelve a la misma vista con los datos correctos
             }
 
@@ -406,14 +412,14 @@ namespace HermesBankingApp.Controllers
             if (account == null || loan == null)
             {
                 ModelState.AddModelError("", "Cuenta o préstamo no válido.");
-                vm.SavingsAccount = GetActiveSavingsAccounts();
+                vm.SavingsAccount = await GetActiveSavingsAccounts(); // Recarga lista si hay error
                 return View("LoanPayment", vm);  // Devuelve a la misma vista si hay error
             }
 
             if (account.Balance < vm.Amount)
             {
                 ModelState.AddModelError("", "Fondos insuficientes.");
-                vm.SavingsAccount = GetActiveSavingsAccounts();
+                vm.SavingsAccount = await GetActiveSavingsAccounts(); // Recarga lista si hay error
                 return View("LoanPayment", vm);  // Devuelve a la misma vista si hay error
             }
 

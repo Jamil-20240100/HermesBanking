@@ -3,5 +3,8 @@
     public enum Status
     {
         APPROVED,
+        PENDING,
+        REJECTED
     }
+
 }

@@ -1,4 +1,6 @@
-﻿namespace HermesBanking.Core.Application.DTOs.Email
+﻿
+
+namespace HermesBanking.Core.Application.DTOs.Email
 {
     public class EmailRequestDto
     {

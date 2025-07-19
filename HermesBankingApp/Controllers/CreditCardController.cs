@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using HermesBanking.Core.Application.DTOs.CreditCard;
 using HermesBanking.Core.Application.DTOs.Email;
+using HermesBanking.Core.Application.DTOs.Transaction;
 using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Application.ViewModels.CreditCard;
 using HermesBanking.Core.Application.ViewModels.User;
@@ -21,7 +22,15 @@ namespace HermesBankingApp.Controllers
         private readonly IMapper _mapper;
         private readonly IEmailService _emailService;
         private readonly ILoanService _loanService;
-        public CreditCardController(ICreditCardService service, IMapper mapper, UserManager<AppUser> userManager, IAccountServiceForWebApp accountServiceForWebApp, IEmailService emailService, ILoanService loanService)
+        private readonly ITransactionService _transactionService;
+        public CreditCardController(
+            ICreditCardService service,
+            IMapper mapper,
+            UserManager<AppUser> userManager,
+            IAccountServiceForWebApp accountServiceForWebApp,
+            IEmailService emailService,
+            ILoanService loanService,
+            ITransactionService transactionService) 
         {
             _service = service;
             _mapper = mapper;
@@ -29,6 +38,7 @@ namespace HermesBankingApp.Controllers
             _accountServiceForWebApp = accountServiceForWebApp;
             _emailService = emailService;
             _loanService = loanService;
+            _transactionService = transactionService; 
         }
 
         public async Task<IActionResult> Index()
@@ -350,5 +360,68 @@ namespace HermesBankingApp.Controllers
                 return builder.ToString();
             }
         }
+
+        [HttpPost]
+        public async Task<IActionResult> PayCreditCard(string accountNumber, string cardNumber, decimal amount, string cashierId)
+        {
+            var account = await _accountServiceForWebApp.GetAccountByNumberAsync(accountNumber);
+            var card = await _service.GetCardByNumberAsync(cardNumber);
+
+            if (account == null || card == null)
+            {
+                ModelState.AddModelError("", "La cuenta o tarjeta no existen.");
+                return View();
+            }
+
+            if (account.Balance < amount)
+            {
+                ModelState.AddModelError("", "Fondos insuficientes.");
+                return View();
+            }
+
+            if (amount > card.TotalOwedAmount)
+            {
+                amount = card.TotalOwedAmount; // Solo se puede pagar la deuda total
+            }
+
+            // Debitar de la cuenta de origen
+            account.Balance -= amount;
+            await _accountServiceForWebApp.UpdateAsync(account);
+
+            // Reducir la deuda de la tarjeta de crédito
+            card.TotalOwedAmount -= amount;
+            await _service.UpdateAsync(card, card.Id);
+
+            // Crear el DTO de la transacción
+            var transactionDTO = new TransactionDTO
+            {
+                SavingsAccountId = account.Id,
+                Type = "CRÉDITO", // Asignar un tipo de transacción
+                Amount = amount,
+                Origin = accountNumber,    // Origen
+                Beneficiary = cardNumber,  // Beneficiario
+                CashierId = cashierId,     // ID del cajero
+                Date = DateTime.Now        // Fecha de la transacción
+            };
+
+            // Registrar la transacción (pasando el DTO como parámetro)
+            await _transactionService.RegisterTransactionAsync(transactionDTO);
+
+            // Enviar correos electrónicos
+            var user = await _accountServiceForWebApp.GetUserById(account.ClientId);
+            string last4Card = card.CardId.Substring(card.CardId.Length - 4);
+            string last4Account = account.AccountNumber.Substring(account.AccountNumber.Length - 4);
+
+            await _emailService.SendAsync(new EmailRequestDto
+            {
+                To = user.Email,
+                Subject = $"Pago realizado a la tarjeta {last4Card}",
+                HtmlBody = $"Se ha realizado un pago de RD${amount:N2} desde su cuenta {last4Account} a su tarjeta de crédito."
+            });
+
+            return RedirectToAction("Home", "Client");
+        }
+
+
     }
 }

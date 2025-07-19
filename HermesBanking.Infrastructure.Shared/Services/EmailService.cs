@@ -18,10 +18,13 @@ namespace HermesBanking.Infrastructure.Shared.Services
             _logger = logger;
         }
 
+        // Eliminar la dependencia circular. Ya no necesitamos IAccountServiceForWebApp.
+
         public async Task SendAsync(EmailRequestDto emailRequestDto)
         {
             try
             {
+                // Agregar el destinatario a la lista de destinatarios.
                 emailRequestDto.ToRange?.Add(emailRequestDto.To ?? "");
 
                 MimeMessage email = new()
@@ -30,6 +33,7 @@ namespace HermesBanking.Infrastructure.Shared.Services
                     Subject = emailRequestDto.Subject
                 };
 
+                // Añadir todos los destinatarios.
                 foreach (var toItem in emailRequestDto.ToRange ?? [])
                 {
                     email.To.Add(MailboxAddress.Parse(toItem));
@@ -49,19 +53,20 @@ namespace HermesBanking.Infrastructure.Shared.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An exception occured {Exception}.", ex);
+                _logger.LogError(ex, "An exception occurred {Exception}.", ex);
             }
         }
+
+        // Método de envío simple para simular el envío de un correo.
         public async Task SendEmailAsync(string toEmail, string subject, string message)
         {
-            // Aquí iría tu lógica real de envío de correo (ej. SmtpClient, SendGrid, Mailgun)
-            // Por simplicidad, solo simulará el envío.
             Console.WriteLine($"Simulando envío de correo a: {toEmail}");
             Console.WriteLine($"Asunto: {subject}");
             Console.WriteLine($"Mensaje: {message}");
             await Task.CompletedTask;
         }
 
+        // Método para enviar el correo cuando un préstamo ha sido aprobado.
         public async Task SendLoanApprovedEmail(string clientEmail, decimal amount, int term, decimal interestRate, decimal monthlyInstallment)
         {
             string subject = "¡Préstamo Aprobado - Hermes Banking!";
@@ -78,6 +83,7 @@ namespace HermesBanking.Infrastructure.Shared.Services
             await SendEmailAsync(clientEmail, subject, message);
         }
 
+        // Método para enviar un correo cuando la tasa de interés del préstamo se actualiza.
         public async Task SendLoanInterestRateUpdatedEmail(string clientEmail, decimal newInterestRate, decimal newMonthlyInstallment, decimal oldMonthlyInstallment)
         {
             string subject = "Actualización de Tasa de Interés de su Préstamo - Hermes Banking";
@@ -88,6 +94,23 @@ namespace HermesBanking.Infrastructure.Shared.Services
                              $"- Nueva Tasa de Interés Anual: {newInterestRate:F2}%\n" +
                              $"- Nueva Cuota Mensual a partir de la próxima fecha de vencimiento: {newMonthlyInstallment:C}\n\n" +
                              $"Si tiene alguna pregunta, no dude en contactarnos.\n\n" +
+                             $"Atentamente,\nEl equipo de Hermes Banking";
+
+            await SendEmailAsync(clientEmail, subject, message);
+        }
+
+        // Método para enviar una confirmación de transacción.
+        public async Task SendTransactionConfirmationEmail(string clientEmail, decimal amount, string sourceAccount, string destinationAccount, DateTime transactionDate)
+        {
+            string subject = $"Confirmación de Transacción: {amount:C} de {sourceAccount} a {destinationAccount}";
+            string message = $"Estimado cliente,\n\n" +
+                             $"Su transacción ha sido completada con éxito.\n\n" +
+                             $"Detalles de la transacción:\n" +
+                             $"- Monto: {amount:C}\n" +
+                             $"- Cuenta de Origen: {sourceAccount}\n" +
+                             $"- Cuenta de Destino: {destinationAccount}\n" +
+                             $"- Fecha y Hora: {transactionDate:G}\n\n" +
+                             $"Gracias por utilizar Hermes Banking.\n\n" +
                              $"Atentamente,\nEl equipo de Hermes Banking";
 
             await SendEmailAsync(clientEmail, subject, message);

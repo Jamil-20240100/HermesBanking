@@ -16,6 +16,10 @@ namespace HermesBanking.Core.Application.Services
             _repository = repository;
             _mapper = mapper;
         }
+        public async Task<IEnumerable<Beneficiary>> GetAvailableBeneficiariesAsync(string clientId)
+        {
+            return await _repository.GetAll();  // Devuelve todos los beneficiarios, puedes agregar algún filtro si es necesario
+        }
 
         public async Task<List<BeneficiaryDTO>> GetAllByClientIdAsync(string clientId)
         {

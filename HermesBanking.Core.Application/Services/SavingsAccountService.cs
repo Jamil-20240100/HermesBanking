@@ -13,6 +13,7 @@ namespace HermesBanking.Core.Application.Services
         private readonly IAccountServiceForWebApp _accountServiceForWebApp;
         private readonly IMapper _mapper;
 
+
         public SavingsAccountService(ISavingsAccountRepository repository, IMapper mapper, IAccountServiceForWebApp accountServiceForWebApp) : base(repository, mapper)
         {
             _mapper = mapper;
@@ -152,6 +153,18 @@ namespace HermesBanking.Core.Application.Services
 
             return dto;
         }
+
+        public async Task<IEnumerable<SavingsAccount>> GetAllActiveAccounts()
+        {
+            // Obtener todas las cuentas de ahorro
+            var allAccounts = await _repository.GetAll();
+
+            // Filtrar solo las cuentas activas
+            var activeAccounts = allAccounts.Where(account => account.IsActive).ToList();
+
+            return activeAccounts;
+        }
+
 
     }
 }

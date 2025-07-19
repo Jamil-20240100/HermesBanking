@@ -5,5 +5,8 @@ namespace HermesBanking.Core.Domain.Interfaces
     public interface ISavingsAccountRepository : IGenericRepository<SavingsAccount>
     {
         Task<SavingsAccount?> GetByAccountNumberAsync(string accountNumber);
+        Task<SavingsAccount> GetByIdAsync(int id);
+        Task<IEnumerable<SavingsAccount>> GetAccountsByClientIdAsync(string clientId);
     }
 }
+

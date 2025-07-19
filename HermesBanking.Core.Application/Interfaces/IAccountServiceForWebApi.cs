@@ -4,6 +4,6 @@ namespace HermesBanking.Core.Application.Interfaces
 {
     public interface IAccountServiceForWebApi : IBaseAccountService
     {
-        Task<LoginResponseForApiDto> AuthenticateAsync(LoginDto loginDto);
+        Task<LoginResponseForApiDto> AuthenticateAsync(LoginDto loginDto);  // Tipo de retorno correcto
     }
 }

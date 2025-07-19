@@ -26,6 +26,8 @@
         public DateTime CreatedAt { get; set; }
         public DateTime? CompletedAt { get; set; }
 
+        public decimal RemainingDebt { get; set; }
+
         public ICollection<AmortizationInstallment> AmortizationInstallments { get; set; }
     }
 }

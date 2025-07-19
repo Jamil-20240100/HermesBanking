@@ -221,6 +221,9 @@ namespace HermesBanking.Infrastructure.Persistence.Persistence.Migrations
                     b.Property<decimal>("PendingAmount")
                         .HasColumnType("decimal(18, 2)");
 
+                    b.Property<decimal>("RemainingDebt")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("TotalInstallments")
                         .HasColumnType("int");
 
@@ -289,18 +292,17 @@ namespace HermesBanking.Infrastructure.Persistence.Persistence.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("CashierId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ClientId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("CreditCardId")
+                    b.Property<int>("CreditCardId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Origin")
@@ -310,19 +312,16 @@ namespace HermesBanking.Infrastructure.Persistence.Persistence.Migrations
                     b.Property<string>("PerformedByCashierId")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("SavingsAccountId")
+                    b.Property<int>("SavingsAccountId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TransactionType")
+                    b.Property<int>("Status")
                         .HasColumnType("int");
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.HasKey("Id");
 
@@ -346,7 +345,9 @@ namespace HermesBanking.Infrastructure.Persistence.Persistence.Migrations
                 {
                     b.HasOne("HermesBanking.Core.Domain.Entities.SavingsAccount", "SavingsAccount")
                         .WithMany()
-                        .HasForeignKey("SavingsAccountId");
+                        .HasForeignKey("SavingsAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("SavingsAccount");
                 });

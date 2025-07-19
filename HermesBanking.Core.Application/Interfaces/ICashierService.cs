@@ -14,14 +14,14 @@ namespace HermesBanking.Core.Application.Interfaces
         Task<bool> MakeLoanPaymentAsync(string loanIdentifier, string accountNumber, decimal amount, string cashierId);
 
 
-        SavingsAccount? GetSavingsAccountByNumber(string accountNumber);
+        Task<SavingsAccount?> GetSavingsAccountByNumber(string accountNumber);
         Task<(SavingsAccount? account, CreditCard? card, string? clientFullName)> GetAccountCardAndClientNameAsync(string accountNumber, string cardNumber);
         Task<(SavingsAccount? account, string? clientFullName)> GetAccountWithClientNameAsync(string accountNumber);
         Task<(LoanDTO? loan, string clientFullName, decimal remainingDebt)> GetLoanInfoAsync(string loanIdentifier);
         Task<CashierDashboardViewModel> GetTodaySummaryAsync(string cashierId);
-       
 
 
-        List<SavingsAccount> GetAllActiveAccounts();
+
+        Task<List<SavingsAccount>> GetAllActiveAccounts(string clientId);
     }
 }

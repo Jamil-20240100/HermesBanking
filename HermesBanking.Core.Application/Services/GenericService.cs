@@ -7,7 +7,7 @@ namespace HermesBanking.Core.Application.Services
     public class GenericService<Entity, DtoModel> : IGenericService<DtoModel> where Entity : class where DtoModel : class
     {
         private readonly IGenericRepository<Entity> _repository;
-        private readonly IMapper _mapper;
+        protected readonly IMapper _mapper;
 
         public GenericService(IGenericRepository<Entity> repository, IMapper mapper)
         {

@@ -1,0 +1,70 @@
+﻿@model HermesBanking.Core.Application.ViewModels.TransactionViewModel
+
+@{
+    ViewData["Title"] = "Transaction";
+    Layout = "_LayoutClient";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Transfer Funds</h3>
+                </div>
+                <div class="card-body">
+                    <p>Complete the form to make a transfer from your savings account.</p>
+
+@if (Model.HasError)
+{
+                        <div class="alert alert-danger">
+                            @Model.ErrorMessage
+                        </div>
+}
+
+                    <form asp-action="Index" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="form-group mb-3">
+                            <label asp-for="SavingsAccountId" class="form-label fw-bold">Savings Account</label>
+                            <select asp-for="SavingsAccountId" class="form-control">
+                                <option value="">-- Select a savings account --</option>
+                                <!-- Suponiendo que tienes un modelo para las cuentas disponibles -->
+                            </select>
+                            <span asp-validation-for="SavingsAccountId" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="Amount" class="form-label fw-bold">Amount to Transfer (RD$)</label>
+                            <input asp-for="Amount" class="form-control" type="number" step="0.01" placeholder="Example: 5000.00" />
+                            <span asp-validation-for="Amount" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="Type" class="form-label fw-bold">Transaction Type</label>
+                            <input asp-for="Type" class="form-control" type="text" placeholder="Enter transaction type" />
+                            <span asp-validation-for="Type" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="Origin" class="form-label fw-bold">Origin</label>
+                            <input asp-for="Origin" class="form-control" type="text" placeholder="Enter origin" />
+                            <span asp-validation-for="Origin" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="Beneficiary" class="form-label fw-bold">Beneficiary</label>
+                            <input asp-for="Beneficiary" class="form-control" type="text" placeholder="Enter beneficiary" />
+                            <span asp-validation-for="Beneficiary" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="CashierId" class="form-label fw-bold">Cashier ID</label>
+                            <input asp-for="CashierId" class="form-control" type="text" placeholder="Enter cashier ID" />
+                            <span asp-validation-for="CashierId" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">Transfer Funds</button>
+                        </div>
+                    </form>

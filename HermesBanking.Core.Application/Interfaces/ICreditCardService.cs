@@ -4,5 +4,6 @@ namespace HermesBanking.Core.Application.Interfaces
 {
     public interface ICreditCardService : IGenericService<CreditCardDTO>
     {
+        Task<CreditCardDTO?> GetCardByNumberAsync(string cardNumber);
     }
 }
