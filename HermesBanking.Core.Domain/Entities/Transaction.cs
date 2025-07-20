@@ -12,11 +12,12 @@ namespace HermesBanking.Core.Domain.Entities
         public DateTime Date { get; set; } = DateTime.Now;
         public int SavingsAccountId { get; set; }
         public SavingsAccount SavingsAccount { get; set; } = null!;
-        public string? PerformedByCashierId { get; set; }
+
         public Status Status { get; set; }
         public int CreditCardId { get; set; }
 
-        public string CashierId { get; set; }
         public string Description { get; set; }
+
+        public string? CashierId { get; set; }
     }
 }

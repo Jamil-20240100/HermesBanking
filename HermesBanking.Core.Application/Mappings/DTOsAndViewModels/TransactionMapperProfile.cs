@@ -17,7 +17,6 @@ namespace HermesBanking.Core.Application.Mapping
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type))
                 .ForMember(dest => dest.Origin, opt => opt.MapFrom(src => src.Origin))
                 .ForMember(dest => dest.Beneficiary, opt => opt.MapFrom(src => src.Beneficiary))
-                .ForMember(dest => dest.CashierId, opt => opt.MapFrom(src => src.CashierId))
                 .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.Date));
 
             // Mapeo de DTO TransactionDTO a entidad Transaction
@@ -27,7 +26,6 @@ namespace HermesBanking.Core.Application.Mapping
                 .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type))
                 .ForMember(dest => dest.Origin, opt => opt.MapFrom(src => src.Origin))
                 .ForMember(dest => dest.Beneficiary, opt => opt.MapFrom(src => src.Beneficiary))
-                .ForMember(dest => dest.CashierId, opt => opt.MapFrom(src => src.CashierId))
                 .ForMember(dest => dest.Date, opt => opt.MapFrom(src => src.Date));
         }
     }

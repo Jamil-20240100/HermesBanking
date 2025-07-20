@@ -1,4 +1,6 @@
-﻿namespace HermesBanking.Core.Application.ViewModels.Cashier
+﻿using HermesBanking.Core.Application.ViewModels.SavingsAccount;
+
+namespace HermesBanking.Core.Application.ViewModels.Cashier
 {
     public class CashierDashboardViewModel
     {
@@ -7,6 +9,6 @@
         public int TotalWithdrawals { get; set; }
         public int TotalPayments { get; set; }
 
-        public List<HermesBanking.Core.Domain.Entities.SavingsAccount> Accounts { get; set; } = new();
+        public List<SavingsAccountViewModel> Accounts { get; set; }
     }
 }

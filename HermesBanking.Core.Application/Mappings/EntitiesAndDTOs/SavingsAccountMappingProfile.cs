@@ -1,14 +1,19 @@
 ﻿using AutoMapper;
-using HermesBanking.Core.Application.DTOs.SavingsAccount;
 using HermesBanking.Core.Domain.Entities;
+using HermesBanking.Core.Application.ViewModels.SavingsAccount;
 
-namespace HermesBanking.Core.Application.Mappings.EntitiesAndDTOs
+namespace HermesBanking.Core.Application.Mappings.DTOsAndViewModels
 {
-    public class SavingsAccountMappingProfile : Profile
+    public class SavingsAccountViewModelMappingProfile : Profile
     {
-        public SavingsAccountMappingProfile()
+        public SavingsAccountViewModelMappingProfile()
         {
-            CreateMap<SavingsAccount, SavingsAccountDTO>().ReverseMap();
+            CreateMap<SavingsAccount, SavingsAccountViewModel>()
+                .ForMember(dest => dest.AccountNumber, opt => opt.MapFrom(src => src.AccountNumber))
+                .ForMember(dest => dest.Balance, opt => opt.MapFrom(src => src.Balance))
+                .ForMember(dest => dest.AccountType, opt => opt.MapFrom(src => src.AccountType))
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt));
         }
     }
 }

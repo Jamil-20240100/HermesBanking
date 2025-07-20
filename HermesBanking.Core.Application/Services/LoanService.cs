@@ -196,6 +196,14 @@ namespace HermesBanking.Core.Application.Services
             }
         }
 
+
+        public async Task<List<LoanDTO>> GetAll()
+        {
+            var loans = await _loanRepository.GetAll();
+            return _mapper.Map<List<LoanDTO>>(loans);
+        }
+
+
         public async Task<decimal> CalculateAverageClientDebtAsync()
         {
             var allLoans = await _loanRepository.GetAll();

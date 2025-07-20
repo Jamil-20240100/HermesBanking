@@ -5,6 +5,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
+
+	
+
 	<ItemGroup>
 		<ProjectReference Include="..\HermesBanking.Core.Application\HermesBanking.Core.Application.csproj" />
 		<ProjectReference Include="..\HermesBanking.Core.Domain\HermesBanking.Core.Domain.csproj" />

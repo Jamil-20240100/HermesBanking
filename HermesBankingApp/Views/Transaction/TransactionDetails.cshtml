@@ -1,0 +1,57 @@
+﻿@model HermesBanking.Core.Application.ViewModels.Transaction.TransactionDetailsViewModel
+
+@{
+    ViewData["Title"] = "Detalles de la Transacción";
+    Layout = "_LayoutClient";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Detalles de la Transacción</h3>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-4">
+                        <dt class="col-sm-5">Cuenta Origen</dt>
+                        <dd class="col-sm-7">@Model.OriginAccount</dd>
+
+                        <dt class="col-sm-5">Cuenta Destino</dt>
+                        <dd class="col-sm-7">@Model.DestinationAccount</dd>
+
+                        <dt class="col-sm-5">Monto (RD$)</dt>
+                        <dd class="col-sm-7">@Model.Amount.ToString("N2")</dd>
+
+                        <dt class="col-sm-5">Tipo de Transacción</dt>
+                        <dd class="col-sm-7">@Model.TransactionType</dd>
+
+                        <dt class="col-sm-5">Descripción</dt>
+                        <dd class="col-sm-7">@Model.Description</dd>
+
+                        <dt class="col-sm-5">Fecha</dt>
+                        <dd class="col-sm-7">@Model.Date.ToString("g")</dd>
+
+                        @if (Model.TransactionType == "CreditCard")
+                        {
+                            <dt class="col-sm-5">Tarjeta de Crédito</dt>
+                            <dd class="col-sm-7">@Model.CreditCardId</dd>
+                        }
+
+                        @if (Model.TransactionType == "Loan")
+                        {
+                            <dt class="col-sm-5">Préstamo</dt>
+                            <dd class="col-sm-7">@Model.LoanId</dd>
+                        }
+
+                        @if (Model.TransactionType == "Beneficiary")
+                        {
+                            <dt class="col-sm-5">Beneficiario</dt>
+                            <dd class="col-sm-7">@Model.BeneficiaryName</dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

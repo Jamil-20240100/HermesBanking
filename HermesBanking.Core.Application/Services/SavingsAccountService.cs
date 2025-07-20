@@ -131,8 +131,8 @@ namespace HermesBanking.Core.Application.Services
             var clientAccounts = savingsAccountsList
                 .Where(sa =>
                     (clientIds.Contains(sa.ClientId) || adminIds.Contains(sa.CreatedByAdminId ?? "")) &&
-                    sa.AccountType == AccountType.Primary &&
-                    sa.AccountNumber == beneficiaryAccountNumber)
+                    sa.AccountNumber == beneficiaryAccountNumber &&
+                    sa.IsActive)  // Asegúrate de que la cuenta esté activa
                 .ToList();
 
             var targetAccount = clientAccounts.FirstOrDefault();
@@ -154,16 +154,7 @@ namespace HermesBanking.Core.Application.Services
             return dto;
         }
 
-        public async Task<IEnumerable<SavingsAccount>> GetAllActiveAccounts()
-        {
-            // Obtener todas las cuentas de ahorro
-            var allAccounts = await _repository.GetAll();
-
-            // Filtrar solo las cuentas activas
-            var activeAccounts = allAccounts.Where(account => account.IsActive).ToList();
-
-            return activeAccounts;
-        }
+        
 
 
     }

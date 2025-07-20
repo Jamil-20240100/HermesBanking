@@ -22,6 +22,6 @@ namespace HermesBanking.Core.Application.Interfaces
 
 
 
-        Task<List<SavingsAccount>> GetAllActiveAccounts(string clientId);
+        Task<List<SavingsAccount>> GetAllSavingsAccountsOfClients(string clientId);
     }
 }

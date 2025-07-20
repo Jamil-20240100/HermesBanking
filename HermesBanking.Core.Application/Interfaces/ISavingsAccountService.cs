@@ -10,6 +10,6 @@ namespace HermesBanking.Core.Application.Interfaces
         Task CancelAsync(int id);
         Task TransferBalanceAndCancelAsync(int accountId);
         Task<SavingsAccountDTO?> GetByAccountNumberAsync(string beneficiaryAccountNumber);
-        Task<IEnumerable<SavingsAccount>> GetAllActiveAccounts();
+        
     }
 }

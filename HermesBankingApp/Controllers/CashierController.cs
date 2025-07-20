@@ -32,7 +32,7 @@ namespace HermesBankingApp.Controllers
             var cashierId = _userManager.GetUserId(User);
 
             // Esperar la tarea y obtener las cuentas activas
-            var accounts = await _cashierService.GetAllActiveAccounts(cashierId);
+            var accounts = await _cashierService.GetAllSavingsAccountsOfClients(cashierId);
 
             // Excluir la cuenta si es necesario
             if (!string.IsNullOrEmpty(excludeAccountNumber))
@@ -115,7 +115,6 @@ namespace HermesBankingApp.Controllers
             var cashierId = _userManager.GetUserId(User)!;
             var success = await _cashierService.MakeDepositAsync(accountNumber, amount, cashierId);
 
-
             if (!success)
             {
                 TempData["Error"] = "Error al realizar el depósito.";
@@ -177,7 +176,6 @@ namespace HermesBankingApp.Controllers
             var cashierId = _userManager.GetUserId(User)!;
             var result = await _cashierService.MakeWithdrawAsync(accountNumber, amount, cashierId);
 
-
             if (!result)
             {
                 TempData["Error"] = "No se pudo completar el retiro.";
@@ -192,7 +190,7 @@ namespace HermesBankingApp.Controllers
         public async Task<IActionResult> ThirdPartyTransfer()
         {
             // Esperar a obtener la lista de cuentas activas de forma asincrónica
-            var accounts = await _cashierService.GetAllActiveAccounts(User.Identity.Name);
+            var accounts = await _cashierService.GetAllSavingsAccountsOfClients(User.Identity.Name);
 
             var items = accounts.Select(a => new SelectListItem
             {
@@ -209,14 +207,13 @@ namespace HermesBankingApp.Controllers
             return View(viewModel);
         }
 
-
         [HttpPost]
         public async Task<IActionResult> ConfirmThirdPartyTransfer(ThirdPartyTransferViewModel vm)
         {
             if (!ModelState.IsValid)
             {
                 // Recarga las listas por si vuelves a la vista original
-                var accounts = await _cashierService.GetAllActiveAccounts(User.Identity.Name);
+                var accounts = await _cashierService.GetAllSavingsAccountsOfClients(User.Identity.Name);
                 var items = accounts.Select(a => new SelectListItem
                 {
                     Value = a.AccountNumber,
@@ -260,7 +257,6 @@ namespace HermesBankingApp.Controllers
             var cashierId = _userManager.GetUserId(User)!;
             var success = await _cashierService.MakeThirdPartyTransferAsync(sourceAccountNumber, destinationAccountNumber, amount, cashierId);
 
-
             if (!success)
             {
                 TempData["Error"] = "Error al realizar la transferencia.";
@@ -280,7 +276,6 @@ namespace HermesBankingApp.Controllers
             };
             return View(vm);
         }
-
 
         [HttpPost]
         public async Task<IActionResult> PayCreditCard(CreditCardPaymentDto paymentDto)
@@ -314,7 +309,6 @@ namespace HermesBankingApp.Controllers
             // Redirigir de nuevo a la vista principal del Cajero
             return RedirectToAction("Index", "CashierHome");
         }
-
 
         [HttpPost]
         public async Task<IActionResult> ConfirmCreditCardPayment(PagoTarjetaCreditoViewModel vm)
@@ -353,7 +347,6 @@ namespace HermesBankingApp.Controllers
             return View("ConfirmCreditCardPayment", confirmVm);  // Vista de confirmación después de validaciones
         }
 
-
         [HttpPost]
         public async Task<IActionResult> ExecuteCreditCardPayment(string accountNumber, string cardNumber, decimal amount)
         {
@@ -385,7 +378,6 @@ namespace HermesBankingApp.Controllers
             TempData["Success"] = "Pago realizado correctamente.";
             return RedirectToAction("Index", "CashierHome");
         }
-
 
         [HttpGet]
         public async Task<IActionResult> LoanPayment()
@@ -436,7 +428,6 @@ namespace HermesBankingApp.Controllers
             return View("ConfirmLoanPayment", confirmVm);
         }
 
-
         [HttpPost]
         public async Task<IActionResult> ExecuteLoanPayment(string loanIdentifier, string accountNumber, decimal amount)
         {
@@ -474,90 +465,5 @@ namespace HermesBankingApp.Controllers
             TempData["Success"] = "Pago aplicado correctamente.";
             return RedirectToAction("Index", "CashierHome");
         }
-
-
-
-
-
-        [HttpPost]
-        public async Task<IActionResult> PayLoan(string loanIdentifier, string accountNumber, decimal amount)
-        {
-            var cashierId = _userManager.GetUserId(User)!;
-
-            var result = await _cashierService.MakeLoanPaymentAsync(loanIdentifier, accountNumber, amount, cashierId);
-
-            // Si el pago no se pudo hacer, guardamos el mensaje en TempData
-            if (!result)
-            {
-                TempData["Error"] = "No se pudo completar el pago. Verifique si ya está saldado.";
-                return View("LoanPayment", new PagoPrestamoViewModel
-                {
-                    AccountNumber = accountNumber,
-                    LoanNumber = loanIdentifier,
-                    Amount = amount
-                });
-            }
-
-            // Si el pago fue exitoso, guardamos el mensaje en TempData
-            TempData["Success"] = "Pago aplicado correctamente.";
-            return View("LoanPayment", new PagoPrestamoViewModel
-            {
-                AccountNumber = accountNumber,
-                LoanNumber = loanIdentifier,
-                Amount = amount
-            });
-        }
-
-
-
-
-
-        [HttpGet]
-        public async Task<IActionResult> LoanDetails(string loanIdentifier)
-        {
-            var (loan, clientFullName, remainingDebt) = await _cashierService.GetLoanInfoAsync(loanIdentifier);
-
-            if (loan == null)
-            {
-                TempData["Error"] = "Préstamo no encontrado o inactivo.";
-                return RedirectToAction("Index", "CashierHome");
-            }
-
-            var vm = new LoanDetailsViewModel
-            {
-                Id = loan.Id,
-                LoanIdentifier = loan.LoanIdentifier,
-                ClientId = loan.ClientId,
-                Amount = loan.Amount,
-                InterestRate = loan.InterestRate,
-                LoanTermMonths = loan.LoanTermMonths,
-                MonthlyInstallmentValue = loan.MonthlyInstallmentValue,
-                TotalInstallments = loan.TotalInstallments,
-                PaidInstallments = loan.PaidInstallments,
-                PendingAmount = loan.PendingAmount,
-                IsActive = loan.IsActive,
-                IsOverdue = loan.IsOverdue,
-                AssignedByAdminId = loan.AssignedByAdminId,
-                AdminFullName = loan.AdminFullName,
-                CreatedAt = loan.CreatedAt,
-                CompletedAt = loan.CompletedAt,
-                AmortizationSchedule = loan.AmortizationInstallments?.Select(a => _mapper.Map<AmortizationInstallmentViewModel>(a)).ToList() ?? new List<AmortizationInstallmentViewModel>(),
-                ClientFullName = clientFullName,
-                RemainingDebt = remainingDebt
-            };
-
-            return View(vm);
-        }
-
-
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Logout()
-        {
-            await HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
-            return RedirectToAction("Index", "Login");
-        }
-        
     }
 }

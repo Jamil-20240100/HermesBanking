@@ -20,6 +20,13 @@ public class CashierHomeController : Controller
     {
         var userId = _userManager.GetUserId(User)!;
         var vm = await _cashierService.GetTodaySummaryAsync(userId);
+
+        // Depuración
+        Console.WriteLine($"Total Transactions: {vm.TotalTransactions}");
+        Console.WriteLine($"Total Deposits: {vm.TotalDeposits}");
+        Console.WriteLine($"Total Withdrawals: {vm.TotalWithdrawals}");
+        Console.WriteLine($"Total Payments: {vm.TotalPayments}");
+
         return View(vm);
     }
 }

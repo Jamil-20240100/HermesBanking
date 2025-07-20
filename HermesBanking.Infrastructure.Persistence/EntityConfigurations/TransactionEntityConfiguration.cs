@@ -18,7 +18,7 @@ namespace HermesBanking.Infrastructure.Persistence.EntityConfigurations
             builder.Property(t => t.Beneficiary).IsRequired();
             builder.Property(t => t.Amount).IsRequired().HasColumnType("decimal(18,2)");
             builder.Property(t => t.Date).IsRequired();
-            builder.Property(t => t.PerformedByCashierId).IsRequired(false);
+            
 
             builder.HasOne(t => t.SavingsAccount)
                 .WithMany()

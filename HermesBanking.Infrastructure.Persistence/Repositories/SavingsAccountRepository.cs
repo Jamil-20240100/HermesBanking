@@ -18,18 +18,11 @@ namespace HermesBanking.Infrastructure.Persistence.Repositories
                 .FirstOrDefaultAsync(sa => sa.AccountNumber == accountNumber);
         }
 
-        public async Task<SavingsAccount> GetByIdAsync(int id)
-        {
-            return await _context.SavingsAccount.FindAsync(id);
-        }
-
         public async Task<IEnumerable<SavingsAccount>> GetAccountsByClientIdAsync(string clientId)
         {
             return await _context.SavingsAccount
-                 .Where(account => account.ClientId == clientId)
-                 .ToListAsync();
+                .Where(account => account.ClientId == clientId)
+                .ToListAsync();
         }
-
-
     }
 }

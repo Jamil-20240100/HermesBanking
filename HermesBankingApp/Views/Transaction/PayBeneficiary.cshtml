@@ -1,0 +1,62 @@
+﻿@model HermesBanking.Core.Application.ViewModels.Transaction.TransferToBeneficiaryViewModel
+@using HermesBanking.Core.Application.ViewModels.SavingsAccount
+@using HermesBanking.Core.Application.ViewModels.Beneficiary
+
+@{
+    ViewData["Title"] = "Transferencia a Beneficiario";
+    Layout = "_LayoutClient";
+    var accountsList = Model.AvailableAccounts ?? new List<SavingsAccountViewModel>();
+    var beneficiariesList = Model.AvailableBeneficiaries ?? new List<BeneficiaryViewModel>();
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Transferencia a Beneficiario</h3>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">Completa el formulario para transferir a un beneficiario registrado.</p>
+
+                    @if (Model.HasError)
+                    {
+                        <div class="alert alert-danger">@Model.ErrorMessage</div>
+                    }
+
+                    <form asp-action="TransferToBeneficiary" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="form-group mb-3">
+                            <label asp-for="FromAccountId" class="form-label fw-bold">Cuenta de Ahorros (Origen)</label>
+                            <select asp-for="FromAccountId" class="form-control"
+                                    asp-items="@(new SelectList(accountsList, "Id", "AccountNumber"))">
+                                <option value="">Seleccione una cuenta</option>
+                            </select>
+                            <span asp-validation-for="FromAccountId" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="BeneficiaryId" class="form-label fw-bold">Beneficiario</label>
+                            <select asp-for="BeneficiaryId" class="form-control"
+                                    asp-items="@(new SelectList(beneficiariesList, "Id", "FullName"))">
+                                <option value="">Seleccione un beneficiario</option>
+                            </select>
+                            <span asp-validation-for="BeneficiaryId" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label asp-for="Amount" class="form-label fw-bold">Monto a Transferir (RD$)</label>
+                            <input asp-for="Amount" class="form-control" type="number" step="0.01" />
+                            <span asp-validation-for="Amount" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">Transferir</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

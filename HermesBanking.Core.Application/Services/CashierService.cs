@@ -4,38 +4,47 @@ using HermesBanking.Core.Application.DTOs.Loan;
 using HermesBanking.Core.Application.DTOs.Transaction;
 using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Application.ViewModels.Cashier;
+using HermesBanking.Core.Application.ViewModels.SavingsAccount;
 using HermesBanking.Core.Domain.Entities;
 using HermesBanking.Core.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace HermesBanking.Core.Application.Services
 {
     public class CashierService : ICashierService
     {
         private readonly ISavingsAccountRepository _accountRepo;
-        private readonly ITransactionService _transactionService;
-        private readonly ICreditCardRepository _creditCardRepo;
-        private readonly ILoanService _loanService;
+        private readonly ICashierTransactionService _cashierTransactionService;
         private readonly IMapper _mapper;
         private readonly IEmailService _emailService;
         private readonly IAccountServiceForWebApp _userService;
+        private readonly ITransactionRepository _transactionRepo;
+        private readonly ILoanRepository _loanRepo; // Asegúrate de que tienes un repositorio de préstamos
+        private readonly ICreditCardRepository _cardRepo; // Asegúrate de que tienes un repositorio de tarjetas
 
         public CashierService(
-             IAccountServiceForWebApp userService,
+            IAccountServiceForWebApp userService,
             ISavingsAccountRepository accountRepo,
-            ITransactionService transactionService,
-            ICreditCardRepository creditCardRepo,
-            ILoanService loanService,
+            ICashierTransactionService cashierTransactionService,
             IMapper mapper,
-            IEmailService emailService)
+            IEmailService emailService,
+            ITransactionRepository transactionRepo,
+            ILoanRepository loanRepo,
+            ICreditCardRepository cardRepo)
         {
             _userService = userService;
             _accountRepo = accountRepo;
-            _transactionService = transactionService;
-            _creditCardRepo = creditCardRepo;
-            _loanService = loanService;
+            _cashierTransactionService = cashierTransactionService;
             _mapper = mapper;
             _emailService = emailService;
-        }
+            _transactionRepo = transactionRepo;
+            _loanRepo = loanRepo; // Asignar repositorio de préstamos
+            _cardRepo = cardRepo;
+                    }
 
         public async Task<bool> MakeDepositAsync(string accountNumber, decimal amount, string cashierId)
         {
@@ -45,7 +54,6 @@ namespace HermesBanking.Core.Application.Services
             account.Balance += amount;
             await _accountRepo.UpdateAsync(account);
 
-            // Registrar transacción
             var transactionDto = new TransactionDTO
             {
                 SavingsAccountId = account.Id,
@@ -57,22 +65,21 @@ namespace HermesBanking.Core.Application.Services
                 Date = DateTime.Now
             };
 
-            await _transactionService.RegisterTransactionAsync(transactionDto);
+            await _cashierTransactionService.RegisterCashierTransactionAsync(transactionDto);
 
-            // Enviar correo de confirmación
             var user = await _userService.GetUserById(account.ClientId);
             if (user == null || string.IsNullOrEmpty(user.Email)) return false;
 
             string lastFour = account.AccountNumber.Substring(account.AccountNumber.Length - 4);
             string subject = $"Depósito realizado a su cuenta {lastFour}";
             string htmlBody = $@"
-    <h3>Depósito exitoso</h3>
-    <p>Se ha realizado un depósito a su cuenta <strong>{account.AccountNumber}</strong>.</p>
-    <ul>
-        <li><strong>Monto:</strong> RD$ {amount:N2}</li>
-        <li><strong>Fecha:</strong> {DateTime.Now:dd/MM/yyyy}</li>
-        <li><strong>Hora:</strong> {DateTime.Now:hh:mm tt}</li>
-    </ul>";
+                <h3>Depósito exitoso</h3>
+                <p>Se ha realizado un depósito a su cuenta <strong>{account.AccountNumber}</strong>.</p>
+                <ul>
+                    <li><strong>Monto:</strong> RD$ {amount:N2}</li>
+                    <li><strong>Fecha:</strong> {DateTime.Now:dd/MM/yyyy}</li>
+                    <li><strong>Hora:</strong> {DateTime.Now:hh:mm tt}</li>
+                </ul>";
 
             var email = new EmailRequestDto
             {
@@ -88,55 +95,25 @@ namespace HermesBanking.Core.Application.Services
 
         public async Task<bool> MakeThirdPartyTransferAsync(string sourceAccountNumber, string destinationAccountNumber, decimal amount, string cashierId)
         {
-            // Obtener las cuentas de origen y destino
             var sourceAccount = await _accountRepo.GetByAccountNumberAsync(sourceAccountNumber);
             var destinationAccount = await _accountRepo.GetByAccountNumberAsync(destinationAccountNumber);
 
-            // Verificar que ambas cuentas existen y que la cuenta de origen tenga suficientes fondos
             if (sourceAccount == null || destinationAccount == null || sourceAccount.Balance < amount)
-            {
-                return false; // Retornar false si no se cumplen las condiciones
-            }
+                return false;
 
-            // Realizar la transferencia: deducir del saldo de la cuenta de origen y agregar al saldo de la cuenta de destino
             sourceAccount.Balance -= amount;
             destinationAccount.Balance += amount;
 
-            // Actualizar las cuentas en el repositorio
             await _accountRepo.UpdateAsync(sourceAccount.Id, sourceAccount);
             await _accountRepo.UpdateAsync(destinationAccount.Id, destinationAccount);
 
-            // Registrar la transacción de débito en la cuenta de origen
-            await _transactionService.RegisterTransactionAsync(new TransactionDTO
-            {
-                SavingsAccountId = sourceAccount.Id,
-                Type = "DÉBITO",
-                Amount = amount,
-                Origin = sourceAccountNumber,
-                Beneficiary = destinationAccountNumber,
-                CashierId = cashierId,
-                Date = DateTime.Now
-            });
+            await _cashierTransactionService.ProcessCashierTransferAsync(sourceAccountNumber, destinationAccountNumber, amount, cashierId);
 
-            // Registrar la transacción de crédito en la cuenta de destino
-            await _transactionService.RegisterTransactionAsync(new TransactionDTO
-            {
-                SavingsAccountId = destinationAccount.Id,
-                Type = "CREDITO",
-                Amount = amount,
-                Origin = sourceAccountNumber,
-                Beneficiary = destinationAccountNumber,
-                CashierId = cashierId,
-                Date = DateTime.Now
-            });
-
-            // Enviar notificación por correo electrónico
-            var sourceUser = await _emailService.GetUserEmailByClientId(sourceAccount.ClientId);
-            var destinationUser = await _emailService.GetUserEmailByClientId(destinationAccount.ClientId);
+            var sourceUser = await _userService.GetUserEmailAsync(sourceAccount.ClientId);
+            var destinationUser = await _userService.GetUserEmailAsync(destinationAccount.ClientId);
 
             if (sourceUser != null)
             {
-                // Enviar correo al usuario de la cuenta de origen
                 await _emailService.SendAsync(new EmailRequestDto
                 {
                     To = sourceUser,
@@ -147,7 +124,6 @@ namespace HermesBanking.Core.Application.Services
 
             if (destinationUser != null)
             {
-                // Enviar correo al usuario de la cuenta de destino
                 await _emailService.SendAsync(new EmailRequestDto
                 {
                     To = destinationUser,
@@ -156,7 +132,82 @@ namespace HermesBanking.Core.Application.Services
                 });
             }
 
-            return true; // Retornar true si la transferencia fue exitosa
+            return true;
+        }
+
+        public async Task<bool> MakeLoanPaymentAsync(string loanIdentifier, string accountNumber, decimal amount, string cashierId)
+        {
+            var loan = await _loanRepo.GetLoanByIdentifierAsync(loanIdentifier);
+            if (loan == null || loan.RemainingDebt < amount) return false;
+
+            loan.RemainingDebt -= amount;
+            await _loanRepo.UpdateAsync(loan);
+
+            var account = await _accountRepo.GetByAccountNumberAsync(accountNumber);
+            if (account == null) return false;
+
+            account.Balance -= amount;
+            await _accountRepo.UpdateAsync(account);
+
+            var transactionDto = new TransactionDTO
+            {
+                SavingsAccountId = account.Id,
+                Type = "LOAN_PAYMENT",
+                Amount = amount,
+                Origin = accountNumber,
+                Beneficiary = loanIdentifier,
+                CashierId = cashierId,
+                Date = DateTime.Now
+            };
+
+            await _cashierTransactionService.RegisterCashierTransactionAsync(transactionDto);
+            return true;
+        }
+
+        public async Task<List<SavingsAccount>> GetAllSavingsAccountsOfClients(string clientId)
+        {
+            return (List<SavingsAccount>)await _accountRepo.GetAccountsByClientIdAsync(clientId);
+        }
+
+        public async Task<CashierDashboardViewModel> GetTodaySummaryAsync(string cashierId)
+        {
+            var today = DateTime.Today;
+
+            var transactions = await _transactionRepo
+                .GetAllQuery()
+                .Where(t => t.Date.Date == today && t.CashierId == cashierId)
+                .ToListAsync();
+
+            var cashierTransactions = transactions.Where(t => t.CashierId == cashierId).ToList();
+
+            var accounts = await _accountRepo.GetAllQuery()
+                .Where(a => a.IsActive)
+                .ToListAsync();
+
+            var accountsViewModel = _mapper.Map<List<SavingsAccountViewModel>>(accounts);
+
+            return new CashierDashboardViewModel
+            {
+                TotalTransactions = cashierTransactions.Count,
+                TotalDeposits = cashierTransactions.Count(t => t.Type == "DEPOSIT"),
+                TotalWithdrawals = cashierTransactions.Count(t => t.Type == "WITHDRAWAL"),
+                TotalPayments = cashierTransactions.Count(t => t.Type == "CREDIT_CARD_PAYMENT" || t.Type == "LOAN_PAYMENT"),
+                Accounts = accountsViewModel
+            };
+        }
+
+        public async Task<(LoanDTO? loan, string clientFullName, decimal remainingDebt)> GetLoanInfoAsync(string loanIdentifier)
+        {
+            var loan = await _loanRepo.GetLoanByIdentifierAsync(loanIdentifier);
+            if (loan == null) return (null, null, 0);
+
+            var clientFullName = $"{loan.ClientFullName}"; // Aquí puedes ajustar el formato del nombre si es necesario
+            return (new LoanDTO
+            {
+                LoanIdentifier = loan.LoanIdentifier,
+                Amount = loan.Amount,
+                PendingAmount = loan.RemainingDebt
+            }, clientFullName, loan.RemainingDebt);
         }
 
 
@@ -165,13 +216,10 @@ namespace HermesBanking.Core.Application.Services
             var account = await _accountRepo.GetByAccountNumberAsync(accountNumber);
             if (account == null || account.Balance < amount) return false;
 
-            var user = await _userService.GetUserById(account.ClientId);
-            if (user == null || string.IsNullOrEmpty(user.Email)) return false;
-
             account.Balance -= amount;
             await _accountRepo.UpdateAsync(account);
 
-            await _transactionService.RegisterTransactionAsync(new TransactionDTO
+            var transactionDto = new TransactionDTO
             {
                 SavingsAccountId = account.Id,
                 Type = "WITHDRAWAL",
@@ -180,112 +228,64 @@ namespace HermesBanking.Core.Application.Services
                 Beneficiary = accountNumber,
                 CashierId = cashierId,
                 Date = DateTime.Now
-            });
-
-            // Enviar correo de confirmación
-            string lastFour = account.AccountNumber.Substring(account.AccountNumber.Length - 4);
-            string subject = $"Retiro realizado de su cuenta {lastFour}";
-            string htmlBody = $@"
-    <h3>Retiro exitoso</h3>
-    <p>Se ha realizado un retiro de su cuenta <strong>{account.AccountNumber}</strong>.</p>
-    <ul>
-        <li><strong>Monto:</strong> RD$ {amount:N2}</li>
-        <li><strong>Fecha:</strong> {DateTime.Now:dd/MM/yyyy}</li>
-        <li><strong>Hora:</strong> {DateTime.Now:hh:mm tt}</li>
-    </ul>";
-
-            var email = new EmailRequestDto
-            {
-                To = user.Email,
-                Subject = subject,
-                HtmlBody = htmlBody
             };
 
-            await _emailService.SendAsync(email);
-
+            await _cashierTransactionService.RegisterCashierTransactionAsync(transactionDto);
             return true;
         }
 
         public async Task<bool> MakeCreditCardPaymentAsync(string accountNumber, string cardNumber, decimal amount, string cashierId)
         {
             var account = await _accountRepo.GetByAccountNumberAsync(accountNumber);
-            var creditCard = await _creditCardRepo.GetByCardNumberAsync(cardNumber);
+            if (account == null || account.Balance < amount) return false;
 
-            if (account == null || creditCard == null || account.Balance < amount) return false;
-
-            var paymentAmount = Math.Min(amount, creditCard.TotalOwedAmount);
-            account.Balance -= paymentAmount;
-            creditCard.TotalOwedAmount -= paymentAmount;
-
+            account.Balance -= amount;
             await _accountRepo.UpdateAsync(account);
-            await _creditCardRepo.UpdateAsync(creditCard);
 
-            // Registrar transacción
             var transactionDto = new TransactionDTO
             {
                 SavingsAccountId = account.Id,
                 Type = "CREDIT_CARD_PAYMENT",
-                Amount = paymentAmount,
+                Amount = amount,
                 Origin = accountNumber,
                 Beneficiary = cardNumber,
                 CashierId = cashierId,
                 Date = DateTime.Now
             };
 
-            await _transactionService.RegisterTransactionAsync(transactionDto);
+            await _cashierTransactionService.RegisterCashierTransactionAsync(transactionDto);
             return true;
         }
 
-        // Implementación de otros métodos de la interfaz ICashierService
-        public async Task<CashierDashboardViewModel> GetTodaySummaryAsync(string cashierId)
+        public async Task<SavingsAccount?> GetSavingsAccountByNumber(string accountNumber)
         {
-            var today = DateTime.Today;
-            var transactions = await _transactionService.GetTransactionsByCashierAndDateAsync(cashierId, today);
+            return await _accountRepo.GetByAccountNumberAsync(accountNumber);
+        }
 
-            return new CashierDashboardViewModel
+        public async Task<(SavingsAccount? account, string? clientFullName)> GetAccountWithClientNameAsync(string accountNumber)
+        {
+            var account = await _accountRepo.GetByAccountNumberAsync(accountNumber);
+            var clientFullName = account != null ? $"{account.ClientFullName}" : null;
+
+            return (account, clientFullName);
+        }
+
+        public async Task<(SavingsAccount? account, CreditCard? card, string? clientFullName)> GetAccountCardAndClientNameAsync(string accountNumber, string cardNumber)
+        {
+            var account = await _accountRepo.GetByAccountNumberAsync(accountNumber);
+            var card = await _cardRepo.GetByCardNumberAsync(cardNumber);
+
+            // Si la cuenta o tarjeta no existen, retornamos null
+            if (account == null || card == null)
             {
-                TotalTransactions = transactions.Count,
-                TotalDeposits = transactions.Count(t => t.Type == "DEPOSIT"),
-                TotalWithdrawals = transactions.Count(t => t.Type == "WITHDRAWAL"),
-                TotalPayments = transactions.Count(t => t.Type == "CREDIT_CARD_PAYMENT")
-            };
+                return (null, null, null);
+            }
+
+            // Se devuelve el nombre completo del cliente, puedes ajustar esto según tu modelo
+            var clientFullName = account.ClientFullName;
+
+            return (account, card, clientFullName);
         }
 
-        // Métodos adicionales de la interfaz ICashierService
-
-        public Task<bool> MakeLoanPaymentAsync(string loanIdentifier, string accountNumber, decimal amount, string cashierId)
-        {
-            // Implementar la lógica de pago de préstamo
-            return Task.FromResult(true);
-        }
-
-        public Task<SavingsAccount?> GetSavingsAccountByNumber(string accountNumber)
-        {
-            return _accountRepo.GetByAccountNumberAsync(accountNumber);
-        }
-
-        public Task<(SavingsAccount? account, CreditCard? card, string? clientFullName)> GetAccountCardAndClientNameAsync(string accountNumber, string cardNumber)
-        {
-            // Implementar la lógica
-            return Task.FromResult<(SavingsAccount? account, CreditCard? card, string? clientFullName)>((null, null, null));
-        }
-
-        public Task<(SavingsAccount? account, string? clientFullName)> GetAccountWithClientNameAsync(string accountNumber)
-        {
-            // Implementar la lógica
-            return Task.FromResult<(SavingsAccount? account, string? clientFullName)>((null, null));
-        }
-
-        public Task<(LoanDTO? loan, string clientFullName, decimal remainingDebt)> GetLoanInfoAsync(string loanIdentifier)
-        {
-            // Implementar la lógica
-            return Task.FromResult<(LoanDTO? loan, string clientFullName, decimal remainingDebt)>((null, "", 0m));
-        }
-
-        public Task<List<SavingsAccount>> GetAllActiveAccounts(string clientId)
-        {
-            // Implementar la lógica
-            return Task.FromResult(new List<SavingsAccount>());
-        }
     }
 }

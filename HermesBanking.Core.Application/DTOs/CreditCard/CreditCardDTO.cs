@@ -1,4 +1,6 @@
-﻿namespace HermesBanking.Core.Application.DTOs.CreditCard
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace HermesBanking.Core.Application.DTOs.CreditCard
 {
     public class CreditCardDTO
     {

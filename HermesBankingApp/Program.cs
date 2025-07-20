@@ -1,5 +1,7 @@
-using HermesBanking.Core.Application;
+using HermesBanking.Core.Domain.Entities;
+using HermesBanking.Core.Application.DTOs.Transaction;
 using HermesBanking.Core.Application.Interfaces;
+using HermesBanking.Core.Application.Mappings.DTOsAndViewModels;
 using HermesBanking.Core.Application.Services;
 using HermesBanking.Core.Domain.Interfaces;
 using HermesBanking.Infrastructure.Application.Services;
@@ -19,41 +21,68 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews()
-    .AddSessionStateTempDataProvider();  // Añadir el proveedor de TempData
+    .AddSessionStateTempDataProvider();
 
+// Configuración para manejar sesiones
 builder.Services.AddSession(opt =>
 {
-    opt.IdleTimeout = TimeSpan.FromMinutes(60);
-    opt.Cookie.HttpOnly = true;
+    opt.IdleTimeout = TimeSpan.FromMinutes(60); // Tiempo de sesión
+    opt.Cookie.HttpOnly = true;  // Seguridad en el uso de cookies
 });
 
-// Registrar servicios de identidad (UserManager, SignInManager)
+// Configuración de Identity
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 {
-    // Opciones adicionales si las necesitas
+    // Aquí podrías agregar configuraciones personalizadas de Identity
+    // Ejemplo: options.Password.RequireDigit = true;
 })
-.AddEntityFrameworkStores<HermesBankingContext>()  // Usar el contexto de la base de datos
-.AddDefaultTokenProviders(); // Proveedores de tokens para funcionalidades como recuperación de contraseñas
+.AddEntityFrameworkStores<IdentityContext>()
+.AddDefaultTokenProviders();
 
-// Registrar los servicios de la aplicación
+// Configuración del DbContext principal para la base de datos
 builder.Services.AddDbContext<HermesBankingContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Configuración del DbContext para Identity
+builder.Services.AddDbContext<IdentityContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("IdentityConnection")));
+
+
 builder.Services.AddScoped<IAccountServiceForWebApp, AccountServiceForWebApp>();
 builder.Services.AddScoped<ICashierService, CashierService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
-builder.Services.AddScoped<IEmailService, EmailService>();  // Registrar EmailService
+builder.Services.AddScoped<IEmailService, EmailService>(); 
+builder.Services.AddScoped<ILoanService, LoanService>();
+builder.Services.AddScoped<IBeneficiaryService, BeneficiaryService>();
+builder.Services.AddScoped<ISavingsAccountService, SavingsAccountService>();
+builder.Services.AddScoped<ICreditCardService, CreditCardService>();
+builder.Services.AddScoped<ICashAdvanceService, CashAdvanceService>();
+builder.Services.AddScoped<ITransferService, TransferService>();
+builder.Services.AddScoped<ICashierTransactionService, CashierTransactionService>();
+builder.Services.AddScoped<IGenericService<TransactionDTO>, GenericService<Transaction, TransactionDTO>>();
 
-// Registrar repositorios y otros servicios
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<ICreditCardRepository, CreditCardRepository>();
-builder.Services.AddScoped<IBeneficiaryService, BeneficiaryService>();
+builder.Services.AddScoped<ISavingsAccountRepository, SavingsAccountRepository>();
+builder.Services.AddScoped<ILoanRepository, LoanRepository>();
+builder.Services.AddScoped<IAmortizationInstallmentRepository, AmortizationInstallmentRepository>();
+builder.Services.AddScoped<IBeneficiaryRepository, BeneficiaryRepository>();
 
-builder.Services.AddDbContext<IdentityContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));  // Si tienes un IdentityContext
+
+
+
+builder.Services.AddAutoMapper(typeof(Program));
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+builder.Services.AddAutoMapper(typeof(SavingsAccountDTOMappingProfile).Assembly);
+builder.Services.AddAutoMapper(typeof(SavingsAccountViewModelMappingProfile).Assembly);
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+
 
 var app = builder.Build();
 
-await app.Services.RunIdentitySeedAsync();  // Si necesitas hacer un seeding de los usuarios
+app.UseStaticFiles();
+
+await app.Services.RunIdentitySeedAsync(); 
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -68,6 +97,7 @@ app.UseSession();  // Middleware para usar TempData
 
 app.UseAuthentication();
 app.UseAuthorization();
+
 
 app.MapControllerRoute(
     name: "default",

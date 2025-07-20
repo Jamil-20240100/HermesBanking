@@ -115,7 +115,7 @@ namespace HermesBanking.Infrastructure.Identity
                 opt.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
             }).AddJwtBearer(opt =>
             {
-                opt.RequireHttpsMetadata = false;
+https://web.whatsapp.com/               opt.RequireHttpsMetadata = false;
                 opt.SaveToken = false;
                 opt.TokenValidationParameters = new TokenValidationParameters
                 {
