@@ -29,9 +29,9 @@
             <option value="canceled">Canceladas</option>
         </select>
     </div>
-    <div class="col-md-2">
+    @* <div class="col-md-2">
         <button type="button" id="applyFilterBtn" class="btn btn-primary w-100">Filtrar</button>
-    </div>
+    </div> *@
     <div class="col-md-3 text-end">
         <a asp-action="SelectClient" class="btn btn-success w-100">Asignar tarjeta de crédito</a>
     </div>
@@ -47,6 +47,7 @@
             <th>Adeudado</th>
             <th>Estado</th>
             <th class="text-center">Acciones</th>
+            <th hidden>ClientIdentification</th>
         </tr>
     </thead>
     <tbody id="creditCardTableBody">
@@ -54,7 +55,7 @@
         {
             @foreach (var card in Model)
             {
-                <tr>
+                <tr data-client-identification="@(card.ClientIdentification?.ToLower() ?? "")" data-status="@(card.IsActive ? "active" : "canceled")">
                     <td>@card.CardId</td>
                     <td>@card.ClientFullName</td>
                     <td>@FormatCurrency(card.CreditLimit)</td>
@@ -64,13 +65,14 @@
                     <td class="text-center">
                         <a asp-action="Details" asp-route-id="@card.Id" class="btn btn-sm btn-info">Detalles</a>
                         @{
-                            if(card.IsActive == true){
+                            if (card.IsActive == true)
+                            {
                                 <a asp-action="Edit" asp-route-id="@card.Id" class="btn btn-sm btn-warning">Editar</a>
                                 <a asp-action="ConfirmCancel" asp-route-id="@card.Id" class="btn btn-sm btn-danger">Cancelar</a>
                             }
                         }
-                       
                     </td>
+                    <td hidden>@card.ClientIdentification</td>
                 </tr>
             }
         }
@@ -90,14 +92,59 @@
 
 @section Scripts {
     <script>
-        const cedulaSearchInput = document.getElementById('cedulaSearch');
-        const statusFilterSelect = document.getElementById('statusFilter');
-        const applyFilterButton = document.getElementById('applyFilterBtn');
+        document.addEventListener('DOMContentLoaded', function () {
+            const cedulaSearchInput = document.getElementById('cedulaSearch');
+            const statusFilterSelect = document.getElementById('statusFilter');
+            const creditCardTableBody = document.getElementById('creditCardTableBody');
 
-        applyFilterButton.addEventListener('click', () => {
-            const cedula = cedulaSearchInput.value.trim();
-            const status = statusFilterSelect.value;
-            window.location.href = `/CreditCard/Index?cedula=${cedula}&status=${status}`;
+            // Get all table rows initially
+            const initialTableRows = Array.from(creditCardTableBody.querySelectorAll('tr'));
+
+            function applyFilters() {
+                const cedulaFilter = cedulaSearchInput.value.toLowerCase().trim();
+                const statusFilter = statusFilterSelect.value.toLowerCase();
+
+                let foundCards = false; // Bandera para saber si se encontró al menos una tarjeta
+
+                initialTableRows.forEach(row => {
+                    const clientIdentification = row.dataset.clientIdentification; // Already in lowercase
+                    const cardStatus = row.dataset.status; // Already in lowercase
+
+                    const matchesCedula = cedulaFilter === '' || (clientIdentification && clientIdentification.includes(cedulaFilter));
+                    const matchesStatus = statusFilter === 'all' || cardStatus === statusFilter;
+
+                    if (matchesCedula && matchesStatus) {
+                        row.style.display = ''; // Show the row
+                        foundCards = true;
+                    } else {
+                        row.style.display = 'none'; // Hide the row
+                    }
+                });
+
+                // Manejar el mensaje "No hay tarjetas encontradas."
+                const noDataRow = document.getElementById('noDataRow');
+                if (!foundCards) {
+                    if (!noDataRow) {
+                        const newRow = creditCardTableBody.insertRow();
+                        newRow.id = 'noDataRow';
+                        const cell = newRow.insertCell(0);
+                        cell.colSpan = 7; // Ajusta el colspan según el número de columnas visibles
+                        cell.className = 'text-center';
+                        cell.textContent = 'No hay tarjetas encontradas con los filtros aplicados.';
+                    }
+                } else {
+                    if (noDataRow) {
+                        noDataRow.remove();
+                    }
+                }
+            }
+
+            // Añadir event listeners para el filtrado dinámico
+            cedulaSearchInput.addEventListener('keyup', applyFilters); // Se dispara con cada tecla
+            statusFilterSelect.addEventListener('change', applyFilters); // Se dispara cuando cambia la selección
+
+            // Aplicar filtros inicialmente al cargar la página
+            applyFilters();
         });
     </script>
 }

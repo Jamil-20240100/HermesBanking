@@ -7,6 +7,7 @@
 
         public string ClientId { get; set; }
         public string ClientFullName { get; set; }
+        public string? ClientIdentificationNumber { get; set; }
 
         public decimal Amount { get; set; }
         public decimal InterestRate { get; set; }

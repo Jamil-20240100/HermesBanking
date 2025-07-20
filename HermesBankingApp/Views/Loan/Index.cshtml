@@ -19,80 +19,94 @@
     <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
 }
 
-<form asp-action="Index" method="get">
-    <div class="form-group">
-        <label for="cedula">Cédula del Cliente</label>
-        <input type="text" id="cedula" name="cedula" value="@ViewBag.CedulaFilter" class="form-control" />
-    </div>
-    <div class="form-group">
-        <label for="status">Estado</label>
-        <select id="status" name="status" class="form-control">
-            @if ((string)ViewBag.StatusFilter == "all")
-            {
-                <option value="all" selected>Todos</option>
-            }
-            else
-            {
-                <option value="all">Todos</option>
-            }
+<div class="form-group">
+    <label for="cedulaFilter">Cédula del Cliente</label>
+    <input type="text" id="cedulaFilter" class="form-control" placeholder="Filtrar por cédula" />
+</div>
+<div class="form-group">
+    <label for="statusFilter">Estado</label>
+    <select id="statusFilter" class="form-control">
+        <option value="all">Todos</option>
+        <option value="Activo">Activos</option>
+        <option value="Completado">Completados</option>
+        <option value="En Mora">En Mora</option>
+    </select>
+</div>
 
-            @if ((string)ViewBag.StatusFilter == "active")
-            {
-                <option value="active" selected>Activos</option>
-            }
-            else
-            {
-                <option value="active">Activos</option>
-            }
-
-            @if ((string)ViewBag.StatusFilter == "completed")
-            {
-                <option value="completed" selected>Completados</option>
-            }
-            else
-            {
-                <option value="completed">Completados</option>
-            }
-        </select>
-    </div>
-    <button type="submit" class="btn btn-secondary">Filtrar</button>
-</form>
-
-<table class="table">
+<table class="table" id="loansTable">
     <thead>
         <tr>
             <th>ID</th>
             <th>Identificador de Préstamo</th>
             <th>Cliente</th>
-            <th>Monto</th>
-            <th>Tasa Interés</th>
-            <th>Plazo (Meses)</th>
-            <th>Cuotas Pagadas</th>
-            <th>Monto Pendiente</th>
-            <th>Estado</th>
-            <th>Fecha Creación</th>
-            <th>Acciones</th>
+        <th>Monto</th>
+        <th>Tasa Interés</th>
+        <th>Plazo (Meses)</th>
+        <th>Cuotas Pagadas</th>
+        <th>Monto Pendiente</th>
+        <th>Estado</th>
+        <th>Fecha Creación</th>
+        <th>Acciones</th>
+        <th hidden>ClientId</th>
         </tr>
     </thead>
     <tbody>
         @foreach (var item in Model)
         {
-            <tr>
-                <td>@item.Id</td>
-                <td>@item.LoanIdentifier</td>
-                <td>@item.ClientFullName</td>
-                <td>@item.Amount.ToString("C")</td>
-                <td>@item.InterestRate.ToString("F2")%</td>
-                <td>@item.LoanTermMonths</td>
-                <td>@item.PaidInstallments / @item.TotalInstallments</td>
-                <td>@item.PendingAmount.ToString("C")</td>
-                <td>@item.Status</td>
-                <td>@item.CreatedAt.ToShortDateString()</td>
-                <td>
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Detalles</a>
-                    <a asp-action="EditInterestRate" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Editar Tasa</a>
-                </td>
-            </tr>
+            <tr data-client-identification="@(item.ClientIdentificationNumber?.ToLower() ?? "")" data-status="@item.Status?.ToLower()"> @* Convertir a minúsculas para el filtro JS *@
+        <td>@item.Id</td>
+        <td>@item.LoanIdentifier</td>
+        <td>@item.ClientFullName</td>
+        <td>@item.Amount.ToString("C")</td>
+        <td>@item.InterestRate.ToString("F2")%</td>
+        <td>@item.LoanTermMonths</td>
+        <td>@item.PaidInstallments / @item.TotalInstallments</td>
+        <td>@item.PendingAmount.ToString("C")</td>
+        <td>@item.Status</td>
+        <td>@item.CreatedAt.ToShortDateString()</td>
+        <td>
+            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Detalles</a>
+            <a asp-action="EditInterestRate" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Editar Tasa</a>
+        </td>
+        <td hidden>@item.ClientIdentificationNumber</td>
+        </tr>
         }
-    </tbody>
-</table>
+        </tbody>
+        </table>
+
+        @section Scripts {
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const cedulaFilterInput = document.getElementById('cedulaFilter');
+                    const statusFilterSelect = document.getElementById('statusFilter');
+                    const loansTableBody = document.querySelector('#loansTable tbody');
+                    const tableRows = loansTableBody.querySelectorAll('tr');
+
+                    function applyFilters() {
+                        const cedulaFilter = cedulaFilterInput.value.toLowerCase();
+                        const statusFilter = statusFilterSelect.value.toLowerCase(); // Convertir a minúsculas
+
+                        tableRows.forEach(row => {
+                            const clientIdentification = row.dataset.clientIdentification; // Ya es minúsculas del Razor
+                            const status = row.dataset.status; // Ya es minúsculas del Razor
+
+                            const matchesCedula = cedulaFilter === '' || (clientIdentification && clientIdentification.includes(cedulaFilter));
+                            const matchesStatus = statusFilter === 'all' || status === statusFilter;
+
+                            if (matchesCedula && matchesStatus) {
+                                row.style.display = ''; // Muestra la fila
+                            } else {
+                                row.style.display = 'none'; // Oculta la fila
+                            }
+                        });
+                    }
+
+                    // Añadir event listeners para los cambios en los filtros
+                    cedulaFilterInput.addEventListener('keyup', applyFilters);
+                    statusFilterSelect.addEventListener('change', applyFilters);
+
+                    // Aplicar filtros inicialmente
+                    applyFilters();
+                });
+            </script>
+        }

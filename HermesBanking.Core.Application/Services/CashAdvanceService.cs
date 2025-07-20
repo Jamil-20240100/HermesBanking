@@ -68,7 +68,7 @@ namespace HermesBanking.Core.Application.Services
                 SavingsAccountId = destinationAccount.Id,
                 Amount = dto.Amount,
                 Type = TransactionType.CREDITO.ToString(),
-                Origin = $"Avance TDC ...{sourceCard.CardId.Substring(sourceCard.CardId.Length - 4)}",
+                Origin = $"Avance TDC ...{sourceCard?.CardId?.Substring(sourceCard.CardId.Length - 4)}",
                 Beneficiary = destinationAccount.AccountNumber,
                 Date = DateTime.Now,
                 Status = Status.APPROVED,
@@ -76,14 +76,17 @@ namespace HermesBanking.Core.Application.Services
             };
             await _transactionRepo.AddAsync(savingsTransaction);
 
-            var creditCardTransaction = new Transaction
+            if(sourceCard != null)
             {
-                CreditCardId = sourceCard.Id,
-                Amount = dto.Amount,
-                Description = "AVANCE DE EFECTIVO",
-                Date = DateTime.Now,
-                Status = Status.APPROVED
-            };
+                var creditCardTransaction = new Transaction
+                {
+                    CreditCardId = sourceCard.Id,
+                    Amount = dto.Amount,
+                    Description = "AVANCE DE EFECTIVO",
+                    Date = DateTime.Now,
+                    Status = Status.APPROVED
+                };
+            }
 
             await _savingsAccountRepo.UpdateAsync(destinationAccount.Id, destinationAccount);
             await _creditCardRepo.UpdateAsync(sourceCard.Id, sourceCard);
