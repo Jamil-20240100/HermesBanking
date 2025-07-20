@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace HermesAPI.Controllers.v1
 {
     [ApiVersion("1.0")]
+    [Authorize (Roles = "Admin, Commerce")]
     public class AccountController : BaseApiController
     {
         private readonly IAccountServiceForWebApi _accountServiceForWebApi;
@@ -32,7 +33,6 @@ namespace HermesAPI.Controllers.v1
         }
 
 
-        [Authorize]
         [HttpPost("confirm")]
         public async Task<IActionResult> ConfirmAccount([FromBody] ConfirmAccountDto dto)
         {
@@ -52,7 +52,6 @@ namespace HermesAPI.Controllers.v1
             return NoContent();
         }
 
-        [Authorize]
         [HttpPost("get-reset-token")]
         public async Task<IActionResult> GetResetToken([FromBody] ForgotPasswordWithTokenDto request)
         {
@@ -68,7 +67,6 @@ namespace HermesAPI.Controllers.v1
         }
 
         [HttpPost("reset-password")]
-        [Authorize]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto resetPasswordDto)
         {
             if (resetPasswordDto == null)

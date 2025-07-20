@@ -1,12 +1,14 @@
 ﻿using HermesBanking.Core.Application.DTOs.SavingsAccount;
 using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Domain.Common.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HermesAPI.Controllers.v1
 {
     [ApiController]
     [Route("api/savings-account")]
+    [Authorize(Roles = "Admin")]
     public class SavingsAccountController : ControllerBase
     {
         private readonly ISavingsAccountService _savingsAccountService;

@@ -5,9 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HermesAPI.Controllers.v1
 {
-    //[Authorize(Roles = "Administrador")]
     [ApiController]
     [Route("api/credit-card")]
+    [Authorize(Roles = "Admin")]
     public class CreditCardController : ControllerBase
     {
         private readonly ICreditCardService _creditCardService;

@@ -6,9 +6,9 @@ using System.Security.Claims;
 
 namespace HermesAPI.Controllers.v1
 {
-    //[Authorize(Roles = "Admin")]
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Admin")]
     public class LoanController : ControllerBase
     {
         private readonly ILoanService _loanService;

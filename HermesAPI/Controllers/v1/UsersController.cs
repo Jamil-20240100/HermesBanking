@@ -1,7 +1,6 @@
 ﻿using Asp.Versioning;
 using HermesBanking.Core.Application.DTOs.User;
 using HermesBanking.Core.Application.Interfaces;
-using HermesBanking.Core.Application.Services;
 using HermesBanking.Core.Domain.Common.Enums;
 using HermesBanking.Infrastructure.Identity.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -14,7 +13,7 @@ namespace HermesAPI.Controllers.v1
 {
     [ApiVersion("1.0")]
     [Route("api/[controller]")]
-    //[Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Admin")]
     public class UsersController : ControllerBase
     {
         private readonly IAccountServiceForWebApi _accountServiceForWebApi;
@@ -159,7 +158,6 @@ namespace HermesAPI.Controllers.v1
         }
 
         [HttpPatch("{id}/status")]
-        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> ChangeUserStatus(string id, [FromBody] ChangeUserStatusDto dto)
         {
             if (!ModelState.IsValid)
@@ -180,7 +178,6 @@ namespace HermesAPI.Controllers.v1
         }
 
         [HttpGet("{id}")]
-       //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetUserById(string id)
         {
             var user = await _userManager.FindByIdAsync(id);
