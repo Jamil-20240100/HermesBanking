@@ -1,0 +1,32 @@
+﻿@model HermesBanking.Core.Application.ViewModels.Loan.ConfirmLoanAssignmentViewModel
+
+@{
+    ViewData["Title"] = "Advertencia de Riesgo de Préstamo";
+}
+
+<div class="container mt-5">
+    <div class="alert alert-warning" role="alert">
+        <h4 class="alert-heading">¡Advertencia de Alto Riesgo!</h4>
+        <p>@Model.RiskMessage</p>
+        <hr>
+        <p class="mb-0">¿Desea continuar con la asignación de este préstamo?</p>
+    </div>
+
+    <form asp-action="ConfirmLoanAssignment" method="post">
+        <input type="hidden" asp-for="ClientId" />
+        <input type="hidden" asp-for="Amount" />
+        <input type="hidden" asp-for="InterestRate" />
+        <input type="hidden" asp-for="LoanTermMonths" />
+        <input type="hidden" asp-for="CreatedByAdminId" />
+        <input type="hidden" asp-for="AdminFullName" />
+        <input type="hidden" asp-for="RiskMessage" />
+        <input type="hidden" asp-for="IsExistingHighRisk" />
+
+        <button type="submit" name="action" value="confirm" class="btn btn-danger">Confirmar Asignación</button>
+        <button type="submit" name="action" value="cancel" class="btn btn-secondary">Cancelar</button>
+    </form>
+
+    <div class="mt-3">
+        <a asp-action="AssignLoan" class="btn btn-info">Volver a Selección de Cliente</a>
+    </div>
+</div>

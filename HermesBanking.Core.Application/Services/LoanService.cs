@@ -39,26 +39,22 @@ namespace HermesBanking.Core.Application.Services
 
             if (!string.IsNullOrWhiteSpace(cedula))
             {
-                var user = await _accountServiceForWebApp.GetUserByIdentificationNumber(cedula);
-                if (user != null)
-                {
-                    loans = loans.Where(l => l.ClientId == user.Id).ToList();
-                }
-                else
-                {
-                    return [];
-                }
+                loans = loans.Where(l => l.ClientIdentificationNumber != null && l.ClientIdentificationNumber.Contains(cedula)).ToList();
             }
 
-            if (!string.IsNullOrWhiteSpace(status) && status != "all")
+            if (!string.IsNullOrWhiteSpace(status) && status.ToLower() != "all")
             {
                 if (status.Equals("active", StringComparison.CurrentCultureIgnoreCase))
                 {
                     loans = loans.Where(l => l.IsActive).ToList();
                 }
-                else if (status.ToLower() == "completed")
+                else if (status.Equals("completed", StringComparison.CurrentCultureIgnoreCase))
                 {
                     loans = loans.Where(l => !l.IsActive).ToList();
+                }
+                else if (status.Equals("en mora", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    loans = loans.Where(l => l.IsActive && l.IsOverdue).ToList();
                 }
             }
 
@@ -75,22 +71,10 @@ namespace HermesBanking.Core.Application.Services
 
             if (!string.IsNullOrWhiteSpace(cedula))
             {
-                var user = await _accountServiceForWebApp.GetUserByIdentificationNumber(cedula);
-                if (user != null)
-                {
-                    loans = loans.Where(l => l.ClientId == user.Id).ToList();
-                }
-                else
-                {
-                    return new
-                    {
-                        data = new List<object>(),
-                        paginacion = new { paginaActual = page, totalPaginas = 0 }
-                    };
-                }
+                loans = loans.Where(l => l.ClientIdentificationNumber != null && l.ClientIdentificationNumber.Contains(cedula)).ToList();
             }
 
-            if (!string.IsNullOrWhiteSpace(status))
+            if (!string.IsNullOrWhiteSpace(status) && status.ToLower() != "all")
             {
                 if (status.Equals("activos", StringComparison.CurrentCultureIgnoreCase))
                 {
@@ -99,6 +83,10 @@ namespace HermesBanking.Core.Application.Services
                 else if (status.Equals("completados", StringComparison.CurrentCultureIgnoreCase))
                 {
                     loans = loans.Where(l => !l.IsActive).ToList();
+                }
+                else if (status.Equals("en mora", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    loans = loans.Where(l => l.IsActive && l.IsOverdue).ToList();
                 }
             }
 
@@ -115,21 +103,33 @@ namespace HermesBanking.Core.Application.Services
 
             foreach (var loan in loansPage)
             {
-                var client = await _accountServiceForWebApp.GetUserById(loan.ClientId);
                 var cuotasPagadas = await _installmentRepository.GetByConditionAsync(i => i.LoanId == loan.Id && i.IsPaid);
                 var cuotasPendientes = await _installmentRepository.GetByConditionAsync(i => i.LoanId == loan.Id && !i.IsPaid);
 
                 string estadoPago = "al_dia";
-                if (cuotasPendientes.Any(i => i.IsOverdue))
+                if (cuotasPendientes.Any(i => i.PaymentDate.Date < DateTime.Today))
                 {
                     estadoPago = "atrasado";
                 }
+                else if (!loan.IsActive && loan.CompletedAt.HasValue)
+                {
+                    estadoPago = "completado";
+                }
+                else if (loan.IsActive && !loan.IsOverdue)
+                {
+                    estadoPago = "activo";
+                }
+                else if (loan.IsActive && loan.IsOverdue)
+                {
+                    estadoPago = "en_mora";
+                }
+
 
                 result.Add(new
                 {
                     id = loan.Id.ToString("D9"),
-                    cliente = $"{client?.Name} {client?.LastName}",
-                    cedula = client?.UserId,
+                    cliente = loan.ClientFullName,
+                    cedula = loan.ClientIdentificationNumber,
                     monto = loan.Amount,
                     cuotasTotales = loan.TotalInstallments,
                     cuotasPagadas = cuotasPagadas.Count(),
@@ -184,18 +184,22 @@ namespace HermesBanking.Core.Application.Services
 
         public async Task AddLoanAsync(CreateLoanDTO loanDto, string adminId, string adminFullName)
         {
-            var loan = _mapper.Map<Loan>(loanDto);
-            loan.AssignedByAdminId = adminId;
-            loan.AdminFullName = adminFullName;
-            loan.CreatedAt = DateTime.Now;
-            loan.TotalInstallments = loan.LoanTermMonths;
-
             var client = await _accountServiceForWebApp.GetUserById(loanDto.ClientId);
             if (client == null)
             {
                 throw new InvalidOperationException("Cliente no encontrado para la asignación del préstamo.");
             }
+
+            var loan = _mapper.Map<Loan>(loanDto);
+
+            loan.ClientId = client.Id; 
             loan.ClientFullName = $"{client.Name} {client.LastName}";
+            loan.ClientIdentificationNumber = client.UserId;
+
+            loan.AssignedByAdminId = adminId;
+            loan.AdminFullName = adminFullName;
+            loan.CreatedAt = DateTime.Now;
+            loan.TotalInstallments = loan.LoanTermMonths;
 
             loan.MonthlyInstallmentValue = CalculateAmortizationSchedule(
                 loan.Amount, loan.InterestRate, loan.LoanTermMonths, loan.CreatedAt).First().InstallmentValue;
@@ -212,14 +216,10 @@ namespace HermesBanking.Core.Application.Services
                 await _installmentRepository.AddAsync(installment);
             }
 
-            await _accountServiceForWebApp.UpdateSavingsAccountBalance(loan.ClientId, loan.Amount);
-
-            //
-            //assign loan to savings account
-            //
+            await _accountServiceForWebApp.UpdateSavingsAccountBalance(client.Id, loan.Amount);
 
             var accounts = await _savingsAccountRepository
-                .GetByConditionAsync(sa => sa.ClientId == loan.ClientId && sa.AccountType == AccountType.Primary);
+                .GetByConditionAsync(sa => sa.ClientId == client.Id && sa.AccountType == AccountType.Primary);
 
             var account = accounts.FirstOrDefault();
 
@@ -236,7 +236,7 @@ namespace HermesBanking.Core.Application.Services
                     client.Email, loan.Amount, loan.LoanTermMonths, loan.InterestRate, loan.MonthlyInstallmentValue);
             }
         }
-
+        
         public async Task<(int StatusCode, string? Error)> CreateLoanForClientAsync(CreateLoanDTO dto, string adminId, string adminFullName)
         {
             if (string.IsNullOrWhiteSpace(dto.ClientId)
@@ -482,6 +482,28 @@ namespace HermesBanking.Core.Application.Services
             var entities = await _loanRepository.GetAllQuery().FirstOrDefaultAsync(l => l.LoanIdentifier == loanIdentifier);
             var dtos = _mapper.Map<LoanDTO>(entities);
             return dtos;
+        }
+
+
+        public async Task<decimal> GetClientTotalDebt(string clientId)
+        {
+            return await _loanRepository.GetAllQuery()
+                                    .Where(l => l.ClientId == clientId && l.IsActive == true)
+                                    .SumAsync(l => l.PendingAmount);
+        }
+
+        public async Task<decimal> GetAverageSystemDebt()
+        {
+            var totalActiveLoans = await _loanRepository.GetAllQuery()
+                                                     .Where(l => l.IsActive == true)
+                                                     .ToListAsync();
+
+            if (!totalActiveLoans.Any())
+            {
+                return 0;
+            }
+
+            return totalActiveLoans.Average(l => l.PendingAmount);
         }
 
     }

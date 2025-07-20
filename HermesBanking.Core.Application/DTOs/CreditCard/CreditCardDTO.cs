@@ -6,6 +6,7 @@
         public string? CardId { get; set; }
         public required string ClientId { get; set; }
         public string? ClientFullName { get; set; }
+        public string? ClientIdentification { get; set; }
         public required decimal CreditLimit { get; set; }
         public required decimal TotalOwedAmount { get; set; }
         public string? CVC { get; set; }

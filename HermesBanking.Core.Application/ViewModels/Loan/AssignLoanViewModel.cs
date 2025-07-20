@@ -6,6 +6,7 @@ namespace HermesBanking.Core.Application.ViewModels.Loan
     {
         public string? ClientId { get; set; }
         public string? ClientFullName { get; set; }
+        public string? ClientIdentificationNumber { get; set; }
 
         [Required(ErrorMessage = "El monto a prestar es obligatorio.")]
         [Range(0.01, (double)decimal.MaxValue, ErrorMessage = "El monto debe ser mayor que cero.")]

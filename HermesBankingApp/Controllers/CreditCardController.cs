@@ -47,14 +47,14 @@ namespace HermesBankingApp.Controllers
             //
             //
 
-            var allCards = await _service.GetAll();
-            var vmList = _mapper.Map<List<CreditCardViewModel>>(allCards);
+            var pagedResponse = await _service.GetCreditCardsAsync(); // Llama a tu método específico
+            var vmList = _mapper.Map<List<CreditCardViewModel>>(pagedResponse.Data); // Mapea el Data de la respuesta paginada
 
+            // El ordenamiento que tenías en el controlador
             vmList.Sort((a, b) =>
             {
                 if (a.IsActive && !b.IsActive) return -1;
                 if (!a.IsActive && b.IsActive) return 1;
-
                 return b.CreatedAt.CompareTo(a.CreatedAt);
             });
 
@@ -316,7 +316,5 @@ namespace HermesBankingApp.Controllers
 
             return RedirectToAction("Index");
         }
-
-        
     }
 }

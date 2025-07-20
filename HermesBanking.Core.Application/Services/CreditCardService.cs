@@ -80,6 +80,7 @@ namespace HermesBanking.Core.Application.Services
                 if (user != null)
                 {
                     dto.ClientFullName = $"{user.Name} {user.LastName}";
+                    dto.ClientIdentification = user.UserId;
                 }
 
                 data.Add(dto);

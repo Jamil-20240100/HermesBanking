@@ -97,7 +97,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
             return new UserDto
             {
                 Id = user.Id,
-                UserId = user.Id,
+                UserId = user.UserId,
                 UserName = user.UserName ?? "",
                 Name = user.Name ?? "",
                 LastName = user.LastName ?? "",

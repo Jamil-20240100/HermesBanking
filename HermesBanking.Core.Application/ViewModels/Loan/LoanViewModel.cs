@@ -5,6 +5,8 @@
         public int Id { get; set; }
         public string? LoanIdentifier { get; set; }
         public string? ClientFullName { get; set; }
+        public string? ClientId { get; set; }
+        public string? ClientIdentificationNumber { get; set; }
         public decimal Amount { get; set; }
         public int TotalInstallments { get; set; }
         public int PaidInstallments { get; set; }
