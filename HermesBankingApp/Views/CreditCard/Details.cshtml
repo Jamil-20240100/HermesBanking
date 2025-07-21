@@ -1,0 +1,45 @@
+﻿@model CreditCardTransactionsViewModel
+
+@{
+    ViewData["Title"] = "Detalles de la Tarjeta de Crédito";
+}
+
+<h2>Detalles de la Tarjeta de Crédito @Model.CardId</h2>
+<p><strong>Cliente:</strong> @Model.ClientFullName</p>
+<p><strong>Límite:</strong> @Model.CreditLimit</p>
+<p><strong>Adeudado:</strong> @Model.TotalOwedAmount</p>
+<p><strong>Estado:</strong> @(Model.IsActive ? "Activa" : "Cancelada")</p>
+<p><strong>Expira:</strong> @Model.ExpirationDate.ToString("MM/yy")</p>
+
+<h4>Transacciones Realizadas</h4>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Tipo</th>
+            <th>Monto</th>
+            <th>Origen</th>
+            <th>Fecha</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Transactions != null && Model.Transactions.Any())
+        {
+            @foreach (var transaction in Model.Transactions)
+            {
+                <tr>
+                    <td>@transaction.Type</td>
+                    <td>RD$ @transaction.Amount:N2</td>
+                    <td>@transaction.Origin</td>
+                    <td>@transaction.Date.ToString("g")</td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="4" class="text-center">No hay transacciones para esta tarjeta.</td>
+            </tr>
+        }
+    </tbody>
+</table>
