@@ -16,7 +16,7 @@ public static class DefaultAdminUser
                 Name = "Jane",
                 LastName = "Doe",
                 Email = email,
-                EmailConfirmed = false,
+                EmailConfirmed = true,
                 UserName = "JaneDoeAdmin",
                 UserId = "40230098754",
                 IsActive = true

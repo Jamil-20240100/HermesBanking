@@ -1,5 +1,4 @@
 ﻿
-
 namespace HermesBanking.Core.Application.DTOs.Email
 {
     public class EmailRequestDto
@@ -7,11 +6,11 @@ namespace HermesBanking.Core.Application.DTOs.Email
         public string? To { get; set; }
         public required string Subject { get; set; }
         public required string HtmlBody { get; set; }
-        public List<string>? ToRange { get; set; } = new List<string>();
+        public List<string>? ToRange { get; set; } = [];
 
         public bool IsValid()
         {
-            return !string.IsNullOrEmpty(To) || (ToRange?.Any() ?? false);
+            throw new NotImplementedException();
         }
     }
 }

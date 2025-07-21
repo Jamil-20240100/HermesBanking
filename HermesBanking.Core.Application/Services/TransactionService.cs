@@ -18,7 +18,7 @@ namespace HermesBanking.Infrastructure.Application.Services
         private readonly IGenericService<TransactionDTO> _genericService;
         private readonly IMapper _mapper;
         private readonly ILoanRepository _loanRepo;
-        private readonly ICreditCardRepository _creditCardRepo;
+        private readonly ICreditCardRepository _creditCardRepo; 
 
         public TransactionService(
             ISavingsAccountRepository savingsAccountRepo,

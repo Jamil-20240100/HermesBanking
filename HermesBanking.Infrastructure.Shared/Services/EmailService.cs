@@ -22,18 +22,7 @@ namespace HermesBanking.Infrastructure.Shared.Services
         {
             try
             {
-                // Verificar que al menos haya una dirección válida para enviar el correo.
-                if (!emailRequestDto.IsValid())
-                {
-                    _logger.LogError("No valid recipient address provided.");
-                    throw new ArgumentException("No valid recipient address provided.");
-                }
-
-                // Si 'To' no está vacío, agregarlo a 'ToRange'.
-                if (!string.IsNullOrEmpty(emailRequestDto.To))
-                {
-                    emailRequestDto.ToRange?.Add(emailRequestDto.To);
-                }
+                emailRequestDto.ToRange?.Add(emailRequestDto.To ?? "");
 
                 MimeMessage email = new()
                 {
@@ -41,23 +30,17 @@ namespace HermesBanking.Infrastructure.Shared.Services
                     Subject = emailRequestDto.Subject
                 };
 
-                // Agregar las direcciones de correo de 'ToRange' a la lista de destinatarios, ignorando valores vacíos.
-                foreach (var toItem in emailRequestDto.ToRange ?? new List<string>())
+                foreach (var toItem in emailRequestDto.ToRange ?? [])
                 {
-                    if (!string.IsNullOrEmpty(toItem))
-                    {
-                        email.To.Add(MailboxAddress.Parse(toItem));
-                    }
+                    email.To.Add(MailboxAddress.Parse(toItem));
                 }
 
-                // Crear el cuerpo del mensaje.
                 BodyBuilder builder = new()
                 {
                     HtmlBody = emailRequestDto.HtmlBody
                 };
                 email.Body = builder.ToMessageBody();
 
-                // Enviar el correo a través de SMTP.
                 using MailKit.Net.Smtp.SmtpClient smtpClient = new();
                 await smtpClient.ConnectAsync(_mailSettings.SmtpHost, _mailSettings.SmtpPort, MailKit.Security.SecureSocketOptions.StartTls);
                 await smtpClient.AuthenticateAsync(_mailSettings.SmtpUser, _mailSettings.SmtpPass);
@@ -66,15 +49,9 @@ namespace HermesBanking.Infrastructure.Shared.Services
             }
             catch (Exception ex)
             {
-                // Registrar el error si algo falla.
-                _logger.LogError(ex, "An exception occured while sending email.");
+                _logger.LogError(ex, "An exception occured {Exception}.", ex);
             }
         }
-
-
-
-
-
 
         // Método de envío simple para simular el envío de un correo.
         public async Task SendEmailAsync(string toEmail, string subject, string message)

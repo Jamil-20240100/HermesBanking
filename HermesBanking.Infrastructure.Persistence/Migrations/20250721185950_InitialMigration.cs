@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace HermesBanking.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -174,33 +174,13 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                     Date = table.Column<DateTime>(type: "datetime2", nullable: false),
                     SavingsAccountId = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    CreditCardId = table.Column<int>(type: "int", nullable: true),
-                    LoanId = table.Column<int>(type: "int", nullable: true),
-                    BeneficiaryId = table.Column<int>(type: "int", nullable: true),
+                    CreditCardId = table.Column<int>(type: "int", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CashierId = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Transactions", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Transactions_Beneficiaries_BeneficiaryId",
-                        column: x => x.BeneficiaryId,
-                        principalTable: "Beneficiaries",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_Transactions_CreditCards_CreditCardId",
-                        column: x => x.CreditCardId,
-                        principalTable: "CreditCards",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_Transactions_Loans_LoanId",
-                        column: x => x.LoanId,
-                        principalTable: "Loans",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_Transactions_SavingsAccount_SavingsAccountId",
                         column: x => x.SavingsAccountId,
@@ -212,21 +192,6 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_AmortizationInstallments_LoanId",
                 table: "AmortizationInstallments",
-                column: "LoanId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Transactions_BeneficiaryId",
-                table: "Transactions",
-                column: "BeneficiaryId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Transactions_CreditCardId",
-                table: "Transactions",
-                column: "CreditCardId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Transactions_LoanId",
-                table: "Transactions",
                 column: "LoanId");
 
             migrationBuilder.CreateIndex(
@@ -245,13 +210,13 @@ namespace HermesBanking.Infrastructure.Persistence.Migrations
                 name: "AppUser");
 
             migrationBuilder.DropTable(
-                name: "Transactions");
-
-            migrationBuilder.DropTable(
                 name: "Beneficiaries");
 
             migrationBuilder.DropTable(
                 name: "CreditCards");
+
+            migrationBuilder.DropTable(
+                name: "Transactions");
 
             migrationBuilder.DropTable(
                 name: "Loans");

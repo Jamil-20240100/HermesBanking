@@ -205,7 +205,7 @@ namespace HermesBankingApp.Controllers
         {
             var user = await _userManager.GetUserAsync(User);
             var accounts = await _savingsAccountService.GetAll();
-            var loans = await _loanService.GetAll();
+            var loans = await _loanService.GetAllLoansAsync(user.UserId, "active");
 
             var vm = new PayLoanViewModel
             {

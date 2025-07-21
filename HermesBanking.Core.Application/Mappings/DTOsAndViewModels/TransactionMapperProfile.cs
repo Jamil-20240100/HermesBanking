@@ -1,14 +1,12 @@
 ﻿using AutoMapper;
-using HermesBanking.Core.Application.DTOs.Transaction;
-using HermesBanking.Core.Domain.Entities;
 using TransactionDTO = HermesBanking.Core.Application.DTOs.Transaction.TransactionDTO;
 using TransactionEntity = HermesBanking.Core.Domain.Entities.Transaction;
 
-namespace HermesBanking.Core.Application.Mapping
+namespace HermesBanking.Core.Application.Mappings.DTOsAndViewModels
 {
-    public class TransactionProfile : Profile
+    public class TransactionMapperProfile : Profile
     {
-        public TransactionProfile()
+        public TransactionMapperProfile()
         {
             // Mapeo de la entidad Transaction a DTO TransactionDTO
             CreateMap<TransactionEntity, TransactionDTO>()
