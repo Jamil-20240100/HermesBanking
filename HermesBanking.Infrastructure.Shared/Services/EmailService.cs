@@ -22,26 +22,32 @@ namespace HermesBanking.Infrastructure.Shared.Services
         {
             try
             {
-                emailRequestDto.ToRange?.Add(emailRequestDto.To ?? "");
+                if (!string.IsNullOrWhiteSpace(emailRequestDto.To))
+                {
+                    emailRequestDto.ToRange ??= new List<string>();
+                    if (!emailRequestDto.ToRange.Contains(emailRequestDto.To))
+                        emailRequestDto.ToRange.Add(emailRequestDto.To);
+                }
 
-                MimeMessage email = new()
+                var email = new MimeMessage
                 {
                     Sender = MailboxAddress.Parse(_mailSettings.EmailFrom),
                     Subject = emailRequestDto.Subject
                 };
 
-                foreach (var toItem in emailRequestDto.ToRange ?? [])
+                foreach (var toItem in emailRequestDto.ToRange ?? Enumerable.Empty<string>())
                 {
                     email.To.Add(MailboxAddress.Parse(toItem));
                 }
 
-                BodyBuilder builder = new()
+                var builder = new BodyBuilder
                 {
                     HtmlBody = emailRequestDto.HtmlBody
                 };
+
                 email.Body = builder.ToMessageBody();
 
-                using MailKit.Net.Smtp.SmtpClient smtpClient = new();
+                using var smtpClient = new MailKit.Net.Smtp.SmtpClient();
                 await smtpClient.ConnectAsync(_mailSettings.SmtpHost, _mailSettings.SmtpPort, MailKit.Security.SecureSocketOptions.StartTls);
                 await smtpClient.AuthenticateAsync(_mailSettings.SmtpUser, _mailSettings.SmtpPass);
                 await smtpClient.SendAsync(email);
@@ -49,20 +55,22 @@ namespace HermesBanking.Infrastructure.Shared.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An exception occured {Exception}.", ex);
+                _logger.LogError(ex, "An exception occurred while sending an email.");
             }
         }
 
-        // Método de envío simple para simular el envío de un correo.
         public async Task SendEmailAsync(string toEmail, string subject, string message)
         {
-            Console.WriteLine($"Simulando envío de correo a: {toEmail}");
-            Console.WriteLine($"Asunto: {subject}");
-            Console.WriteLine($"Mensaje: {message}");
-            await Task.CompletedTask;
+            var emailRequest = new EmailRequestDto
+            {
+                To = toEmail,
+                Subject = subject,
+                HtmlBody = $"<p>{message.Replace("\n", "<br>")}</p>"
+            };
+
+            await SendAsync(emailRequest);
         }
 
-        // Método para enviar el correo cuando un préstamo ha sido aprobado.
         public async Task SendLoanApprovedEmail(string clientEmail, decimal amount, int term, decimal interestRate, decimal monthlyInstallment)
         {
             string subject = "¡Préstamo Aprobado - Hermes Banking!";
@@ -79,7 +87,6 @@ namespace HermesBanking.Infrastructure.Shared.Services
             await SendEmailAsync(clientEmail, subject, message);
         }
 
-        // Método para enviar un correo cuando la tasa de interés del préstamo se actualiza.
         public async Task SendLoanInterestRateUpdatedEmail(string clientEmail, decimal newInterestRate, decimal newMonthlyInstallment, decimal oldMonthlyInstallment)
         {
             string subject = "Actualización de Tasa de Interés de su Préstamo - Hermes Banking";
@@ -95,7 +102,6 @@ namespace HermesBanking.Infrastructure.Shared.Services
             await SendEmailAsync(clientEmail, subject, message);
         }
 
-        // Método para enviar una confirmación de transacción.
         public async Task SendTransactionConfirmationEmail(string clientEmail, decimal amount, string sourceAccount, string destinationAccount, DateTime transactionDate)
         {
             string subject = $"Confirmación de Transacción: {amount:C} de {sourceAccount} a {destinationAccount}";

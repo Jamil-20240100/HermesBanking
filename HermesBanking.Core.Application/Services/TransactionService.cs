@@ -7,7 +7,7 @@ using HermesBanking.Core.Domain.Entities;
 using HermesBanking.Core.Domain.Interfaces;
 using System;
 using System.Threading.Tasks;
-
+/*
 namespace HermesBanking.Infrastructure.Application.Services
 {
     public class TransactionService : ITransactionService
@@ -310,12 +310,6 @@ namespace HermesBanking.Infrastructure.Application.Services
                 throw new InvalidOperationException("Error ejecutando la transacción a beneficiario", ex);
             }
         }
-        
-
-
-
-
-
-
     }
 }
+*/

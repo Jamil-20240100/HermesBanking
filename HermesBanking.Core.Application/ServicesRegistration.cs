@@ -19,12 +19,13 @@ namespace HermesBanking.Core.Application
             #region Services IOC
             services.AddScoped<ISavingsAccountService, SavingsAccountService>();
             services.AddScoped<ICreditCardService, CreditCardService>();
-            services.AddScoped<ITransactionService, TransactionService>();
+            //services.AddScoped<ITransactionService, TransactionService>();
             services.AddScoped<ILoanService, LoanService>();
             services.AddScoped<IBeneficiaryService, BeneficiaryService>();
             services.AddScoped<ICashAdvanceService, CashAdvanceService>();
             services.AddScoped<ITransferService, TransferService>();
-
+            services.AddScoped<ICashierService, CashierService>();
+            services.AddScoped<ICashierTransactionService, CashierTransactionService>();
             #endregion
         }
     }

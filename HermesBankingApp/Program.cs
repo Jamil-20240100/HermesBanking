@@ -2,6 +2,8 @@ using HermesBanking.Core.Application;
 using HermesBanking.Infrastructure.Shared;
 using HermesBanking.Infrastructure.Identity;
 using HermesBanking.Infrastructure.Persistence;
+using HermesBanking.Core.Application.DTOs.Transaction;
+using HermesBanking.Core.Application.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,7 +21,6 @@ builder.Services.AddApplicationLayerIoc();
 builder.Services.AddIdentityLayerIocForWebApp(builder.Configuration);
 builder.Services.AddSharedLayerIoc(builder.Configuration);
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-
 var app = builder.Build();
 
 await app.Services.RunIdentitySeedAsync();

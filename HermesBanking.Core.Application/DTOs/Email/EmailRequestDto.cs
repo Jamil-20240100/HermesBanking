@@ -7,10 +7,5 @@ namespace HermesBanking.Core.Application.DTOs.Email
         public required string Subject { get; set; }
         public required string HtmlBody { get; set; }
         public List<string>? ToRange { get; set; } = [];
-
-        public bool IsValid()
-        {
-            throw new NotImplementedException();
-        }
     }
 }

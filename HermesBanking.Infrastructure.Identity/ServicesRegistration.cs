@@ -68,7 +68,7 @@ namespace HermesBanking.Infrastructure.Identity
             #endregion
 
             #region Services
-            services.AddScoped<ITransactionService, TransactionService>();
+            //services.AddScoped<ITransactionService, TransactionService>();
             services.AddScoped<IAccountServiceForWebApp, AccountServiceForWebApp>();
             #endregion
         }
