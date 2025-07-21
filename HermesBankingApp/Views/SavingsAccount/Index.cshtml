@@ -2,130 +2,214 @@
 
 @{
     ViewData["Title"] = "Gestión de Cuentas de Ahorro";
+    string FormatCurrency(decimal amount)
+    {
+        return amount.ToString("C", new System.Globalization.CultureInfo("es-DO"));
+    }
 }
 
-<h2 class="mb-4">Cuentas de Ahorro</h2>
+<div class="container-fluid py-4">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h2 class="card-title mb-0"><i class="bi bi-wallet-fill me-2"></i> @ViewData["Title"]</h2>
+            <a asp-action="Create" class="btn btn-light btn-sm shadow-sm">
+                <i class="bi bi-plus-circle me-1"></i> Asignar Cuenta de Ahorro
+            </a>
+        </div>
+        <div class="card-body">
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">@TempData["Success"]</div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger">@TempData["Error"]</div>
-}
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
 
-<div class="d-flex justify-content-between mb-3">
-    <div>
-        <a asp-action="Create" class="btn btn-primary">Asignar cuenta de ahorro</a>
-    </div>
-    <div class="d-flex gap-2">
-        <input type="text" class="form-control" placeholder="Buscar por cédula..." />
-        <select class="form-select">
-            <option value="">Estado</option>
-            <option value="true">Activa</option>
-            <option value="false">Cancelada</option>
-        </select>
-        <select class="form-select">
-            <option value="">Tipo</option>
-            <option value="0">Principal</option>
-            <option value="1">Secundaria</option>
-        </select>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label for="cedulaSearch" class="form-label fw-bold">Buscar por Cédula</label>
+                    <input type="text" id="cedulaSearch" class="form-control form-control-sm shadow-sm" placeholder="Ej: 001-1234567-8" />
+                </div>
+                <div class="col-md-3">
+                    <label for="statusFilter" class="form-label fw-bold">Filtrar por Estado</label>
+                    <select id="statusFilter" class="form-select form-select-sm shadow-sm">
+                        <option value="all">Todos</option>
+                        <option value="activa">Activa</option>
+                        <option value="cancelada">Cancelada</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="typeFilter" class="form-label fw-bold">Filtrar por Tipo</label>
+                    <select id="typeFilter" class="form-select form-select-sm shadow-sm">
+                        <option value="all">Todos</option>
+                        <option value="principal">Principal</option>
+                        <option value="secundaria">Secundaria</option>
+                    </select>
+                </div>
+            </div>
+
+            @if (Model == null || !Model.Any())
+            {
+                <div class="alert alert-info text-center py-4 rounded-3 shadow-sm" role="alert" id="noAccountsMessage">
+                    <h4 class="alert-heading"><i class="bi bi-info-circle-fill me-2"></i> No hay cuentas de ahorro registradas.</h4>
+                    <p>Parece que aún no se han asignado cuentas de ahorro. ¡Crea una nueva para empezar!</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle caption-top shadow-sm rounded-3 overflow-hidden">
+                        <caption class="text-start mb-2 ps-2">Lista de todas las cuentas de ahorro registradas en el sistema.</caption>
+                        <thead class="table-dark">
+                            <tr>
+                                <th scope="col">Número de Cuenta</th>
+                                <th scope="col">Cliente</th>
+                                <th scope="col">Balance</th>
+                                <th scope="col">Tipo</th>
+                                <th scope="col">Estado</th>
+                                <th scope="col" class="text-center">Acciones</th>
+                                <th scope="col" hidden>ClientIdentification</th>
+                            </tr>
+                        </thead>
+                        <tbody id="savingsAccountTableBody">
+                            @foreach (var item in Model)
+                            {
+                                <tr data-client-identification="@(item.ClientUserId?.ToLower() ?? "")"
+                                    data-status="@(item.IsActive ? "activa" : "cancelada")"
+                                    data-type="@(item.AccountType == HermesBanking.Core.Domain.Common.Enums.AccountType.Primary ? "principal" : "secundaria")">
+                                    <td>@item.AccountNumber</td>
+                                    <td>@item.ClientFullName</td>
+                                    <td class="fw-bold text-success">@FormatCurrency(item.Balance)</td>
+                                    <td>
+                                        @{
+                                            string typeBadgeClass = "";
+                                            string typeText = "";
+                                            if (item.AccountType == HermesBanking.Core.Domain.Common.Enums.AccountType.Primary)
+                                            {
+                                                typeBadgeClass = "bg-primary";
+                                                typeText = "Principal";
+                                            }
+                                            else
+                                            {
+                                                typeBadgeClass = "bg-info";
+                                                typeText = "Secundaria";
+                                            }
+                                        }
+                                        <span class="badge @typeBadgeClass">@typeText</span>
+                                    </td>
+                                    <td>
+                                        @if (item.IsActive)
+                                        {
+                                            <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Activa</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary"><i class="bi bi-x-circle-fill me-1"></i>Cancelada</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group" aria-label="Acciones de cuenta">
+                                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" data-bs-placement="top" title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+
+                                            @if (item.AccountType == HermesBanking.Core.Domain.Common.Enums.AccountType.Secondary && item.IsActive == true)
+                                            {
+                                                <a asp-action="ConfirmCancel" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Cancelar cuenta">
+                                                    <i class="bi bi-slash-circle"></i>
+                                                </a>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td hidden>@item.ClientUserId</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
     </div>
 </div>
-
-<table class="table table-bordered table-striped">
-    <thead class="table-dark">
-        <tr>
-            <th>Número de Cuenta</th>
-            <th>Cliente</th>
-            <th>Balance</th>
-            <th>Tipo</th>
-            <th>Estado</th>
-            <th hidden>Cedula</th>
-            <th class="text-center">Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        @if (Model != null && Model.Any())
-        {
-            foreach (var item in Model)
-            {
-                <tr>
-                    <td>@item.AccountNumber</td>
-                    <td>@item.ClientFullName</td>
-                    <td>@item.Balance.ToString("C")</td>
-                    <td>@(item.AccountType == HermesBanking.Core.Domain.Common.Enums.AccountType.Primary ? "Principal" : "Secundaria")</td>
-                    <td>@(item.IsActive ? "Activa" : "Cancelada")</td>
-                    <td hidden>@(item.ClientUserId)</td>
-                    <td class="text-center">
-                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Detalles</a>
-
-                        @if (item.AccountType == HermesBanking.Core.Domain.Common.Enums.AccountType.Secondary && item.IsActive == true)
-                        {
-                            <a asp-action="ConfirmCancel" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Cancelar</a>
-                        }
-                    </td>
-                </tr>
-            }
-        }
-        else
-        {
-            <tr>
-                <td colspan="6" class="text-center">No hay cuentas registradas.</td>
-            </tr>
-        }
-    </tbody>
-</table>
-
-<nav aria-label="Paginación">
-    <ul class="pagination justify-content-center">
-        <li class="page-item disabled"><a class="page-link">Anterior</a></li>
-        <li class="page-item active"><a class="page-link">1</a></li>
-        <li class="page-item"><a class="page-link">2</a></li>
-        <li class="page-item"><a class="page-link">3</a></li>
-        <li class="page-item"><a class="page-link">Siguiente</a></li>
-    </ul>
-</nav>
 
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const searchInput = document.querySelector('input[placeholder="Buscar por cédula..."]');
-            const estadoSelect = document.querySelector('select.form-select:nth-of-type(1)');
-            const tipoSelect = document.querySelector('select.form-select:nth-of-type(2)');
-            const tableRows = document.querySelectorAll('tbody tr');
+            const cedulaSearchInput = document.getElementById('cedulaSearch');
+            const statusFilterSelect = document.getElementById('statusFilter');
+            const typeFilterSelect = document.getElementById('typeFilter');
+            const savingsAccountTableBody = document.getElementById('savingsAccountTableBody');
+            const noAccountsMessage = document.getElementById('noAccountsMessage');
 
-            function normalize(text) {
-                return text.toLowerCase().trim();
-            }
+            const initialTableRows = Array.from(savingsAccountTableBody ? savingsAccountTableBody.querySelectorAll('tr') : []);
 
-            function filterTable() {
-                const cedula = normalize(searchInput.value);
-                const estado = estadoSelect.value;
-                const tipo = tipoSelect.value;
+            function applyFilters() {
+                const cedulaFilter = cedulaSearchInput.value.toLowerCase().trim();
+                const statusFilter = statusFilterSelect.value.toLowerCase();
+                const typeFilter = typeFilterSelect.value.toLowerCase();
 
-                tableRows.forEach(row => {
-                    const cedulaText = normalize(row.children[5]?.textContent || ''); // columna oculta
-                    const estadoText = normalize(row.children[4]?.textContent || '');
-                    const tipoText = normalize(row.children[3]?.textContent || '');
+                let foundAccounts = 0;
 
-                    const matchCedula = !cedula || cedulaText.includes(cedula);
-                    const matchEstado = !estado || (estado === "true" ? estadoText.includes("activa") : estadoText.includes("cancelada"));
-                    const matchTipo = !tipo || (tipo === "0" ? tipoText.includes("principal") : tipoText.includes("secundaria"));
+                initialTableRows.forEach(row => {
+                    const clientIdentification = row.dataset.clientIdentification;
+                    const accountStatus = row.dataset.status;
+                    const accountType = row.dataset.type;
 
-                    if (matchCedula && matchEstado && matchTipo) {
+                    const matchesCedula = cedulaFilter === '' || (clientIdentification && clientIdentification.includes(cedulaFilter));
+                    const matchesStatus = statusFilter === 'all' || accountStatus === statusFilter;
+                    const matchesType = typeFilter === 'all' || accountType === typeFilter;
+
+                    if (matchesCedula && matchesStatus && matchesType) {
                         row.style.display = '';
+                        foundAccounts++;
                     } else {
                         row.style.display = 'none';
                     }
                 });
+
+                let noDataRow = document.getElementById('noDataRow');
+                if (foundAccounts === 0) {
+                    if (!noDataRow) {
+                        noDataRow = document.createElement('tr');
+                        noDataRow.id = 'noDataRow';
+                        const cell = document.createElement('td');
+                        cell.colSpan = 6;
+                        cell.className = 'text-center py-3 text-muted';
+                        cell.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i> No hay cuentas encontradas con los filtros aplicados.';
+                        noDataRow.appendChild(cell);
+                        savingsAccountTableBody.appendChild(noDataRow);
+                    } else {
+                        noDataRow.style.display = '';
+                    }
+                    if (noAccountsMessage) noAccountsMessage.style.display = 'none';
+                } else {
+                    if (noDataRow) {
+                        noDataRow.remove();
+                    }
+                    if (noAccountsMessage && initialTableRows.length === 0) {
+                        noAccountsMessage.style.display = 'none';
+                    }
+                }
             }
 
-            // Escuchar cambios
-            searchInput.addEventListener('input', filterTable);
-            estadoSelect.addEventListener('change', filterTable);
-            tipoSelect.addEventListener('change', filterTable);
+            cedulaSearchInput.addEventListener('keyup', applyFilters);
+            statusFilterSelect.addEventListener('change', applyFilters);
+            typeFilterSelect.addEventListener('change', applyFilters);
+
+            applyFilters();
+
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
         });
     </script>
 }

@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using HermesBanking.Core.Application.DTOs.Loan;
-using HermesBanking.Core.Application.DTOs.SavingsAccount;
 using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Domain.Common.Enums;
 using HermesBanking.Core.Domain.Entities;
@@ -195,7 +194,6 @@ namespace HermesBanking.Core.Application.Services
             loan.ClientId = client.Id; 
             loan.ClientFullName = $"{client.Name} {client.LastName}";
             loan.ClientIdentificationNumber = client.UserId;
-
             loan.AssignedByAdminId = adminId;
             loan.AdminFullName = adminFullName;
             loan.CreatedAt = DateTime.Now;
