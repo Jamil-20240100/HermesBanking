@@ -1,0 +1,15 @@
+﻿@{
+    ViewData["Title"] = "Pago de Tarjeta de Crédito Confirmado";
+    Layout = "_LayoutClient";
+
+}
+
+<div class="text-center">
+    <h1 class="display-4 text-success">¡Pago de Tarjeta de Crédito Realizado con Éxito!</h1>
+    <p class="lead">Su pago de tarjeta de crédito ha sido procesado correctamente.</p>
+    <hr class="my-4">
+    <p>
+        <a asp-controller="ClientHome" asp-action="Index" class="btn btn-primary btn-lg">Volver al Inicio</a>
+        <a asp-controller="Transaction" asp-action="PayCreditCard" class="btn btn-secondary btn-lg ms-3">Realizar Otro Pago</a>
+    </p>
+</div>

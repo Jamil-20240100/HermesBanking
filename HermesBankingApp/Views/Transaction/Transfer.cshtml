@@ -1,13 +1,14 @@
-﻿@model PayBeneficiaryDTO
+﻿@model HermesBanking.Core.Application.DTOs.Transaction.TransactionRequestDto
 
 @{
-    ViewData["Title"] = "Pagar a Beneficiario";
+    ViewData["Title"] = "Realizar Transferencia";
     Layout = "_LayoutClient";
 
 }
 
 <h1>@ViewData["Title"]</h1>
 
+@* Mensajes de éxito y error con TempData *@
 @if (TempData["SuccessMessage"] != null)
 {
     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -25,11 +26,13 @@
 
 <div class="row">
     <div class="col-md-6">
-        <form asp-action="PayBeneficiary" method="post">
+        <form asp-action="Transfer" method="post">
+            @* Este Tag Helper genera el token anti-falsificación automáticamente *@
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
             <div class="form-group mb-3">
                 <label asp-for="SourceAccountNumber" class="form-label"></label>
+                @* Usamos ViewBag.SourceAccounts que contiene SelectList *@
                 <select asp-for="SourceAccountNumber" asp-items="ViewBag.SourceAccounts" class="form-control">
                     <option value="">-- Seleccione Cuenta de Origen --</option>
                 </select>
@@ -37,11 +40,12 @@
             </div>
 
             <div class="form-group mb-3">
-                <label asp-for="BeneficiaryId" class="form-label"></label>
-                <select asp-for="BeneficiaryId" asp-items="ViewBag.Beneficiaries" class="form-control">
-                    <option value="">-- Seleccione Beneficiario --</option>
+                <label asp-for="DestinationAccountNumber" class="form-label"></label>
+                @* Usamos ViewBag.DestinationAccounts que contiene SelectList *@
+                <select asp-for="DestinationAccountNumber" asp-items="ViewBag.DestinationAccounts" class="form-control">
+                    <option value="">-- Seleccione Cuenta de Destino --</option>
                 </select>
-                <span asp-validation-for="BeneficiaryId" class="text-danger"></span>
+                <span asp-validation-for="DestinationAccountNumber" class="text-danger"></span>
             </div>
 
             <div class="form-group mb-3">
@@ -57,7 +61,7 @@
             </div>
 
             <div class="form-group mt-4">
-                <button type="submit" class="btn btn-primary">Realizar Pago a Beneficiario</button>
+                <button type="submit" class="btn btn-primary">Realizar Transferencia</button>
                 <a asp-controller="ClientHome" asp-action="Index" class="btn btn-secondary ms-2">Cancelar</a>
             </div>
         </form>
@@ -66,6 +70,7 @@
 
 @section Scripts {
     @{
+        // Esto incluye los scripts de validación del lado del cliente (jQuery Validation)
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 }

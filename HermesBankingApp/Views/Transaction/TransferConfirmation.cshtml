@@ -1,0 +1,15 @@
+﻿@{
+    ViewData["Title"] = "Transferencia Confirmada";
+    Layout = "_LayoutClient";
+
+}
+
+<div class="text-center">
+    <h1 class="display-4 text-success">¡Transferencia Realizada con Éxito!</h1>
+    <p class="lead">Su transferencia ha sido procesada correctamente.</p>
+    <hr class="my-4">
+    <p>
+        <a asp-controller="ClientHome" asp-action="Index" class="btn btn-primary btn-lg">Volver al Inicio</a>
+        <a asp-controller="Transaction" asp-action="Transfer" class="btn btn-secondary btn-lg ms-3">Realizar Otra Transferencia</a>
+    </p>
+</div>

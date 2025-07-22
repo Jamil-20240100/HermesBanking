@@ -1,5 +1,8 @@
 ﻿@{
+    // Define el título de la página que se mostrará en el navegador
     ViewData["Title"] = "Seleccionar Tipo de Transacción";
+    // Especifica el layout que se utilizará para esta vista
+    // Asegúrate de que este layout exista en Views/Shared/ o en Views
     Layout = "_LayoutClient";
 }
 
@@ -14,13 +17,27 @@
                     <p class="mb-4">Selecciona el tipo de transacción que deseas realizar:</p>
 
                     <div class="d-grid gap-3">
-                        <a asp-action="Express" asp-controller="Transaction" class="btn btn-outline-primary btn-lg">Transacción Express</a>
-                        <a asp-action="PayCreditCard" asp-controller="Transaction" class="btn btn-outline-secondary btn-lg">Pago a Tarjeta de Crédito</a>
-                        <a asp-action="PayLoan" asp-controller="Transaction" class="btn btn-outline-warning btn-lg text-dark">Pago a Préstamo</a>
-                        <a asp-action="PayBeneficiary" asp-controller="Transaction" class="btn btn-outline-success btn-lg">Transferencia a Beneficiario</a>
+                        <a asp-action="Transfer" asp-controller="Transaction" class="btn btn-outline-primary btn-lg">
+                            <i class="bi bi-arrow-left-right me-2"></i> Transferencia Entre Cuentas
+                        </a>
+
+                        <a asp-action="PayCreditCard" asp-controller="Transaction" class="btn btn-outline-secondary btn-lg">
+                            <i class="bi bi-credit-card-fill me-2"></i> Pago a Tarjeta de Crédito
+                        </a>
+
+                        <a asp-action="PayLoan" asp-controller="Transaction" class="btn btn-outline-warning btn-lg text-dark">
+                            <i class="bi bi-cash-stack me-2"></i> Pago a Préstamo
+                        </a>
+
+                        <a asp-action="PayBeneficiary" asp-controller="Transaction" class="btn btn-outline-success btn-lg">
+                            <i class="bi bi-person-check-fill me-2"></i> Transferencia a Beneficiario
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+}

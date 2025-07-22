@@ -86,7 +86,7 @@
                             {
                                 <tr class="@(installment.IsOverdue && !installment.IsPaid ? "table-danger" : (installment.IsPaid ? "table-success" : ""))">
                                     <td>@installment.InstallmentNumber</td>
-                                    <td>@installment.PaymentDate.ToShortDateString()</td>
+                                    <td>@installment.DueDate.ToShortDateString()</td>
                                     <td>@installment.InstallmentValue.ToString("C", new System.Globalization.CultureInfo("es-DO"))</td>
                                     <td>@installment.PrincipalAmount.ToString("C", new System.Globalization.CultureInfo("es-DO"))</td>
                                     <td>@installment.InterestAmount.ToString("C", new System.Globalization.CultureInfo("es-DO"))</td>

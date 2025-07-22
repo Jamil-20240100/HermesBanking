@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+
 namespace HermesBanking.Core.Application.Services
 {
     public class CashierService : ICashierService
@@ -175,7 +176,7 @@ namespace HermesBanking.Core.Application.Services
 
             var transactions = await _transactionRepo
                 .GetAllQuery()
-                .Where(t => t.Date.Date == today && t.CashierId == cashierId)
+                .Where(t => t.Date == today && t.CashierId == cashierId)
                 .ToListAsync();
 
             var cashierTransactions = transactions.Where(t => t.CashierId == cashierId).ToList();
@@ -188,7 +189,7 @@ namespace HermesBanking.Core.Application.Services
 
             return new CashierDashboardViewModel
             {
-                TotalTransactions = cashierTransactions.Count,
+                TotalTransactions = cashierTransactions.Count(),
                 TotalDeposits = cashierTransactions.Count(t => t.Type == "DEPOSIT"),
                 TotalWithdrawals = cashierTransactions.Count(t => t.Type == "WITHDRAWAL"),
                 TotalPayments = cashierTransactions.Count(t => t.Type == "CREDIT_CARD_PAYMENT" || t.Type == "LOAN_PAYMENT"),

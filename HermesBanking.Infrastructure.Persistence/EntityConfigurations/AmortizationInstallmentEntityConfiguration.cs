@@ -13,7 +13,7 @@ namespace HermesBanking.Infrastructure.Persistence.Configurations
             builder.Property(ai => ai.InstallmentNumber)
                    .IsRequired();
 
-            builder.Property(ai => ai.PaymentDate)
+            builder.Property(ai => ai.DueDate)
                    .IsRequired();
 
             builder.Property(ai => ai.InstallmentValue)

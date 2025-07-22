@@ -1,9 +1,7 @@
 ﻿using HermesBanking.Core.Application.DTOs.User;
 using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Application.Services;
-using HermesBanking.Core.Application.Services;
 using HermesBanking.Core.Domain.Settings;
-using HermesBanking.Infrastructure.Application.Services;
 using HermesBanking.Infrastructure.Identity.Contexts;
 using HermesBanking.Infrastructure.Identity.Entities;
 using HermesBanking.Infrastructure.Identity.Seeds;

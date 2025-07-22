@@ -18,13 +18,8 @@ namespace HermesBanking.Infrastructure.Persistence.Repositories
 
         public async Task<Transaction> GetByIdAsync(int transactionId)
         {
-            var transaction = await _context.Transactions
-                                             .FirstOrDefaultAsync(t => t.Id == transactionId);
-            if (transaction == null)
-            {
-                throw new KeyNotFoundException("Transacción no encontrada.");
-            }
-            return transaction;
+            return await _context.Transactions
+                                 .FirstOrDefaultAsync(t => t.Id == transactionId);
         }
 
         public async Task<IEnumerable<Transaction>> GetAllAsync()

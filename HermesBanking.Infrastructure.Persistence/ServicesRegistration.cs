@@ -1,4 +1,5 @@
-﻿using HermesBanking.Core.Domain.Interfaces;
+﻿using HermesBanking.Core.Application.Interfaces;
+using HermesBanking.Core.Domain.Interfaces;
 using HermesBanking.Infrastructure.Persistence.Contexts;
 using HermesBanking.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -40,6 +41,7 @@ namespace HermesBanking.Infrastructure.Persistence
                 services.AddScoped<ILoanRepository, LoanRepository>();
                 services.AddScoped<IAmortizationInstallmentRepository, AmortizationLInstallmentRepository>();
                 services.AddScoped<IBeneficiaryRepository, BeneficiaryRepository>();
+                services.AddScoped<IUnitOfWork, UnitOfWork>();
                 #endregion
             }
         }

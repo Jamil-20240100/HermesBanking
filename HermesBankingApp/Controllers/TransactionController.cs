@@ -1,643 +1,321 @@
-﻿using AutoMapper;
-using HermesBanking.Core.Application.DTOs;
-using HermesBanking.Core.Application.DTOs.CreditCard;
-using HermesBanking.Core.Application.DTOs.Loan;
-using HermesBanking.Core.Application.DTOs.SavingsAccount;
-using HermesBanking.Core.Application.DTOs.Transaction;
+﻿using HermesBanking.Core.Application.DTOs.Transaction;
 using HermesBanking.Core.Application.Interfaces;
-using HermesBanking.Core.Application.ViewModels;
-using HermesBanking.Core.Application.ViewModels.Beneficiary;
-using HermesBanking.Core.Application.ViewModels.CreditCard;
-using HermesBanking.Core.Application.ViewModels.Loan;
-using HermesBanking.Core.Application.ViewModels.SavingsAccount;
-using HermesBanking.Core.Application.ViewModels.Transaction;
-using HermesBanking.Infrastructure.Identity.Entities;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
+using Microsoft.AspNetCore.Mvc.Rendering; // Para SelectList
+using System.Security.Claims; // Para obtener el ID del usuario
 
 namespace HermesBankingApp.Controllers
 {
-    [Authorize(Roles = "Client")]
+    // Considera usar [Authorize] aquí para proteger todas las acciones del controlador
+    // [Authorize]
     public class TransactionController : Controller
     {
-        private readonly ISavingsAccountService _savingsAccountService;
-        private readonly ILoanService _loanService;
-        private readonly ICreditCardService _creditCardService;
-        private readonly IBeneficiaryService _beneficiaryService;
         private readonly ITransactionService _transactionService;
-        private readonly UserManager<AppUser> _userManager;
-        private readonly IMapper _mapper;
+        private readonly IAccountServiceForWebApp _accountServiceForWebApp; // Para obtener cuentas/tarjetas/préstamos del usuario
+        private readonly IBeneficiaryService _beneficiaryService; // Para obtener beneficiarios del usuario
         private readonly ILogger<TransactionController> _logger;
 
         public TransactionController(
-            ISavingsAccountService savingsAccountService,
-            ILoanService loanService,
-            ICreditCardService creditCardService,
-            IBeneficiaryService beneficiaryService,
             ITransactionService transactionService,
-            UserManager<AppUser> userManager,
-            IMapper mapper,
+            IAccountServiceForWebApp accountServiceForWebApp,
+            IBeneficiaryService beneficiaryService,
             ILogger<TransactionController> logger)
         {
-            _savingsAccountService = savingsAccountService;
-            _loanService = loanService;
-            _creditCardService = creditCardService;
-            _beneficiaryService = beneficiaryService;
             _transactionService = transactionService;
-            _userManager = userManager;
-            _mapper = mapper;
+            _accountServiceForWebApp = accountServiceForWebApp;
+            _beneficiaryService = beneficiaryService;
             _logger = logger;
         }
 
-        // -------- INDEX --------
-        [HttpGet]
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return RedirectToAction("Index", "Login");
-            }
-
-            var vm = await BuildTransactionViewModel(user.Id);
-            return View(vm);
+            return View();
         }
 
-        private async Task<ExpressTransactionViewModel> BuildTransactionViewModel(string clientId)
+        private string GetCurrentUserId()
         {
-            var allAccounts = await _savingsAccountService.GetAll();
-            var clientAccounts = allAccounts
-                .Where(a => a.ClientId == clientId && a.IsActive)
-                .ToList();
+            return User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        }
 
-            var vm = new ExpressTransactionViewModel
+        #region Transferencias Entre Cuentas
+        // GET: /Transaction/Transfer
+        public async Task<IActionResult> Transfer()
+        {
+            var userId = GetCurrentUserId();
+            var accounts = await _accountServiceForWebApp.GetSavingsAccountsByUserIdAsync(userId); // Asume que este método existe y retorna List<SavingsAccountDTO>
+
+            var model = new TransactionRequestDto
             {
-                AvailableAccounts = _mapper.Map<List<SavingsAccountViewModel>>(clientAccounts)
+                AvailableAccounts = accounts.Where(a => a.IsActive).ToList() // Filtra solo cuentas activas
             };
-            return vm;
+            ViewBag.SourceAccounts = new SelectList(model.AvailableAccounts, "AccountNumber", "DisplayText");
+            ViewBag.DestinationAccounts = new SelectList(model.AvailableAccounts, "AccountNumber", "DisplayText");
+            return View(model);
         }
 
-        // -------- EXPRESS --------
-        [HttpGet]
-        public async Task<IActionResult> Express()
-        {
-            var user = await _userManager.GetUserAsync(User);
-            var accounts = await _savingsAccountService.GetAll();
-            var clientAccounts = accounts.Where(a => a.ClientId == user.Id && a.IsActive).ToList();
-
-            var vm = new ExpressTransactionViewModel
-            {
-                AvailableAccounts = _mapper.Map<List<SavingsAccountViewModel>>(clientAccounts)
-            };
-
-            return View(vm);
-        }
-
+        // POST: /Transaction/Transfer
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Express(ExpressTransactionViewModel vm)
+        [ValidateAntiForgeryToken] // Protección CSRF
+        public async Task<IActionResult> Transfer(TransactionRequestDto request)
         {
-            var user = await _userManager.GetUserAsync(User);
-            var allClientAccounts = await _savingsAccountService.GetAll();
-            var clientAccounts = allClientAccounts.Where(a => a.ClientId == user.Id && a.IsActive).ToList();
+            var userId = GetCurrentUserId();
+            var accounts = await _accountServiceForWebApp.GetSavingsAccountsByUserIdAsync(userId);
+            request.AvailableAccounts = accounts.Where(a => a.IsActive).ToList(); // Vuelve a cargar para re-popular el dropdown si hay errores
 
-            // Validaciones
             if (!ModelState.IsValid)
             {
-                vm.AvailableAccounts = _mapper.Map<List<SavingsAccountViewModel>>(clientAccounts);
-                return View(vm);
+                ViewBag.SourceAccounts = new SelectList(request.AvailableAccounts, "AccountNumber", "DisplayText", request.SourceAccountNumber);
+                ViewBag.DestinationAccounts = new SelectList(request.AvailableAccounts, "AccountNumber", "DisplayText", request.DestinationAccountNumber);
+                TempData["ErrorMessage"] = "Por favor, corrige los errores del formulario.";
+                return View(request);
             }
 
-            // Validar cuentas
-            var senderAccount = clientAccounts.FirstOrDefault(a => a.AccountNumber == vm.SenderAccountNumber);
-            var receiverAccount = await _savingsAccountService.GetByAccountNumberAsync(vm.ReceiverAccountNumber);
-
-            if (senderAccount == null || receiverAccount == null || !receiverAccount.IsActive || !senderAccount.IsActive)
+            try
             {
-                ModelState.AddModelError("SenderAccountNumber", "Cuentas inválidas o inactivas.");
-                vm.AvailableAccounts = _mapper.Map<List<SavingsAccountViewModel>>(clientAccounts);
-                return View(vm);
+                await _transactionService.PerformTransactionAsync(request); // Llama a tu servicio de dominio
+                TempData["SuccessMessage"] = "Transferencia realizada exitosamente.";
+                _logger.LogInformation("Transferencia exitosa de {SourceAccount} a {DestinationAccount} por {Amount:C} para el usuario {UserId}.",
+                    request.SourceAccountNumber, request.DestinationAccountNumber, request.Amount, userId);
+                return RedirectToAction("TransferConfirmation"); // Redirige a una página de confirmación
             }
-
-            // Validar fondos
-            if (senderAccount.Balance < vm.Amount)
+            catch (InvalidOperationException ex)
             {
-                ModelState.AddModelError("Amount", "Fondos insuficientes en la cuenta origen.");
-                vm.AvailableAccounts = _mapper.Map<List<SavingsAccountViewModel>>(clientAccounts);
-                return View(vm);
+                _logger.LogWarning(ex, "Transferencia fallida (validación) de {SourceAccount} a {DestinationAccount} para el usuario {UserId}: {ErrorMessage}",
+                    request.SourceAccountNumber, request.DestinationAccountNumber, userId, ex.Message);
+                TempData["ErrorMessage"] = ex.Message; // Muestra el mensaje de validación al usuario
+                ViewBag.SourceAccounts = new SelectList(request.AvailableAccounts, "AccountNumber", "DisplayText", request.SourceAccountNumber);
+                ViewBag.DestinationAccounts = new SelectList(request.AvailableAccounts, "AccountNumber", "DisplayText", request.DestinationAccountNumber);
+                return View(request);
             }
-
-            // Crear DTO para la transacción
-            var dto = new ExpressTransactionDTO
+            catch (Exception ex)
             {
-                SenderAccountNumber = vm.SenderAccountNumber,
-                ReceiverAccountNumber = vm.ReceiverAccountNumber,
-                Amount = vm.Amount,
-            };
-
-            var wrapper = new ConfirmTransactionWrapperDTO
-            {
-                Type = "Express",
-                JsonPayload = JsonConvert.SerializeObject(dto)
-            };
-            TempData["TransactionDetails"] = JsonConvert.SerializeObject(wrapper);
-
-            // Redirigir a la página de confirmación
-            return RedirectToAction(nameof(ConfirmTransactionExpress));
+                _logger.LogError(ex, "Error inesperado al procesar la transferencia de {SourceAccount} a {DestinationAccount} para el usuario {UserId}.",
+                    request.SourceAccountNumber, request.DestinationAccountNumber, userId);
+                TempData["ErrorMessage"] = "Ocurrió un error inesperado al procesar la transferencia. Inténtalo de nuevo.";
+                ViewBag.SourceAccounts = new SelectList(request.AvailableAccounts, "AccountNumber", "DisplayText", request.SourceAccountNumber);
+                ViewBag.DestinationAccounts = new SelectList(request.AvailableAccounts, "AccountNumber", "DisplayText", request.DestinationAccountNumber);
+                return View(request);
+            }
         }
 
-        // -------- PAY CREDIT CARD --------
-        [HttpGet]
+        // GET: /Transaction/TransferConfirmation
+        public IActionResult TransferConfirmation()
+        {
+            return View();
+        }
+        #endregion
+
+        #region Pagos de Tarjeta de Crédito
+        // GET: /Transaction/PayCreditCard
         public async Task<IActionResult> PayCreditCard()
         {
-            var user = await _userManager.GetUserAsync(User);
+            var userId = GetCurrentUserId();
+            var accounts = await _accountServiceForWebApp.GetSavingsAccountsByUserIdAsync(userId);
+            var creditCards = await _accountServiceForWebApp.GetCreditCardsByUserIdAsync(userId); // Asume que este método existe y retorna List<CreditCardDTO>
 
-            // Obtener todas las cuentas y tarjetas de crédito disponibles para el cliente
-            var accounts = await _savingsAccountService.GetAll();
-            var creditCards = await _creditCardService.GetAll();
-
-            // Filtrar las cuentas y tarjetas activas para este cliente
-            var clientAccounts = accounts.Where(a => a.ClientId == user.Id && a.IsActive).ToList();
-            var clientCards = creditCards.Where(c => c.ClientId == user.Id && c.IsActive).ToList();
-
-            // Agregar depuración aquí para verificar los datos antes de la vista
-            Console.WriteLine("Cuentas del cliente:");
-            foreach (var account in clientAccounts)
+            var model = new CreditCardPaymentDto
             {
-                Console.WriteLine($"Cuenta: {account.AccountNumber}, Balance: {account.Balance}");
-            }
-
-            Console.WriteLine("Tarjetas del cliente:");
-            foreach (var card in clientCards)
-            {
-                Console.WriteLine($"Tarjeta: {card.CardId}, Activa: {card.IsActive}, Límite: {card.CreditLimit}");
-            }
-
-            // Mapear a ViewModel para la vista
-            var vm = new PayCreditCardViewModel
-            {
-                AvailableAccounts = _mapper.Map<List<SavingsAccountViewModel>>(clientAccounts),
-                AvailableCreditCards = _mapper.Map<List<CreditCardViewModel>>(clientCards)
+                AvailableAccounts = accounts.Where(a => a.IsActive).ToList(),
+                AvailableCreditCards = creditCards.Where(cc => cc.IsActive).ToList() // Filtra solo tarjetas activas
             };
-
-            return View(vm);
+            ViewBag.SourceAccounts = new SelectList(model.AvailableAccounts, "AccountNumber", "DisplayText");
+            ViewBag.CreditCards = new SelectList(model.AvailableCreditCards, "CardId", "DisplayText"); // Usa CardId como valor
+            return View(model);
         }
 
-
+        // POST: /Transaction/PayCreditCard
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> PayCreditCard(PayCreditCardViewModel vm)
+        public async Task<IActionResult> PayCreditCard(CreditCardPaymentDto paymentDto)
         {
-            var user = await _userManager.GetUserAsync(User);
+            var userId = GetCurrentUserId();
+            var accounts = await _accountServiceForWebApp.GetSavingsAccountsByUserIdAsync(userId);
+            var creditCards = await _accountServiceForWebApp.GetCreditCardsByUserIdAsync(userId);
+            paymentDto.AvailableAccounts = accounts.Where(a => a.IsActive).ToList();
+            paymentDto.AvailableCreditCards = creditCards.Where(cc => cc.IsActive).ToList();
 
-            if (vm == null)
+            if (!ModelState.IsValid)
             {
-                ModelState.AddModelError("", "El modelo no puede ser nulo.");
-                return View(vm);
-            }
-
-            if (string.IsNullOrEmpty(vm.CreditCardId))
-            {
-                ModelState.AddModelError(nameof(vm.CreditCardId), "El ID de la tarjeta es obligatorio.");
-                return View(vm);
-            }
-
-            if (string.IsNullOrEmpty(vm.FromAccountId))
-            {
-                ModelState.AddModelError(nameof(vm.FromAccountId), "La cuenta origen es obligatoria.");
-                return View(vm);
+                ViewBag.SourceAccounts = new SelectList(paymentDto.AvailableAccounts, "AccountNumber", "DisplayText", paymentDto.SourceAccountNumber);
+                ViewBag.CreditCards = new SelectList(paymentDto.AvailableCreditCards, "CardId", "DisplayText", paymentDto.CreditCardNumber);
+                TempData["ErrorMessage"] = "Por favor, corrige los errores del formulario.";
+                return View(paymentDto);
             }
 
             try
             {
-                // Obtener todas las cuentas activas asociadas al cliente (de la misma forma que en Express)
-                var accounts = await _savingsAccountService.GetAll();
-                var clientAccounts = accounts.Where(a => a.ClientId == user.Id && a.IsActive).ToList();
-
-                // Obtener todas las tarjetas de crédito activas asociadas al cliente
-                var creditCards = await _creditCardService.GetAll();
-                var clientCards = creditCards.Where(c => c.ClientId == user.Id && c.IsActive).ToList();
-
-                // Validar cuenta de origen usando la misma lógica de Express
-                var senderAccount = clientAccounts.FirstOrDefault(a => a.AccountNumber == vm.FromAccountId);
-                if (senderAccount == null)
-                {
-                    ModelState.AddModelError(nameof(vm.FromAccountId), "Cuenta origen no válida.");
-                    vm.AvailableCreditCards = _mapper.Map<List<CreditCardViewModel>>(clientCards); // Mantener las tarjetas
-                    return View(vm);
-                }
-
-                if (senderAccount.Balance < vm.Amount)
-                {
-                    ModelState.AddModelError(nameof(vm.Amount), "Fondos insuficientes en la cuenta origen.");
-                    vm.AvailableCreditCards = _mapper.Map<List<CreditCardViewModel>>(clientCards); // Mantener las tarjetas
-                    return View(vm);
-                }
-
-                // Validar tarjeta de crédito
-                var creditCard = clientCards.FirstOrDefault(c => c.CardId == vm.CreditCardId);
-                if (creditCard == null || !creditCard.IsActive)
-                {
-                    ModelState.AddModelError(nameof(vm.CreditCardId), "Tarjeta de crédito no válida o inactiva.");
-                    vm.AvailableCreditCards = _mapper.Map<List<CreditCardViewModel>>(clientCards); // Mantener las tarjetas
-                    return View(vm);
-                }
-
-                // Crear DTO para la transacción
-                var creditDto = new PayCreditCardDTO
-                {
-                    FromAccountNumber = vm.FromAccountId,
-                    CreditCardNumber = vm.CreditCardId,
-                    Amount = vm.Amount,
-                };
-
-                // Guardar los detalles en TempData para la confirmación
-                var wrapper = new ConfirmTransactionWrapperDTO
-                {
-                    Type = "CreditCard",
-                    JsonPayload = JsonConvert.SerializeObject(creditDto)
-                };
-
-                TempData["TransactionDetails"] = JsonConvert.SerializeObject(wrapper);
-
-                // Redirigir a la página de confirmación
-                return RedirectToAction(nameof(ConfirmTransactionCreditCard));
+                await _transactionService.PayCreditCardAsync(paymentDto);
+                TempData["SuccessMessage"] = "Pago de tarjeta de crédito realizado exitosamente.";
+                _logger.LogInformation("Pago de tarjeta de crédito exitoso desde {SourceAccount} para tarjeta {CreditCardNumber} por {Amount:C} para el usuario {UserId}.",
+                    paymentDto.SourceAccountNumber, paymentDto.CreditCardNumber, paymentDto.Amount, userId);
+                return RedirectToAction("CreditCardPaymentConfirmation");
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Pago de tarjeta de crédito fallido (validación) desde {SourceAccount} para tarjeta {CreditCardNumber} para el usuario {UserId}: {ErrorMessage}",
+                    paymentDto.SourceAccountNumber, paymentDto.CreditCardNumber, userId, ex.Message);
+                TempData["ErrorMessage"] = ex.Message;
+                ViewBag.SourceAccounts = new SelectList(paymentDto.AvailableAccounts, "AccountNumber", "DisplayText", paymentDto.SourceAccountNumber);
+                ViewBag.CreditCards = new SelectList(paymentDto.AvailableCreditCards, "CardId", "DisplayText", paymentDto.CreditCardNumber);
+                return View(paymentDto);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error en PayCreditCard: {ex.Message}");
-                ModelState.AddModelError("", "Hubo un problema al procesar la solicitud.");
-                return View(vm);
+                _logger.LogError(ex, "Error inesperado al procesar el pago de tarjeta de crédito desde {SourceAccount} para tarjeta {CreditCardNumber} para el usuario {UserId}.",
+                    paymentDto.SourceAccountNumber, paymentDto.CreditCardNumber, userId);
+                TempData["ErrorMessage"] = "Ocurrió un error inesperado al procesar el pago de la tarjeta de crédito. Inténtalo de nuevo.";
+                ViewBag.SourceAccounts = new SelectList(paymentDto.AvailableAccounts, "AccountNumber", "DisplayText", paymentDto.SourceAccountNumber);
+                ViewBag.CreditCards = new SelectList(paymentDto.AvailableCreditCards, "CardId", "DisplayText", paymentDto.CreditCardNumber);
+                return View(paymentDto);
             }
         }
 
+        public IActionResult CreditCardPaymentConfirmation()
+        {
+            return View();
+        }
+        #endregion
 
-
-
-
-
-
-
-
-
-
-        // -------- PAY LOAN --------
-        [HttpGet]
+        #region Pagos de Préstamos
+        // GET: /Transaction/PayLoan
         public async Task<IActionResult> PayLoan()
         {
-            var user = await _userManager.GetUserAsync(User);
-            var accounts = await _savingsAccountService.GetAll();
-            var loans = await _loanService.GetAllLoansAsync(null, null);
+            var userId = GetCurrentUserId();
+            var accounts = await _accountServiceForWebApp.GetSavingsAccountsByUserIdAsync(userId);
+            var loans = await _accountServiceForWebApp.GetLoansByUserIdAsync(userId); // Asume que este método existe y retorna List<LoanDTO>
 
-            var vm = new PayLoanViewModel
+            var model = new LoanPaymentDto
             {
-                AvailableAccounts = _mapper.Map<List<SavingsAccountViewModel>>(
-                    accounts.Where(a => a.ClientId == user.Id && a.IsActive).ToList()),
-                AvailableLoans = _mapper.Map<List<LoanViewModel>>(
-                    loans.Where(l => l.ClientId == user.Id && l.IsActive).ToList())
+                AvailableAccounts = accounts.Where(a => a.IsActive).ToList(),
+                AvailableLoans = loans.Where(l => l.IsActive).ToList() // Filtra solo préstamos activos
             };
-
-            return View(vm);
+            ViewBag.SourceAccounts = new SelectList(model.AvailableAccounts, "AccountNumber", "DisplayText");
+            ViewBag.Loans = new SelectList(model.AvailableLoans, "LoanIdentifier", "DisplayText");
+            return View(model);
         }
 
+        // POST: /Transaction/PayLoan
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> PayLoan(PayLoanViewModel vm)
+        public async Task<IActionResult> PayLoan(LoanPaymentDto paymentDto)
         {
-            var user = await _userManager.GetUserAsync(User);
+            var userId = GetCurrentUserId();
+            var accounts = await _accountServiceForWebApp.GetSavingsAccountsByUserIdAsync(userId);
+            var loans = await _accountServiceForWebApp.GetLoansByUserIdAsync(userId);
+            paymentDto.AvailableAccounts = accounts.Where(a => a.IsActive).ToList();
+            paymentDto.AvailableLoans = loans.Where(l => l.IsActive).ToList();
 
             if (!ModelState.IsValid)
-                return View(vm);
-
-            var hasFunds = await _transactionService.HasSufficientFunds(vm.SavingsAccountNumber, vm.Amount);
-            if (!hasFunds)
             {
-                ModelState.AddModelError(nameof(vm.Amount), "Fondos insuficientes.");
-                return View(vm);
+                ViewBag.SourceAccounts = new SelectList(paymentDto.AvailableAccounts, "AccountNumber", "DisplayText", paymentDto.SourceAccountNumber);
+                ViewBag.Loans = new SelectList(paymentDto.AvailableLoans, "LoanIdentifier", "DisplayText", paymentDto.LoanIdentifier);
+                TempData["ErrorMessage"] = "Por favor, corrige los errores del formulario.";
+                return View(paymentDto);
             }
 
-            var loanDto = new PayLoanDTO
+            try
             {
-                FromAccountNumber = vm.SavingsAccountNumber,
-                LoanCode = vm.LoanId,
-                Amount = vm.Amount,
-            };
-
-            var wrapper = new ConfirmTransactionWrapperDTO
+                await _transactionService.PayLoanAsync(paymentDto);
+                TempData["SuccessMessage"] = "Pago de préstamo realizado exitosamente.";
+                _logger.LogInformation("Pago de préstamo exitoso desde {SourceAccount} para préstamo {LoanIdentifier} por {Amount:C} para el usuario {UserId}.",
+                    paymentDto.SourceAccountNumber, paymentDto.LoanIdentifier, paymentDto.Amount, userId);
+                return RedirectToAction("LoanPaymentConfirmation");
+            }
+            catch (InvalidOperationException ex)
             {
-                Type = "Loan",
-                JsonPayload = JsonConvert.SerializeObject(loanDto)
-            };
-            TempData["TransactionDetails"] = JsonConvert.SerializeObject(wrapper);
-
-            return RedirectToAction(nameof(ConfirmTransactionLoan));
+                _logger.LogWarning(ex, "Pago de préstamo fallido (validación) desde {SourceAccount} para préstamo {LoanIdentifier} para el usuario {UserId}: {ErrorMessage}",
+                    paymentDto.SourceAccountNumber, paymentDto.LoanIdentifier, userId, ex.Message);
+                TempData["ErrorMessage"] = ex.Message;
+                ViewBag.SourceAccounts = new SelectList(paymentDto.AvailableAccounts, "AccountNumber", "DisplayText", paymentDto.SourceAccountNumber);
+                ViewBag.Loans = new SelectList(paymentDto.AvailableLoans, "LoanIdentifier", "DisplayText", paymentDto.LoanIdentifier);
+                return View(paymentDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error inesperado al procesar el pago de préstamo desde {SourceAccount} para préstamo {LoanIdentifier} para el usuario {UserId}.",
+                    paymentDto.SourceAccountNumber, paymentDto.LoanIdentifier, userId);
+                TempData["ErrorMessage"] = "Ocurrió un error inesperado al procesar el pago del préstamo. Inténtalo de nuevo.";
+                ViewBag.SourceAccounts = new SelectList(paymentDto.AvailableAccounts, "AccountNumber", "DisplayText", paymentDto.SourceAccountNumber);
+                ViewBag.Loans = new SelectList(paymentDto.AvailableLoans, "LoanIdentifier", "DisplayText", paymentDto.LoanIdentifier);
+                return View(paymentDto);
+            }
         }
 
-        // -------- PAY BENEFICIARY --------
-        [HttpGet]
+        public IActionResult LoanPaymentConfirmation()
+        {
+            return View();
+        }
+        #endregion
+
+        #region Pagos a Beneficiarios
+        // GET: /Transaction/PayBeneficiary
         public async Task<IActionResult> PayBeneficiary()
         {
-            var user = await _userManager.GetUserAsync(User);
-            var accounts = await _savingsAccountService.GetAll();
-            var beneficiaries = await _beneficiaryService.GetAll();
+            var userId = GetCurrentUserId();
+            var accounts = await _accountServiceForWebApp.GetSavingsAccountsByUserIdAsync(userId);
+            var beneficiaries = await _beneficiaryService.GetBeneficiariesByUserIdAsync(userId); // Asume que este método existe en IBeneficiaryService y retorna List<BeneficiaryDTO>
 
-            var vm = new TransferToBeneficiaryViewModel
+            var model = new PayBeneficiaryDTO
             {
-                AvailableAccounts = _mapper.Map<List<SavingsAccountViewModel>>(accounts.Where(a => a.ClientId == user.Id && a.IsActive).ToList()),
-                AvailableBeneficiaries = _mapper.Map<List<BeneficiaryViewModel>>(
-                    beneficiaries.Where(b => b.ClientId == user.Id).ToList())
+                AvailableAccounts = accounts.Where(a => a.IsActive).ToList(),
+                AvailableBeneficiaries = beneficiaries.ToList() // Asume que BeneficiaryDTO no tiene 'IsActive' o ya está filtrado
             };
-
-            return View(vm);
+            ViewBag.SourceAccounts = new SelectList(model.AvailableAccounts, "AccountNumber", "DisplayText");
+            ViewBag.Beneficiaries = new SelectList(model.AvailableBeneficiaries, "Id", "DisplayText");
+            return View(model);
         }
 
+        // POST: /Transaction/PayBeneficiary
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> PayBeneficiary(TransferToBeneficiaryViewModel vm)
+        public async Task<IActionResult> PayBeneficiary(PayBeneficiaryDTO dto)
         {
-            var user = await _userManager.GetUserAsync(User);
-
-            if (!ModelState.IsValid)
-                return View(vm);
-
-            var hasFunds = await _transactionService.HasSufficientFunds(vm.FromAccountId, vm.Amount);
-            if (!hasFunds)
-            {
-                ModelState.AddModelError(nameof(vm.Amount), "Fondos insuficientes.");
-                return View(vm);
-            }
-
-            var beneficiaryDto = new PayBeneficiaryDTO
-            {
-                FromAccountNumber = vm.FromAccountId,
-                BeneficiaryAccountNumber = vm.BeneficiaryId,
-                Amount = vm.Amount,
-            };
-
-            var wrapper = new ConfirmTransactionWrapperDTO
-            {
-                Type = "Beneficiary",
-                JsonPayload = JsonConvert.SerializeObject(beneficiaryDto)
-            };
-            TempData["TransactionDetails"] = JsonConvert.SerializeObject(wrapper);
-
-            return RedirectToAction(nameof(ConfirmTransactionBeneficiary));
-        }
-
-        // -------- CONFIRM TRANSACTION EXPRESS --------
-        [HttpGet]
-        public IActionResult ConfirmTransactionExpress()
-        {
-            var wrapperJson = TempData["TransactionDetails"] as string;
-
-            if (string.IsNullOrEmpty(wrapperJson))
-                return RedirectToAction(nameof(Index));
-
-            var wrapper = JsonConvert.DeserializeObject<ConfirmTransactionWrapperDTO>(wrapperJson);
-            var expressDto = JsonConvert.DeserializeObject<ExpressTransactionDTO>(wrapper.JsonPayload);
-
-            var vm = new ExpressTransactionViewModel
-            {
-                SenderAccountNumber = expressDto.SenderAccountNumber,
-                ReceiverAccountNumber = expressDto.ReceiverAccountNumber,
-                Amount = expressDto.Amount
-            };
-
-            return View(vm);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ConfirmTransactionExpress(ExpressTransactionViewModel vm, string confirm)
-        {
-            if (confirm != "yes")
-            {
-                _logger.LogWarning("Confirmación no válida. Redirigiendo.");
-                return RedirectToAction(nameof(Index)); // Redirige si no se confirma la transacción
-            }
+            var userId = GetCurrentUserId();
+            var accounts = await _accountServiceForWebApp.GetSavingsAccountsByUserIdAsync(userId);
+            var beneficiaries = await _beneficiaryService.GetBeneficiariesByUserIdAsync(userId);
+            dto.AvailableAccounts = accounts.Where(a => a.IsActive).ToList();
+            dto.AvailableBeneficiaries = beneficiaries.ToList();
 
             if (!ModelState.IsValid)
             {
-                _logger.LogWarning("El estado del modelo no es válido.");
-                return View(vm); // Si el modelo no es válido, muestra la vista con los errores
+                ViewBag.SourceAccounts = new SelectList(dto.AvailableAccounts, "AccountNumber", "DisplayText", dto.SourceAccountNumber);
+                ViewBag.Beneficiaries = new SelectList(dto.AvailableBeneficiaries, "Id", "DisplayText", dto.BeneficiaryId);
+                TempData["ErrorMessage"] = "Por favor, corrige los errores del formulario.";
+                return View(dto);
             }
-
-            // Ejecutar la transacción
-            var dto = new ExpressTransactionDTO
-            {
-                SenderAccountNumber = vm.SenderAccountNumber,
-                ReceiverAccountNumber = vm.ReceiverAccountNumber,
-                Amount = vm.Amount
-            };
-
-            try
-            {
-                await _transactionService.ExecuteExpressTransactionAsync(dto);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error ejecutando la transacción: {ex.Message}");
-                ModelState.AddModelError("", "Hubo un problema al ejecutar la transacción.");
-                return View(vm); // Si hay un error, muestra el mensaje
-            }
-
-            return RedirectToAction("Index", "ClientHome"); // Redirige a la página de inicio si la transacción fue exitosa
-        }
-
-
-        // -------- CONFIRM TRANSACTION LOAN --------
-        [HttpGet]
-        public IActionResult ConfirmTransactionLoan()
-        {
-            var wrapperJson = TempData["TransactionDetails"] as string;
-
-            if (string.IsNullOrEmpty(wrapperJson))
-                return RedirectToAction(nameof(Index));
-
-            var wrapper = JsonConvert.DeserializeObject<ConfirmTransactionWrapperDTO>(wrapperJson);
-            var loanDto = JsonConvert.DeserializeObject<PayLoanDTO>(wrapper.JsonPayload);
-
-            var vm = new PayLoanViewModel
-            {
-                SavingsAccountNumber = loanDto.FromAccountNumber,
-                LoanId = loanDto.LoanCode,
-                Amount = loanDto.Amount
-            };
-
-            return View(vm);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ConfirmTransactionLoan(PayLoanViewModel vm, string confirm)
-        {
-            if (confirm != "yes")
-            {
-                _logger.LogWarning("Confirmación no válida. Redirigiendo.");
-                return RedirectToAction(nameof(Index)); // Redirige si no se confirma la transacción
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("El estado del modelo no es válido.");
-                return View(vm); // Si el modelo no es válido, muestra la vista con los errores
-            }
-
-            // Ejecutar la transacción
-            var dto = new PayLoanDTO
-            {
-                FromAccountNumber = vm.SavingsAccountNumber,
-                LoanCode = vm.LoanId,
-                Amount = vm.Amount
-            };
-
-            try
-            {
-                await _transactionService.ExecutePayLoanTransactionAsync(dto);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error ejecutando la transacción: {ex.Message}");
-                ModelState.AddModelError("", "Hubo un problema al ejecutar la transacción.");
-                return View(vm); // Si hay un error, muestra el mensaje
-            }
-
-            return RedirectToAction("Index", "ClientHome"); // Redirige a la página de inicio si la transacción fue exitosa
-        }
-
-
-        // -------- CONFIRM TRANSACTION BENEFICIARY --------
-        [HttpGet]
-        public IActionResult ConfirmTransactionBeneficiary()
-        {
-            var wrapperJson = TempData["TransactionDetails"] as string;
-
-            if (string.IsNullOrEmpty(wrapperJson))
-                return RedirectToAction(nameof(Index));
-
-            var wrapper = JsonConvert.DeserializeObject<ConfirmTransactionWrapperDTO>(wrapperJson);
-            var beneficiaryDto = JsonConvert.DeserializeObject<PayBeneficiaryDTO>(wrapper.JsonPayload);
-
-            var vm = new TransferToBeneficiaryViewModel
-            {
-                FromAccountId = beneficiaryDto.FromAccountNumber,
-                BeneficiaryId = beneficiaryDto.BeneficiaryAccountNumber,
-                Amount = beneficiaryDto.Amount
-            };
-
-            return View(vm);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ConfirmTransactionBeneficiary(ConfirmTransactionBeneficiaryViewModel vm, string confirm)
-        {
-            if (confirm != "yes")
-            {
-                _logger.LogWarning("Confirmación no válida. Redirigiendo.");
-                return RedirectToAction(nameof(Index)); // Redirige si no se confirma la transacción
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("El estado del modelo no es válido.");
-                return View(vm); // Si el modelo no es válido, muestra la vista con los errores
-            }
-
-            // Ejecutar la transacción
-            var dto = new PayBeneficiaryDTO
-            {
-                FromAccountNumber = vm.FromAccountId,
-                BeneficiaryAccountNumber = vm.ClientId,
-                Amount = vm.Amount
-            };
 
             try
             {
                 await _transactionService.ExecutePayBeneficiaryTransactionAsync(dto);
+                TempData["SuccessMessage"] = "Pago a beneficiario realizado exitosamente.";
+                _logger.LogInformation("Pago a beneficiario exitoso desde {SourceAccount} al beneficiario {BeneficiaryId} por {Amount:C} para el usuario {UserId}.",
+                   dto.SourceAccountNumber, dto.BeneficiaryId, dto.Amount, userId);
+                return RedirectToAction("BeneficiaryPaymentConfirmation");
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Pago a beneficiario fallido (validación) desde {SourceAccount} al beneficiario {BeneficiaryId} para el usuario {UserId}: {ErrorMessage}",
+                    dto.SourceAccountNumber, dto.BeneficiaryId, userId, ex.Message);
+                TempData["ErrorMessage"] = ex.Message;
+                ViewBag.SourceAccounts = new SelectList(dto.AvailableAccounts, "AccountNumber", "DisplayText", dto.SourceAccountNumber);
+                ViewBag.Beneficiaries = new SelectList(dto.AvailableBeneficiaries, "Id", "DisplayText", dto.BeneficiaryId);
+                return View(dto);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error ejecutando la transacción: {ex.Message}");
-                ModelState.AddModelError("", "Hubo un problema al ejecutar la transacción.");
-                return View(vm); // Si hay un error, muestra el mensaje
+                _logger.LogError(ex, "Error inesperado al procesar el pago a beneficiario desde {SourceAccount} al beneficiario {BeneficiaryId} para el usuario {UserId}.",
+                    dto.SourceAccountNumber, dto.BeneficiaryId, userId);
+                TempData["ErrorMessage"] = "Ocurrió un error inesperado al procesar el pago a beneficiario. Inténtalo de nuevo.";
+                ViewBag.SourceAccounts = new SelectList(dto.AvailableAccounts, "AccountNumber", "DisplayText", dto.SourceAccountNumber);
+                ViewBag.Beneficiaries = new SelectList(dto.AvailableBeneficiaries, "Id", "DisplayText", dto.BeneficiaryId);
+                return View(dto);
             }
-
-            return RedirectToAction("Index", "ClientHome"); // Redirige a la página de inicio si la transacción fue exitosa
         }
 
-
-        // -------- CONFIRM TRANSACTION CREDIT CARD --------
-        [HttpGet]
-        public IActionResult ConfirmTransactionCreditCard()
+        public IActionResult BeneficiaryPaymentConfirmation()
         {
-            var wrapperJson = TempData["TransactionDetails"] as string;
-
-            if (string.IsNullOrEmpty(wrapperJson))
-                return RedirectToAction(nameof(Index));
-
-            var wrapper = JsonConvert.DeserializeObject<ConfirmTransactionWrapperDTO>(wrapperJson);
-            var creditCardDto = JsonConvert.DeserializeObject<PayCreditCardDTO>(wrapper.JsonPayload);
-
-            var vm = new ConfirmTransactionCreditCardViewModel
-            {
-                FromAccountId = creditCardDto.FromAccountNumber,
-                CreditCardId = creditCardDto.CreditCardNumber,
-                Amount = creditCardDto.Amount
-            };
-
-            return View(vm);
+            return View();
         }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ConfirmTransactionCreditCard(ConfirmTransactionCreditCardViewModel vm, string confirm)
-        {
-            if (confirm != "yes")
-            {
-                _logger.LogWarning("Confirmación no válida. Redirigiendo.");
-                return RedirectToAction(nameof(Index)); // Redirige si no se confirma la transacción
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("El estado del modelo no es válido.");
-                return View(vm); // Si el modelo no es válido, muestra la vista con los errores
-            }
-
-            // Crear DTO con los detalles del pago
-            var dto = new PayCreditCardDTO
-            {
-                FromAccountNumber = vm.FromAccountId,
-                CreditCardNumber = vm.CreditCardId,
-                Amount = vm.Amount
-            };
-
-            if (dto.Amount <= 0)
-            {
-                ModelState.AddModelError("", "El monto debe ser mayor a cero.");
-                return View(vm);
-            }
-
-            try
-            {
-                // Realizar la transacción de pago de tarjeta
-                await _transactionService.ExecutePayCreditCardTransactionAsync(dto);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error ejecutando la transacción: {ex.Message}");
-                ModelState.AddModelError("", "Hubo un problema al ejecutar la transacción.");
-                return View(vm); // Si hay un error, muestra el mensaje
-            }
-
-            // Redirigir a la página de inicio después de una transacción exitosa
-            TempData["Success"] = "Pago realizado correctamente.";
-            return RedirectToAction("Index", "ClientHome");
-        }
-
-
+        #endregion
     }
 }
