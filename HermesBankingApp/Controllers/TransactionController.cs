@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using HermesBanking.Core.Application.DTOs;
+using HermesBanking.Core.Application.DTOs.CreditCard;
 using HermesBanking.Core.Application.DTOs.Loan;
 using HermesBanking.Core.Application.DTOs.SavingsAccount;
 using HermesBanking.Core.Application.DTOs.Transaction;
@@ -152,19 +153,38 @@ namespace HermesBankingApp.Controllers
         public async Task<IActionResult> PayCreditCard()
         {
             var user = await _userManager.GetUserAsync(User);
+
+            // Obtener todas las cuentas y tarjetas de crédito disponibles para el cliente
             var accounts = await _savingsAccountService.GetAll();
             var creditCards = await _creditCardService.GetAll();
 
+            // Filtrar las cuentas y tarjetas activas para este cliente
+            var clientAccounts = accounts.Where(a => a.ClientId == user.Id && a.IsActive).ToList();
+            var clientCards = creditCards.Where(c => c.ClientId == user.Id && c.IsActive).ToList();
+
+            // Agregar depuración aquí para verificar los datos antes de la vista
+            Console.WriteLine("Cuentas del cliente:");
+            foreach (var account in clientAccounts)
+            {
+                Console.WriteLine($"Cuenta: {account.AccountNumber}, Balance: {account.Balance}");
+            }
+
+            Console.WriteLine("Tarjetas del cliente:");
+            foreach (var card in clientCards)
+            {
+                Console.WriteLine($"Tarjeta: {card.CardId}, Activa: {card.IsActive}, Límite: {card.CreditLimit}");
+            }
+
+            // Mapear a ViewModel para la vista
             var vm = new PayCreditCardViewModel
             {
-                AvailableAccounts = _mapper.Map<List<SavingsAccountViewModel>>(
-                    accounts.Where(a => a.ClientId == user.Id && a.IsActive).ToList()),
-                AvailableCreditCards = _mapper.Map<List<CreditCardViewModel>>(
-                    creditCards.Where(c => c.ClientId == user.Id && c.IsActive).ToList())
+                AvailableAccounts = _mapper.Map<List<SavingsAccountViewModel>>(clientAccounts),
+                AvailableCreditCards = _mapper.Map<List<CreditCardViewModel>>(clientCards)
             };
 
             return View(vm);
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -172,32 +192,96 @@ namespace HermesBankingApp.Controllers
         {
             var user = await _userManager.GetUserAsync(User);
 
-            if (!ModelState.IsValid)
-                return View(vm);
-
-            var hasFunds = await _transactionService.HasSufficientFunds(vm.FromAccountId, vm.Amount);
-            if (!hasFunds)
+            if (vm == null)
             {
-                ModelState.AddModelError(nameof(vm.Amount), "Fondos insuficientes.");
+                ModelState.AddModelError("", "El modelo no puede ser nulo.");
                 return View(vm);
             }
 
-            var creditDto = new PayCreditCardDTO
+            if (string.IsNullOrEmpty(vm.CreditCardId))
             {
-                FromAccountNumber = vm.FromAccountId,
-                CreditCardNumber = vm.CreditCardId,
-                Amount = vm.Amount,
-            };
+                ModelState.AddModelError(nameof(vm.CreditCardId), "El ID de la tarjeta es obligatorio.");
+                return View(vm);
+            }
 
-            var wrapper = new ConfirmTransactionWrapperDTO
+            if (string.IsNullOrEmpty(vm.FromAccountId))
             {
-                Type = "CreditCard",
-                JsonPayload = JsonConvert.SerializeObject(creditDto)
-            };
-            TempData["TransactionDetails"] = JsonConvert.SerializeObject(wrapper);
+                ModelState.AddModelError(nameof(vm.FromAccountId), "La cuenta origen es obligatoria.");
+                return View(vm);
+            }
 
-            return RedirectToAction(nameof(ConfirmTransactionCreditCard));
+            try
+            {
+                // Obtener todas las cuentas activas asociadas al cliente (de la misma forma que en Express)
+                var accounts = await _savingsAccountService.GetAll();
+                var clientAccounts = accounts.Where(a => a.ClientId == user.Id && a.IsActive).ToList();
+
+                // Obtener todas las tarjetas de crédito activas asociadas al cliente
+                var creditCards = await _creditCardService.GetAll();
+                var clientCards = creditCards.Where(c => c.ClientId == user.Id && c.IsActive).ToList();
+
+                // Validar cuenta de origen usando la misma lógica de Express
+                var senderAccount = clientAccounts.FirstOrDefault(a => a.AccountNumber == vm.FromAccountId);
+                if (senderAccount == null)
+                {
+                    ModelState.AddModelError(nameof(vm.FromAccountId), "Cuenta origen no válida.");
+                    vm.AvailableCreditCards = _mapper.Map<List<CreditCardViewModel>>(clientCards); // Mantener las tarjetas
+                    return View(vm);
+                }
+
+                if (senderAccount.Balance < vm.Amount)
+                {
+                    ModelState.AddModelError(nameof(vm.Amount), "Fondos insuficientes en la cuenta origen.");
+                    vm.AvailableCreditCards = _mapper.Map<List<CreditCardViewModel>>(clientCards); // Mantener las tarjetas
+                    return View(vm);
+                }
+
+                // Validar tarjeta de crédito
+                var creditCard = clientCards.FirstOrDefault(c => c.CardId == vm.CreditCardId);
+                if (creditCard == null || !creditCard.IsActive)
+                {
+                    ModelState.AddModelError(nameof(vm.CreditCardId), "Tarjeta de crédito no válida o inactiva.");
+                    vm.AvailableCreditCards = _mapper.Map<List<CreditCardViewModel>>(clientCards); // Mantener las tarjetas
+                    return View(vm);
+                }
+
+                // Crear DTO para la transacción
+                var creditDto = new PayCreditCardDTO
+                {
+                    FromAccountNumber = vm.FromAccountId,
+                    CreditCardNumber = vm.CreditCardId,
+                    Amount = vm.Amount,
+                };
+
+                // Guardar los detalles en TempData para la confirmación
+                var wrapper = new ConfirmTransactionWrapperDTO
+                {
+                    Type = "CreditCard",
+                    JsonPayload = JsonConvert.SerializeObject(creditDto)
+                };
+
+                TempData["TransactionDetails"] = JsonConvert.SerializeObject(wrapper);
+
+                // Redirigir a la página de confirmación
+                return RedirectToAction(nameof(ConfirmTransactionCreditCard));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error en PayCreditCard: {ex.Message}");
+                ModelState.AddModelError("", "Hubo un problema al procesar la solicitud.");
+                return View(vm);
+            }
         }
+
+
+
+
+
+
+
+
+
+
 
         // -------- PAY LOAN --------
         [HttpGet]
@@ -205,7 +289,7 @@ namespace HermesBankingApp.Controllers
         {
             var user = await _userManager.GetUserAsync(User);
             var accounts = await _savingsAccountService.GetAll();
-            var loans = await _loanService.GetAllLoansAsync(user.UserId, "active");
+            var loans = await _loanService.GetAllLoansAsync(null, null);
 
             var vm = new PayLoanViewModel
             {
@@ -448,7 +532,7 @@ namespace HermesBankingApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ConfirmTransactionBeneficiary(TransferToBeneficiaryViewModel vm, string confirm)
+        public async Task<IActionResult> ConfirmTransactionBeneficiary(ConfirmTransactionBeneficiaryViewModel vm, string confirm)
         {
             if (confirm != "yes")
             {
@@ -466,7 +550,7 @@ namespace HermesBankingApp.Controllers
             var dto = new PayBeneficiaryDTO
             {
                 FromAccountNumber = vm.FromAccountId,
-                BeneficiaryAccountNumber = vm.BeneficiaryId,
+                BeneficiaryAccountNumber = vm.ClientId,
                 Amount = vm.Amount
             };
 
@@ -497,7 +581,7 @@ namespace HermesBankingApp.Controllers
             var wrapper = JsonConvert.DeserializeObject<ConfirmTransactionWrapperDTO>(wrapperJson);
             var creditCardDto = JsonConvert.DeserializeObject<PayCreditCardDTO>(wrapper.JsonPayload);
 
-            var vm = new PayCreditCardViewModel
+            var vm = new ConfirmTransactionCreditCardViewModel
             {
                 FromAccountId = creditCardDto.FromAccountNumber,
                 CreditCardId = creditCardDto.CreditCardNumber,
@@ -509,7 +593,7 @@ namespace HermesBankingApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ConfirmTransactionCreditCard(PayCreditCardViewModel vm, string confirm)
+        public async Task<IActionResult> ConfirmTransactionCreditCard(ConfirmTransactionCreditCardViewModel vm, string confirm)
         {
             if (confirm != "yes")
             {
@@ -523,7 +607,7 @@ namespace HermesBankingApp.Controllers
                 return View(vm); // Si el modelo no es válido, muestra la vista con los errores
             }
 
-            // Ejecutar la transacción
+            // Crear DTO con los detalles del pago
             var dto = new PayCreditCardDTO
             {
                 FromAccountNumber = vm.FromAccountId,
@@ -531,8 +615,15 @@ namespace HermesBankingApp.Controllers
                 Amount = vm.Amount
             };
 
+            if (dto.Amount <= 0)
+            {
+                ModelState.AddModelError("", "El monto debe ser mayor a cero.");
+                return View(vm);
+            }
+
             try
             {
+                // Realizar la transacción de pago de tarjeta
                 await _transactionService.ExecutePayCreditCardTransactionAsync(dto);
             }
             catch (Exception ex)
@@ -542,8 +633,11 @@ namespace HermesBankingApp.Controllers
                 return View(vm); // Si hay un error, muestra el mensaje
             }
 
-            return RedirectToAction("Index", "ClientHome"); // Redirige a la página de inicio si la transacción fue exitosa
+            // Redirigir a la página de inicio después de una transacción exitosa
+            TempData["Success"] = "Pago realizado correctamente.";
+            return RedirectToAction("Index", "ClientHome");
         }
+
 
     }
 }

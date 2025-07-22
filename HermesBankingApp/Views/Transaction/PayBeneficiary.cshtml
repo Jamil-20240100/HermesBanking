@@ -28,7 +28,7 @@
                         <div class="form-group mb-3">
                             <label asp-for="FromAccountId" class="form-label fw-bold">Cuenta de Ahorros (Origen)</label>
                             <select asp-for="FromAccountId" class="form-control"
-                                    asp-items="@(new SelectList(accountsList, "Id", "AccountNumber"))">
+                                    asp-items="@(new SelectList(accountsList, "AccountNumber", "AccountNumber"))">
                                 <option value="">Seleccione una cuenta</option>
                             </select>
                             <span asp-validation-for="FromAccountId" class="text-danger"></span>
@@ -37,7 +37,7 @@
                         <div class="form-group mb-3">
                             <label asp-for="BeneficiaryId" class="form-label fw-bold">Beneficiario</label>
                             <select asp-for="BeneficiaryId" class="form-control"
-                                    asp-items="@(new SelectList(beneficiariesList, "Id", "FullName"))">
+                                    asp-items="@(new SelectList(beneficiariesList, "Id", "BeneficiaryAccountNumber"))">
                                 <option value="">Seleccione un beneficiario</option>
                             </select>
                             <span asp-validation-for="BeneficiaryId" class="text-danger"></span>

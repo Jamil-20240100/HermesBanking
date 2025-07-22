@@ -5,7 +5,7 @@ namespace HermesBanking.Core.Application.ViewModels
     public class ConfirmTransactionBeneficiaryViewModel
     {
         [Required]
-        public string BeneficiaryName { get; set; }
+        public string ClientId { get; set; }
 
         [Required]
         public string FromAccountId { get; set; }

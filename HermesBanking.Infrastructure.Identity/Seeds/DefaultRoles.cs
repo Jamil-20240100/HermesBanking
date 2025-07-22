@@ -9,7 +9,7 @@ namespace HermesBanking.Infrastructure.Identity.Seeds
         {
             foreach (var roleName in new[] { Roles.Admin.ToString(), Roles.Commerce.ToString(), Roles.Client.ToString(), Roles.Cashier.ToString() })
             {
-                if (!await roleManager.RoleExistsAsync(roleName))
+               if (!await roleManager.RoleExistsAsync(roleName))
                 {
                     await roleManager.CreateAsync(new IdentityRole(roleName));
                 }

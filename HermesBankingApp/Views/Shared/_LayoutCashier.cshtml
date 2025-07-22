@@ -35,7 +35,7 @@
                             <a class="nav-link" asp-controller="Cashier" asp-action="ThirdPartyTransfer">Transferencia</a>
                         </li>
                         <li class="nav-item">
-                            <form asp-controller="Cashier" asp-action="Logout" method="post" class="d-inline">
+                            <form asp-controller="Login" asp-action="Logout" method="post" class="d-inline">
                                 <button type="submit" class="btn btn-outline-danger btn-sm">Cerrar sesión (@User.Identity?.Name)</button>
                             </form>
                         </li>

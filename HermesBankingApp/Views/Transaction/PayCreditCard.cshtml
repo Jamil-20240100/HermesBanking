@@ -38,7 +38,7 @@
                         <div class="form-group mb-3">
                             <label asp-for="CreditCardId" class="form-label fw-bold">Tarjeta de Crédito</label>
                             <select asp-for="CreditCardId" class="form-control"
-                                    asp-items="@(new SelectList(cardsList, "Id", "CardNumber"))">
+                                    asp-items="@(new SelectList(cardsList, "Id", "CardId"))">
                                 <option value="">Seleccione una tarjeta</option>
                             </select>
                             <span asp-validation-for="CreditCardId" class="text-danger"></span>

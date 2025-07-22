@@ -13,6 +13,9 @@ namespace HermesBanking.Core.Application.Interfaces
         // Validaciones
         Task<bool> ValidateAccountExistsAndActive(string accountNumber);
         Task<bool> HasSufficientFunds(string accountNumber, decimal amount);
+        Task<bool> ValidateCreditCardExistsAndActive(string creditCardNumber);
+        Task<bool> ValidateLoanExistsAndActive(string loanIdentifier);
+        Task<bool> ValidateBeneficiaryExists(string beneficiaryAccountNumber);
 
         // Ejecución de transacciones específicas
         Task ExecuteExpressTransactionAsync(ExpressTransactionDTO dto); // Transferencia Express

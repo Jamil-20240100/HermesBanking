@@ -465,5 +465,7 @@ namespace HermesBankingApp.Controllers
             TempData["Success"] = "Pago aplicado correctamente.";
             return RedirectToAction("Index", "CashierHome");
         }
+
+
     }
 }
