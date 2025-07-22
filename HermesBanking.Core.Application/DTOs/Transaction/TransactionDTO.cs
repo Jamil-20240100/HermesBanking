@@ -9,7 +9,7 @@ namespace HermesBanking.Core.Application.DTOs.Transaction
         public int Id { get; set; } // Must be present for mapping from entity
         public decimal Amount { get; set; }
         public DateTime TransactionDate { get; set; } // Matches entity
-        public TransactionType TransactionType { get; set; } // Matches entity
+        public TransactionType? TransactionType { get; set; } // Matches entity
 
         public string SourceAccountId { get; set; } = string.Empty;
         public string? DestinationAccountId { get; set; }

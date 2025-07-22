@@ -17,8 +17,8 @@ namespace HermesBanking.Core.Application.Services
         private readonly IAccountServiceForWebApp _accountServiceForWebApp;
         private readonly ILoanAmortizationService _loanAmortizationService;
         private readonly IEmailService _emailService;
-        private readonly IBeneficiaryService _beneficiaryService; // <-- Nuevo: Servicio de beneficiarios
-        private readonly IUnitOfWork _unitOfWork; // <-- Sugerencia para la atomicidad
+        private readonly IBeneficiaryService _beneficiaryService;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<TransactionService> _logger;
 
         public TransactionService(
@@ -41,6 +41,28 @@ namespace HermesBanking.Core.Application.Services
             _beneficiaryService = beneficiaryService; // <-- Asignación
             _unitOfWork = unitOfWork; // <-- Asignación
             _logger = logger;
+        }
+
+        public async Task<List<TransactionDTO>> GetAllTransactionsAsync()
+        {
+            _logger.LogInformation("Attempting to retrieve all transactions.");
+            var transactions = await _transactionRepository.GetAllAsync();
+
+            var transactionDtos = transactions.Select(t => new TransactionDTO
+            {
+                Id = t.Id,
+                Amount = t.Amount,
+                TransactionDate = t.TransactionDate ?? DateTime.MinValue,
+                TransactionType = t.TransactionType,
+                Description = t.Description,
+                SourceAccountId = t.SourceAccountId,
+                DestinationAccountId = t.DestinationAccountId,
+                DestinationCardId = t.DestinationCardId,
+                DestinationLoanId = t.DestinationLoanId
+            }).OrderByDescending(t => t.TransactionDate).ToList();
+
+            _logger.LogInformation($"Retrieved {transactionDtos.Count} transactions.");
+            return transactionDtos;
         }
 
         public async Task PerformTransactionAsync(DTOs.Transaction.TransactionRequestDto request)
@@ -259,10 +281,6 @@ namespace HermesBanking.Core.Application.Services
             }
         }
 
-        /// <summary>
-        /// Ejecuta una transacción a un beneficiario previamente registrado.
-        /// </summary>
-        /// <param name="dto">DTO con la información del pago al beneficiario.</param>
         public async Task ExecutePayBeneficiaryTransactionAsync(PayBeneficiaryDTO dto)
         {
             _logger.LogInformation($"Iniciando pago a beneficiario: BeneficiaryId={dto.BeneficiaryId}, SourceAccount={dto.SourceAccountNumber}, Amount={dto.Amount}");
@@ -370,49 +388,6 @@ namespace HermesBanking.Core.Application.Services
         }
 
         public Task ExecutePayCreditCardTransactionAsync(PayCreditCardDTO dto)
-        {
-            // Podrías refactorizar para que este método llame a PayCreditCardAsync
-            throw new NotImplementedException();
-        }
-
-        public Task ExecutePayLoanTransactionAsync(PayLoanDTO dto)
-        {
-            // Podrías refactorizar para que este método llame a PayLoanAsync
-            throw new NotImplementedException();
-        }
-
-        // Métodos de validación que aún deben implementarse si son necesarios para otros flujos
-        public Task<bool> ValidateAccountExistsAndActive(string accountNumber)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> HasSufficientFunds(string accountNumber, decimal amount)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> ValidateCreditCardExistsAndActive(string cardNumber)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> ValidateLoanExistsAndActive(string loanIdentifier)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> ValidateBeneficiaryExists(string beneficiaryAccountNumber)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<TransactionDTO?> GetByIdAsync(int id)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> RegisterTransactionAsync(TransactionDTO transactionDto)
         {
             throw new NotImplementedException();
         }
