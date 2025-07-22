@@ -282,6 +282,35 @@ namespace HermesBanking.Infrastructure.Identity.Services
             return await _userManager.Users.AnyAsync(u => u.CommerceId == commerceId);
         }
 
+        public async Task<List<UserDto>> GetUsersByCommerceIdAsync(string commerceId)
+        {
+            // Verificar si el commerceId es válido
+            if (string.IsNullOrEmpty(commerceId))
+            {
+                throw new ArgumentException("CommerceId is required.");
+            }
+
+            // Filtrar usuarios por CommerceId
+            var users = await _userManager.Users
+                .Where(u => u.CommerceId == commerceId)  // Comparando con el string de CommerceId
+                .ToListAsync();
+
+            return users.Select(user => new UserDto
+            {
+                Id = user.Id,
+                Name = user.Name,
+                LastName = user.LastName,
+                UserName = user.UserName,
+                Email = user.Email,
+                isVerified = user.EmailConfirmed,
+                Role = "User",  // Aquí podrías ajustar la lógica si necesitas obtener el rol real
+                UserId = user.UserId,
+                InitialAmount = user.InitialAmount,
+                IsActive = user.IsActive,
+            }).ToList();
+
+            throw new ArgumentException("CommerceId is not valid.");
+        }
         #region "private methods"
         private async Task<JwtSecurityToken> GenerateJwtToken(AppUser user)
         {

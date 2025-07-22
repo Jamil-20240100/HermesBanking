@@ -1,7 +1,6 @@
 ﻿using HermesBanking.Core.Application.DTOs.User;
 using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Application.Services;
-using HermesBanking.Core.Application.Services;
 using HermesBanking.Core.Domain.Settings;
 using HermesBanking.Infrastructure.Application.Services;
 using HermesBanking.Infrastructure.Identity.Contexts;
@@ -115,7 +114,7 @@ namespace HermesBanking.Infrastructure.Identity
                 opt.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
             }).AddJwtBearer(opt =>
             {
-https://web.whatsapp.com/               opt.RequireHttpsMetadata = false;
+            https://web.whatsapp.com/               opt.RequireHttpsMetadata = false;
                 opt.SaveToken = false;
                 opt.TokenValidationParameters = new TokenValidationParameters
                 {
@@ -140,10 +139,14 @@ https://web.whatsapp.com/               opt.RequireHttpsMetadata = false;
                     OnChallenge = c =>
                     {
                         c.HandleResponse();
-                        c.Response.StatusCode = 401;
-                        c.Response.ContentType = "application/json";
-                        var result = JsonConvert.SerializeObject(new JwtResponseDto { HasError = true, Error = "You are not Authorized" });
-                        return c.Response.WriteAsync(result);
+                        if (!c.Response.HasStarted)
+                        {
+                            c.Response.StatusCode = 401;
+                            c.Response.ContentType = "application/json";
+                            var result = JsonConvert.SerializeObject(new JwtResponseDto { HasError = true, Error = "You are not Authorized" });
+                            return c.Response.WriteAsync(result);
+                        }
+                        return Task.CompletedTask;
                     },
                     OnForbidden = c =>
                     {

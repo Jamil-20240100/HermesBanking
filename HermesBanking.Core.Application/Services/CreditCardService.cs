@@ -27,8 +27,8 @@ namespace HermesBanking.Core.Application.Services
         {
             var cardsQuery = _repository.GetAllQuery().AsQueryable();
 
-            var allClientDTOs = await _accountServiceForWebApp.GetAllUser(); 
-                                                                             
+            var allClientDTOs = await _accountServiceForWebApp.GetAllUser();
+
             var clientsDict = allClientDTOs.ToDictionary(u => u.Id);
 
             if (!string.IsNullOrWhiteSpace(estado))
@@ -52,14 +52,14 @@ namespace HermesBanking.Core.Application.Services
             if (!string.IsNullOrWhiteSpace(cedula))
             {
                 var matchingClientIds = allClientDTOs
-                    .Where(u => u.UserId == cedula) 
+                    .Where(u => u.UserId == cedula)
                     .Select(u => u.Id)
                     .ToList();
 
                 cardsQuery = cardsQuery.Where(c => matchingClientIds.Contains(c.ClientId));
             }
 
-            var allCards = await cardsQuery.ToListAsync(); 
+            var allCards = await cardsQuery.ToListAsync();
             allCards = allCards.OrderByDescending(c => c.ExpirationDate).ToList();
 
             int totalRegistros = allCards.Count();
@@ -83,7 +83,7 @@ namespace HermesBanking.Core.Application.Services
                     dto.ClientFullName = $"{user.Name} {user.LastName}";
                     dto.ClientIdentification = user.UserId;
                 }
-                 if (card.CreatedByAdminId != null && clientsDict.TryGetValue(card.CreatedByAdminId, out var adminUser))
+                if (card.CreatedByAdminId != null && clientsDict.TryGetValue(card.CreatedByAdminId, out var adminUser))
                 {
                     dto.AdminFullName = $"{adminUser.Name} {adminUser.LastName}";
                 }
@@ -143,7 +143,7 @@ namespace HermesBanking.Core.Application.Services
                 {
                     cardId += random.Next(0, 10).ToString();
                 }
-            } while (false); 
+            } while (false);
             return cardId;
         }
 
@@ -182,7 +182,7 @@ namespace HermesBanking.Core.Application.Services
             if (user != null)
             {
                 dto.ClientFullName = $"{user.Name} {user.LastName}";
-                dto.ClientIdentification = user.UserId; 
+                dto.ClientIdentification = user.UserId;
             }
 
             if (!string.IsNullOrEmpty(card.CreatedByAdminId))

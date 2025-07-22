@@ -10,5 +10,6 @@ namespace HermesBanking.Core.Application.Interfaces
         Task<(bool Success, string? ErrorMessage)> CreateUserAsync(CreateUserRequestDto request);
         Task<bool> CommerceHasUserAsync(string commerceId);
         Task<UserResponseDto> CreateCommerceUserAsync(SaveUserDto dto);
+        Task<List<UserDto>> GetUsersByCommerceIdAsync(string commerceId);
     }
 }

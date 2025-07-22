@@ -19,6 +19,8 @@ namespace HermesBanking.Infrastructure.Persistence.Contexts
         public DbSet<AmortizationInstallment> AmortizationInstallments { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<Beneficiary> Beneficiaries { get; set; }
+        public DbSet<Commerce> Commerces { get; set; }
+        public DbSet<AppUser> Users { get; set; }
 
         //
         // ENTITY CONFIGURATIONS APPLICATION
