@@ -365,3 +365,5 @@ FodyWeavers.xsd
 /HermesBankingApp/appsettings.json
 /HermesBankingAPI/appsettings.json
 /HermesBankingApp/appsettings.Development.json
+/HermesBankingApp/appsettings.Development.json
+/HermesAPI/appsettings.json
