@@ -5,7 +5,7 @@ namespace HermesBanking.Core.Application.ViewModels
     public class ConfirmTransactionBeneficiaryViewModel
     {
         [Required]
-        public string ClientId { get; set; }
+        public string BeneficiaryName { get; set; }
 
         [Required]
         public string FromAccountId { get; set; }
@@ -19,5 +19,6 @@ namespace HermesBanking.Core.Application.ViewModels
 
         [Required]
         public string TransactionType { get; set; }
+        public string ClientId { get; set; }
     }
 }

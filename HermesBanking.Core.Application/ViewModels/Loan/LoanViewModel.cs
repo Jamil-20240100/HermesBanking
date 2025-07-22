@@ -1,5 +1,4 @@
-﻿using HermesBanking.Core.Application.ViewModels.SavingsAccount;
-
+﻿
 namespace HermesBanking.Core.Application.ViewModels.Loan
 {
     public class LoanViewModel
@@ -18,9 +17,5 @@ namespace HermesBanking.Core.Application.ViewModels.Loan
         public string? Status { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
-
-
-        public List<LoanViewModel> AvailableLoans { get; set; }
-        public List<SavingsAccountViewModel> AvailableAccounts { get; set; }
     }
 }

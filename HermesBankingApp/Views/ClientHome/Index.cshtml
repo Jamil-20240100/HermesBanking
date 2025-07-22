@@ -141,7 +141,7 @@
                                     <td class="fw-bold @(t.Type == "Depósito" ? "text-success" : "text-danger")">@FormatCurrency(t.Amount)</td>
                                     <td>@t.Origin</td>
                                     <td>@t.Beneficiary</td>
-                                    <td>@t.Date.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@t.Date.ToString()</td>
                                 </tr>
                             }
                         </tbody>

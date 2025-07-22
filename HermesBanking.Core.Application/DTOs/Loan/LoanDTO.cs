@@ -1,4 +1,6 @@
-﻿namespace HermesBanking.Core.Application.DTOs.Loan
+﻿using System.ComponentModel.DataAnnotations; // Make sure this is present if needed for other attributes
+
+namespace HermesBanking.Core.Application.DTOs.Loan
 {
     public class LoanDTO
     {
@@ -20,6 +22,9 @@
         public string? AdminFullName { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? CompletedAt { get; set; }
-        public List<AmortizationInstallmentDTO>? AmortizationInstallments { get; set; }
+        public List<AmortizationInstallmentDTO>? AmortizationInstallments { get; set; } // Assuming AmortizationInstallmentDTO exists
+
+        // Added for UI display in dropdowns
+        public string DisplayText => $"{LoanIdentifier ?? "N/A"} (Pendiente: {PendingAmount:C} | Cuota: {MonthlyInstallmentValue:C})";
     }
 }

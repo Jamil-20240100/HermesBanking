@@ -132,7 +132,7 @@ namespace HermesBanking.Core.Application.Services
                 .Where(sa =>
                     (clientIds.Contains(sa.ClientId) || adminIds.Contains(sa.CreatedByAdminId ?? "")) &&
                     sa.AccountNumber == beneficiaryAccountNumber &&
-                    sa.IsActive)  // Asegúrate de que la cuenta esté activa
+                    sa.IsActive)
                 .ToList();
 
             var targetAccount = clientAccounts.FirstOrDefault();
@@ -153,9 +153,5 @@ namespace HermesBanking.Core.Application.Services
 
             return dto;
         }
-
-        
-
-
     }
 }

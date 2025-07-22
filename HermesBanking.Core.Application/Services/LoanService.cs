@@ -34,33 +34,35 @@ namespace HermesBanking.Core.Application.Services
 
         public async Task<List<LoanDTO>> GetAllLoansAsync(string? cedula, string? status)
         {
-            var loans = await _loanRepository.GetAll();
+            // You might want to rename this or refactor it to use the new method below
+            // For now, let's just make sure it also eager-loads.
+            var query = _loanRepository.GetAllQueryWithInclude(["AmortizationInstallments"]);
 
-            if (!string.IsNullOrWhiteSpace(cedula))
+            if (!string.IsNullOrEmpty(cedula))
             {
-                loans = loans.Where(l => l.ClientIdentificationNumber != null && l.ClientIdentificationNumber.Contains(cedula)).ToList();
+                query = query.Where(l => l.ClientIdentificationNumber != null && l.ClientIdentificationNumber.Contains(cedula));
             }
 
-            if (!string.IsNullOrWhiteSpace(status) && status.ToLower() != "all")
+            if (status != "all")
             {
-                if (status.Equals("active", StringComparison.CurrentCultureIgnoreCase))
+                bool isActive = status == "activo";
+                bool isOverdue = status == "en mora";
+
+                if (isActive)
                 {
-                    loans = loans.Where(l => l.IsActive).ToList();
+                    query = query.Where(l => l.IsActive && !l.IsOverdue);
                 }
-                else if (status.Equals("completed", StringComparison.CurrentCultureIgnoreCase))
+                else if (isOverdue)
                 {
-                    loans = loans.Where(l => !l.IsActive).ToList();
+                    query = query.Where(l => l.IsActive && l.IsOverdue);
                 }
-                else if (status.Equals("en mora", StringComparison.CurrentCultureIgnoreCase))
+                else if (status == "completado")
                 {
-                    loans = loans.Where(l => l.IsActive && l.IsOverdue).ToList();
+                    query = query.Where(l => !l.IsActive);
                 }
             }
 
-            loans = loans.OrderByDescending(l => l.IsActive)
-                         .ThenByDescending(l => l.CreatedAt)
-                         .ToList();
-
+            var loans = await query.ToListAsync();
             return _mapper.Map<List<LoanDTO>>(loans);
         }
 
@@ -106,7 +108,7 @@ namespace HermesBanking.Core.Application.Services
                 var cuotasPendientes = await _installmentRepository.GetByConditionAsync(i => i.LoanId == loan.Id && !i.IsPaid);
 
                 string estadoPago = "al_dia";
-                if (cuotasPendientes.Any(i => i.PaymentDate.Date < DateTime.Today))
+                if (cuotasPendientes.Any(i => i.DueDate.Date < DateTime.Today))
                 {
                     estadoPago = "atrasado";
                 }
@@ -161,7 +163,7 @@ namespace HermesBanking.Core.Application.Services
 
             foreach (var installment in installments)
             {
-                installment.IsOverdue = !installment.IsPaid && installment.PaymentDate.Date < today;
+                installment.IsOverdue = !installment.IsPaid && installment.DueDate.Date < today;
             }
 
             var installmentsDto = _mapper.Map<List<AmortizationInstallmentDTO>>(installments);
@@ -289,7 +291,7 @@ namespace HermesBanking.Core.Application.Services
             await _loanRepository.UpdateAsync(loan);
 
             var existingInstallments = (await _installmentRepository.GetByConditionAsync(i => i.LoanId == loanId)).ToList();
-            var futureInstallments = existingInstallments.Where(i => i.PaymentDate.Date > DateTime.Today && !i.IsPaid).ToList();
+            var futureInstallments = existingInstallments.Where(i => i.DueDate.Date > DateTime.Today && !i.IsPaid).ToList();
 
             if (!futureInstallments.Any() && existingInstallments.Any(i => !i.IsPaid))
             {
@@ -310,7 +312,7 @@ namespace HermesBanking.Core.Application.Services
                 }
 
                 int remainingTerm = futureInstallments.Count();
-                DateTime nextPaymentDate = futureInstallments.First().PaymentDate;
+                DateTime nextPaymentDate = futureInstallments.First().DueDate;
 
                 var recalculatedInstallments = CalculateAmortizationSchedule(
                     remainingLoanBalance, newInterestRate, remainingTerm, nextPaymentDate.AddMonths(-1));
@@ -379,7 +381,7 @@ namespace HermesBanking.Core.Application.Services
 
             foreach (var installment in unpaidInstallments)
             {
-                if (installment.PaymentDate.Date < DateTime.Today && !installment.IsPaid)
+                if (installment.DueDate.Date < DateTime.Today && !installment.IsPaid)
                 {
                     installment.IsOverdue = true;
                     await _installmentRepository.UpdateAsync(installment);
@@ -399,7 +401,7 @@ namespace HermesBanking.Core.Application.Services
                     var remainingUnpaidInstallments = await _installmentRepository
                         .GetByConditionAsync(i => i.LoanId == installment.LoanId && !i.IsPaid);
 
-                    if (!remainingUnpaidInstallments.Any(i => i.PaymentDate.Date < DateTime.Today))
+                    if (!remainingUnpaidInstallments.Any(i => i.DueDate.Date < DateTime.Today))
                     {
                         var loan = await _loanRepository.GetById(installment.LoanId);
                         if (loan != null && loan.IsOverdue)
@@ -455,7 +457,7 @@ namespace HermesBanking.Core.Application.Services
                 installments.Add(new AmortizationInstallmentDTO
                 {
                     InstallmentNumber = i,
-                    PaymentDate = startDate.AddMonths(i),
+                    DueDate = startDate.AddMonths(i),
                     InstallmentValue = monthlyInstallment,
                     PrincipalAmount = principalAmortized,
                     InterestAmount = interestForPeriod,

@@ -65,14 +65,14 @@ namespace HermesBanking.Core.Application.Services
 
             var savingsTransaction = new Transaction
             {
-                SavingsAccountId = destinationAccount.Id,
+                SavingsAccountId = destinationAccount.Id.ToString(),
                 Amount = dto.Amount,
                 Type = TransactionType.CREDITO.ToString(),
                 Origin = $"Avance TDC ...{sourceCard?.CardId?.Substring(sourceCard.CardId.Length - 4)}",
                 Beneficiary = destinationAccount.AccountNumber,
                 Date = DateTime.Now,
                 Status = Status.APPROVED,
-                Description = "Recepción de avance de efectivo"
+                Description = "Recepción de avance de efectivo",
             };
             await _transactionRepo.AddAsync(savingsTransaction);
 

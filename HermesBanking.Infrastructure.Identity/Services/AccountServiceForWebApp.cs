@@ -1,4 +1,7 @@
 ﻿using AutoMapper;
+using HermesBanking.Core.Application.DTOs.CreditCard;
+using HermesBanking.Core.Application.DTOs.Loan;
+using HermesBanking.Core.Application.DTOs.SavingsAccount;
 using HermesBanking.Core.Application.DTOs.User;
 using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Application.ViewModels.Loan;
@@ -40,6 +43,26 @@ namespace HermesBanking.Infrastructure.Identity.Services
         }
 
         // Authenticate a user
+
+        public async Task<List<SavingsAccountDTO>> GetSavingsAccountsByUserIdAsync(string userId)
+        {
+            // Assuming your repository has a method like GetAccountsByClientId or GetByConditionAsync
+            // You might need to adjust based on how ClientId relates to UserId in your domain.
+            var accounts = await _savingsAccountRepository.GetByConditionAsync(sa => sa.ClientId == userId && sa.IsActive);
+            return _mapper.Map<List<SavingsAccountDTO>>(accounts);
+        }
+
+        public async Task<List<CreditCardDTO>> GetCreditCardsByUserIdAsync(string userId)
+        {
+            var creditCards = await _creditCardRepository.GetByConditionAsync(cc => cc.ClientId == userId && cc.IsActive);
+            return _mapper.Map<List<CreditCardDTO>>(creditCards);
+        }
+
+        public async Task<List<LoanDTO>> GetLoansByUserIdAsync(string userId)
+        {
+            var loans = await _loanRepository.GetByConditionAsync(l => l.ClientId == userId && l.IsActive);
+            return _mapper.Map<List<LoanDTO>>(loans);
+        }
         public async Task<LoginResponseDto> AuthenticateAsync(LoginDto loginDto)
         {
             var response = new LoginResponseDto
@@ -97,7 +120,7 @@ namespace HermesBanking.Infrastructure.Identity.Services
             response.Roles = rolesList.ToList();
 
             // Send a success email notification after login
-            await _emailService.SendEmailAsync(user.Email, "Login Successful", "You have successfully logged in.");
+            //await _emailService.SendEmailAsync(user.Email, "Login Successful", "You have successfully logged in.");
 
             return response;
         }
@@ -252,5 +275,28 @@ namespace HermesBanking.Infrastructure.Identity.Services
         {
             await _savingsAccountRepository.UpdateAsync(account.Id, account);
         }
+
+        public async Task<string?> GetSavingsAccountHolderFullNameAsync(string accountNumber)
+        {
+            var savingsAccount = await _savingsAccountRepository.GetByAccountNumberAsync(accountNumber);
+            if (savingsAccount == null)
+            {
+                return null;
+            }
+            var user = await _userManager.FindByIdAsync(savingsAccount.ClientId);
+            return user == null ? null : $"{user.Name} {user.LastName}";
+        }
+
+        public async Task<string?> GetSavingsAccountHolderEmailAsync(string accountNumber)
+        {
+            var savingsAccount = await _savingsAccountRepository.GetByAccountNumberAsync(accountNumber);
+            if (savingsAccount == null)
+            {
+                return null;
+            }
+            var user = await _userManager.FindByIdAsync(savingsAccount.ClientId);
+            return user?.Email;
+        }
+
     }
 }

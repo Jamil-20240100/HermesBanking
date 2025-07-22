@@ -1,19 +1,19 @@
-﻿using HermesBanking.Core.Application.DTOs.Beneficiary;
-using HermesBanking.Core.Application.DTOs.SavingsAccount;
+﻿// HermesBanking.Core.Application.DTOs/Transaction/TransactionRequestDto.cs
+using HermesBanking.Core.Application.DTOs.SavingsAccount; // Import the specific DTOs
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace HermesBanking.Core.Application.DTOs.Transaction
 {
-    public class PayBeneficiaryDTO
+    public class TransactionRequestDto
     {
-        [Required(ErrorMessage = "El beneficiario es obligatorio.")]
-        [DisplayName("Seleccionar Beneficiario")]
-        public int BeneficiaryId { get; set; }
-
         [Required(ErrorMessage = "La cuenta de origen es obligatoria.")]
         [DisplayName("Cuenta de Origen")]
         public string SourceAccountNumber { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "La cuenta de destino es obligatoria.")]
+        [DisplayName("Cuenta de Destino")]
+        public string DestinationAccountNumber { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "El monto es obligatorio.")]
         [Range(0.01, double.MaxValue, ErrorMessage = "El monto debe ser mayor que cero.")]
@@ -24,7 +24,7 @@ namespace HermesBanking.Core.Application.DTOs.Transaction
         [StringLength(500, ErrorMessage = "La descripción no puede exceder los 500 caracteres.")]
         public string? Description { get; set; }
 
+        // Use your actual SavingsAccountDTO here
         public List<SavingsAccountDTO> AvailableAccounts { get; set; } = new List<SavingsAccountDTO>();
-        public List<BeneficiaryDTO> AvailableBeneficiaries { get; set; } = new List<BeneficiaryDTO>();
     }
 }

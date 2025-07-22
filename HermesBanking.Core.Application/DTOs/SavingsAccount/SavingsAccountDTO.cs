@@ -1,4 +1,5 @@
 ﻿using HermesBanking.Core.Domain.Common.Enums;
+using System.ComponentModel.DataAnnotations; // Make sure this is present if needed for other attributes
 
 namespace HermesBanking.Core.Application.DTOs.SavingsAccount
 {
@@ -20,5 +21,8 @@ namespace HermesBanking.Core.Application.DTOs.SavingsAccount
         //only for secondary accounts info
         public string? CreatedByAdminId { get; set; }
         public string? AdminFullName { get; set; }
+
+        // Added for UI display in dropdowns
+        public string DisplayText => $"{AccountNumber} (Saldo: {Balance:C} | Tipo: {AccountType})";
     }
 }

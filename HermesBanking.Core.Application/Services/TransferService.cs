@@ -39,7 +39,7 @@ namespace HermesBanking.Core.Application.Services
 
             var debitTransaction = new Transaction
             {
-                SavingsAccountId = sourceAccount.Id,
+                SavingsAccountId = sourceAccount.Id.ToString(),
                 Amount = dto.Amount,
                 Type = TransactionType.DEBITO.ToString(),
                 Description = $"Transferencia a cuenta {destinationAccount.AccountNumber}",
@@ -52,7 +52,7 @@ namespace HermesBanking.Core.Application.Services
 
             var creditTransaction = new Transaction
             {
-                SavingsAccountId = destinationAccount.Id,
+                SavingsAccountId = destinationAccount.Id.ToString(),
                 Amount = dto.Amount,
                 Type = TransactionType.CREDITO.ToString(),
                 Description = $"Transferencia desde cuenta {sourceAccount.AccountNumber}",

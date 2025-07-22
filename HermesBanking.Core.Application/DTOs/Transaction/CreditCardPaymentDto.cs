@@ -1,23 +1,24 @@
-﻿using HermesBanking.Core.Application.DTOs.Beneficiary;
+﻿using HermesBanking.Core.Application.DTOs.CreditCard;
 using HermesBanking.Core.Application.DTOs.SavingsAccount;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace HermesBanking.Core.Application.DTOs.Transaction
 {
-    public class PayBeneficiaryDTO
-    {
-        [Required(ErrorMessage = "El beneficiario es obligatorio.")]
-        [DisplayName("Seleccionar Beneficiario")]
-        public int BeneficiaryId { get; set; }
 
+    public class CreditCardPaymentDto
+    {
         [Required(ErrorMessage = "La cuenta de origen es obligatoria.")]
         [DisplayName("Cuenta de Origen")]
         public string SourceAccountNumber { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "El número de tarjeta de crédito es obligatorio.")]
+        [DisplayName("Número de Tarjeta de Crédito")]
+        public string CreditCardNumber { get; set; } = string.Empty;
+
         [Required(ErrorMessage = "El monto es obligatorio.")]
         [Range(0.01, double.MaxValue, ErrorMessage = "El monto debe ser mayor que cero.")]
-        [DisplayName("Monto")]
+        [DisplayName("Monto a Pagar")]
         public decimal Amount { get; set; }
 
         [DisplayName("Descripción")]
@@ -25,6 +26,6 @@ namespace HermesBanking.Core.Application.DTOs.Transaction
         public string? Description { get; set; }
 
         public List<SavingsAccountDTO> AvailableAccounts { get; set; } = new List<SavingsAccountDTO>();
-        public List<BeneficiaryDTO> AvailableBeneficiaries { get; set; } = new List<BeneficiaryDTO>();
+        public List<CreditCardDTO> AvailableCreditCards { get; set; } = new List<CreditCardDTO>();
     }
 }

@@ -1,368 +1,420 @@
-﻿using AutoMapper;
-using HermesBanking.Core.Application.DTOs;
+﻿using HermesBanking.Core.Application.DTOs;
 using HermesBanking.Core.Application.DTOs.Transaction;
 using HermesBanking.Core.Application.DTOs.Transfer;
 using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Domain.Entities;
 using HermesBanking.Core.Domain.Interfaces;
-using HermesBanking.Core.Domain.Common.Enums;
-using System;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using HermesBanking.Core.Domain.Common.Enums; // Para el enum de TransactionType
 
-namespace HermesBanking.Infrastructure.Application.Services
+namespace HermesBanking.Core.Application.Services
 {
     public class TransactionService : ITransactionService
     {
-        private readonly ISavingsAccountRepository _savingsAccountRepo;
-        private readonly ITransactionRepository _transactionRepo;
-        private readonly IMapper _mapper;
-        private readonly ILoanRepository _loanRepo;
-        private readonly ICreditCardRepository _creditCardRepo;
-        private readonly IBeneficiaryRepository _beneficiaryRepo; 
+        private readonly ISavingsAccountRepository _savingsAccountRepository;
+        private readonly ICreditCardRepository _creditCardRepository;
+        private readonly ITransactionRepository _transactionRepository;
+        private readonly IAccountServiceForWebApp _accountServiceForWebApp;
+        private readonly ILoanAmortizationService _loanAmortizationService;
+        private readonly IEmailService _emailService;
+        private readonly IBeneficiaryService _beneficiaryService; // <-- Nuevo: Servicio de beneficiarios
+        private readonly IUnitOfWork _unitOfWork; // <-- Sugerencia para la atomicidad
+        private readonly ILogger<TransactionService> _logger;
 
         public TransactionService(
-            ISavingsAccountRepository savingsAccountRepo,
-            ITransactionRepository transactionRepo,
-            IMapper mapper,
-            ILoanRepository loanRepo,
-            ICreditCardRepository creditCardRepo,
-            IBeneficiaryRepository beneficiaryRepo)
+            ISavingsAccountRepository savingsAccountRepository,
+            ICreditCardRepository creditCardRepository,
+            ITransactionRepository transactionRepository,
+            IAccountServiceForWebApp accountServiceForWebApp,
+            ILoanAmortizationService loanAmortizationService,
+            IEmailService emailService,
+            IBeneficiaryService beneficiaryService, // <-- Nuevo parámetro en el constructor
+            IUnitOfWork unitOfWork, // <-- Nuevo parámetro en el constructor
+            ILogger<TransactionService> logger)
         {
-            _savingsAccountRepo = savingsAccountRepo;
-            _transactionRepo = transactionRepo;
-            _mapper = mapper;
-            _loanRepo = loanRepo;
-            _creditCardRepo = creditCardRepo;
-            _beneficiaryRepo = beneficiaryRepo;
+            _savingsAccountRepository = savingsAccountRepository;
+            _creditCardRepository = creditCardRepository;
+            _transactionRepository = transactionRepository;
+            _accountServiceForWebApp = accountServiceForWebApp;
+            _loanAmortizationService = loanAmortizationService;
+            _emailService = emailService;
+            _beneficiaryService = beneficiaryService; // <-- Asignación
+            _unitOfWork = unitOfWork; // <-- Asignación
+            _logger = logger;
         }
 
-        // Transacción Express
-        public async Task ExecuteExpressTransactionAsync(ExpressTransactionDTO dto)
+        public async Task PerformTransactionAsync(DTOs.Transaction.TransactionRequestDto request)
         {
-            using var dbTransaction = await _transactionRepo.BeginTransactionAsync();
+            _logger.LogInformation($"Iniciando transferencia: Origen={request.SourceAccountNumber}, Destino={request.DestinationAccountNumber}, Monto={request.Amount}");
 
-            try
+            using (var transactionScope = _unitOfWork.BeginTransaction()) // Inicia la transacción de base de datos
             {
-                // Verificar existencia de cuentas
-                var senderAccount = await _savingsAccountRepo.GetByAccountNumberAsync(dto.SenderAccountNumber);
-                var receiverAccount = await _savingsAccountRepo.GetByAccountNumberAsync(dto.ReceiverAccountNumber);
-
-                if (senderAccount == null || !senderAccount.IsActive)
-                    throw new InvalidOperationException($"Cuenta origen {dto.SenderAccountNumber} no válida o inactiva.");
-
-                if (receiverAccount == null || !receiverAccount.IsActive)
-                    throw new InvalidOperationException($"Cuenta destino {dto.ReceiverAccountNumber} no válida o inactiva.");
-
-                // Verificar fondos suficientes en la cuenta de origen
-                if (senderAccount.Balance < dto.Amount)
-                    throw new InvalidOperationException("Fondos insuficientes en la cuenta origen.");
-
-                // Realizar la transacción
-                senderAccount.Balance -= dto.Amount;
-                receiverAccount.Balance += dto.Amount;
-
-                // Crear la transacción
-                var transaction = new Transaction
+                try
                 {
-                    Amount = dto.Amount,
-                    Origin = dto.SenderAccountNumber,
-                    Beneficiary = dto.ReceiverAccountNumber,
-                    Date = DateTime.Now,
-                    Type = FrTransactionType.Express.ToString(), // Usamos el enum aquí
-                    Description = $"Transferencia express RD$ {dto.Amount} de {dto.SenderAccountNumber} a {dto.ReceiverAccountNumber}.",
-                    SavingsAccountId = senderAccount.Id // Asignar el ID de la cuenta origen
-                };
+                    // 1. Validar cuentas (origen y destino existen, están activas)
+                    var sourceAccount = await _savingsAccountRepository.GetByAccountNumberAsync(request.SourceAccountNumber);
+                    var destinationAccount = await _savingsAccountRepository.GetByAccountNumberAsync(request.DestinationAccountNumber);
 
-                // Guardar la transacción
-                await _transactionRepo.AddAsync(transaction);
+                    if (sourceAccount == null) throw new InvalidOperationException("Cuenta de origen no encontrada.");
+                    if (destinationAccount == null) throw new InvalidOperationException("Cuenta de destino no encontrada.");
 
-                // Actualizar las cuentas
-                await _savingsAccountRepo.UpdateAsync(senderAccount.Id, senderAccount);
-                await _savingsAccountRepo.UpdateAsync(receiverAccount.Id, receiverAccount);
+                    if (!sourceAccount.IsActive) throw new InvalidOperationException("La cuenta de origen está inactiva.");
+                    if (!destinationAccount.IsActive) throw new InvalidOperationException("La cuenta de destino está inactiva.");
 
-                // Confirmar transacción
-                await dbTransaction.CommitAsync();
-            }
-            catch (Exception ex)
-            {
-                await dbTransaction.RollbackAsync();
-                throw new InvalidOperationException("Error ejecutando la transacción Express", ex);
-            }
-        }
+                    // 2. Verificar fondos suficientes
+                    if (sourceAccount.Balance < request.Amount)
+                    {
+                        throw new InvalidOperationException("Fondos insuficientes en la cuenta de origen.");
+                    }
 
-        // Verificar existencia y estado activo de cuentas
-        public async Task<bool> ValidateAccountExistsAndActive(string accountNumber)
-        {
-            var account = await _savingsAccountRepo.GetByAccountNumberAsync(accountNumber);
-            return account != null && account.IsActive;
-        }
+                    // 3. Realizar la transacción (deducir de origen, añadir a destino)
+                    sourceAccount.Balance -= request.Amount;
+                    destinationAccount.Balance += request.Amount;
 
-        // Verificar si hay fondos suficientes en la cuenta
-        public async Task<bool> HasSufficientFunds(string accountNumber, decimal amount)
-        {
-            var account = await _savingsAccountRepo.GetByAccountNumberAsync(accountNumber);
-            if (account == null)
-                throw new InvalidOperationException($"La cuenta {accountNumber} no existe.");
+                    await _savingsAccountRepository.UpdateAsync(sourceAccount);
+                    await _savingsAccountRepository.UpdateAsync(destinationAccount);
 
-            return account.Balance >= amount;
-        }
+                    // 4. Registrar la transacción
+                    var transaction = new Transaction
+                    {
+                        Amount = request.Amount,
+                        SourceAccountId = sourceAccount.Id.ToString(),
+                        DestinationAccountId = destinationAccount.Id.ToString(),
+                        TransactionDate = DateTime.Now,
+                        TransactionType = TransactionType.Transferencia, // Usando el enum
+                        Description = request.Description ?? $"Transferencia de {request.SourceAccountNumber} a {request.DestinationAccountNumber}"
+                    };
+                    await _transactionRepository.AddAsync(transaction);
 
-        // Transacción de Transferencia
-        public async Task ProcessTransferAsync(TransferDTO dto)
-        {
-            using var dbTransaction = await _transactionRepo.BeginTransactionAsync();
+                    await _unitOfWork.CommitAsync(); // Confirma todos los cambios en la base de datos
+                    _logger.LogInformation($"Transacción exitosa de {request.Amount:C} de {request.SourceAccountNumber} a {request.DestinationAccountNumber}.");
 
-            try
-            {
-                // Verificar existencia de cuentas
-                var senderAccount = await _savingsAccountRepo.GetById(dto.SourceAccountId);
-                var receiverAccount = await _savingsAccountRepo.GetById(dto.DestinationAccountId);
+                    // 5. Enviar notificaciones por correo electrónico (fuera de la transacción de BD, si se prefiere)
+                    var sourceClientEmail = await _accountServiceForWebApp.GetUserEmailAsync(sourceAccount.ClientId);
+                    var destinationClientEmail = await _accountServiceForWebApp.GetUserEmailAsync(destinationAccount.ClientId);
 
-                if (senderAccount == null || !senderAccount.IsActive)
-                    throw new InvalidOperationException("Cuenta de origen inválida o inactiva.");
+                    if (!string.IsNullOrEmpty(sourceClientEmail))
+                    {
+                        await _emailService.SendTransactionInitiatorNotificationAsync(
+                            sourceClientEmail,
+                            request.Amount,
+                            request.DestinationAccountNumber.Substring(request.DestinationAccountNumber.Length - 4),
+                            transaction.Date ?? DateTime.Now
+                        );
+                    }
 
-                if (receiverAccount == null || !receiverAccount.IsActive)
-                    throw new InvalidOperationException("Cuenta destino inválida o inactiva.");
-
-                // Verificar fondos
-                if (senderAccount.Balance < dto.Amount)
-                    throw new InvalidOperationException("Fondos insuficientes en la cuenta origen.");
-
-                // Realizar la transacción
-                senderAccount.Balance -= dto.Amount;
-                receiverAccount.Balance += dto.Amount;
-
-                // Crear y guardar transacciones de débito y crédito
-                var debitTransaction = new Transaction
+                    if (!string.IsNullOrEmpty(destinationClientEmail) && sourceClientEmail != destinationClientEmail) // Evitar doble envío si es la misma persona
+                    {
+                        await _emailService.SendTransactionReceiverNotificationAsync(
+                            destinationClientEmail,
+                            request.Amount,
+                            request.SourceAccountNumber.Substring(request.SourceAccountNumber.Length - 4),
+                            transaction.TransactionDate ?? DateTime.Now
+                        );
+                    }
+                }
+                catch (Exception ex)
                 {
-                    Amount = dto.Amount,
-                    Origin = senderAccount.AccountNumber,
-                    Beneficiary = receiverAccount.AccountNumber,
-                    Date = DateTime.Now,
-                    Type = FrTransactionType.CreditCard.ToString(), // Usamos el enum aquí
-                    Description = $"Transferencia de RD$ {dto.Amount} de {senderAccount.AccountNumber} a {receiverAccount.AccountNumber}."
-                };
+                    await _unitOfWork.RollbackAsync(); // Revierte todos los cambios si algo falla
+                    _logger.LogError(ex, $"Error al realizar la transferencia entre cuentas: {ex.Message}");
+                    throw; // Re-lanzar la excepción para que sea manejada por el llamador
+                }
+            }
+        }
 
-                var creditTransaction = new Transaction
+        public async Task PayCreditCardAsync(DTOs.Transaction.CreditCardPaymentDto paymentDto)
+        {
+            _logger.LogInformation($"Iniciando pago de tarjeta de crédito: Tarjeta={paymentDto.CreditCardNumber}, Origen={paymentDto.SourceAccountNumber}, Monto={paymentDto.Amount}");
+
+            using (var transactionScope = _unitOfWork.BeginTransaction())
+            {
+                try
                 {
-                    Amount = dto.Amount,
-                    Origin = senderAccount.AccountNumber,
-                    Beneficiary = receiverAccount.AccountNumber,
-                    Date = DateTime.Now,
-                    Type = FrTransactionType.CreditCard.ToString(), // Usamos el enum aquí
-                    Description = $"Transferencia de RD$ {dto.Amount} desde {senderAccount.AccountNumber} a {receiverAccount.AccountNumber}."
-                };
+                    // 1. Validar cuentas/tarjetas
+                    var sourceAccount = await _savingsAccountRepository.GetByAccountNumberAsync(paymentDto.SourceAccountNumber);
+                    var creditCard = await _creditCardRepository.GetByCardNumberAsync(paymentDto.CreditCardNumber);
 
-                await _transactionRepo.AddAsync(debitTransaction);
-                await _transactionRepo.AddAsync(creditTransaction);
+                    if (sourceAccount == null) throw new InvalidOperationException("Cuenta de origen no encontrada.");
+                    if (creditCard == null) throw new InvalidOperationException("Tarjeta de crédito no encontrada.");
 
-                // Actualizar las cuentas
-                await _savingsAccountRepo.UpdateAsync(senderAccount.Id, senderAccount);
-                await _savingsAccountRepo.UpdateAsync(receiverAccount.Id, receiverAccount);
+                    if (!sourceAccount.IsActive) throw new InvalidOperationException("La cuenta de origen está inactiva.");
+                    if (!creditCard.IsActive) throw new InvalidOperationException("La tarjeta de crédito está inactiva.");
 
-                // Confirmar la transacción
-                await dbTransaction.CommitAsync();
-            }
-            catch (Exception ex)
-            {
-                await dbTransaction.RollbackAsync();
-                throw new InvalidOperationException("Error ejecutando la transferencia", ex);
-            }
-        }
+                    // 2. Verificar fondos suficientes
+                    if (sourceAccount.Balance < paymentDto.Amount)
+                    {
+                        throw new InvalidOperationException("Fondos insuficientes en la cuenta de origen.");
+                    }
 
-        //Transacción de Pago de Tarjeta de Crédito
-        public async Task ExecutePayCreditCardTransactionAsync(PayCreditCardDTO dto)
-        {
-            using var dbTransaction = await _transactionRepo.BeginTransactionAsync();
+                    sourceAccount.Balance -= paymentDto.Amount;
+                    creditCard.TotalOwedAmount -= paymentDto.Amount; // Asumiendo TotalOwedAmount es el saldo pendiente
 
-            try
-            {
-                // Verificar existencia de cuenta origen
-                var senderAccount = await _savingsAccountRepo.GetByAccountNumberAsync(dto.FromAccountNumber);
-                if (senderAccount == null || !senderAccount.IsActive)
-                    throw new InvalidOperationException($"Cuenta origen {dto.FromAccountNumber} no válida o inactiva.");
+                    await _savingsAccountRepository.UpdateAsync(sourceAccount);
+                    await _creditCardRepository.UpdateAsync(creditCard);
 
-                // Verificar existencia de tarjeta de crédito
-                var creditCard = await _creditCardRepo.GetByCardNumberAsync(dto.CreditCardNumber);
-                if (creditCard == null || !creditCard.IsActive)
-                    throw new InvalidOperationException($"Tarjeta de crédito {dto.CreditCardNumber} no válida o inactiva.");
+                    // 5. Registrar la transacción
+                    var transaction = new Transaction
+                    {
+                        Amount = paymentDto.Amount,
+                        SourceAccountId = sourceAccount.Id.ToString(),
+                        DestinationCardId = creditCard.Id.ToString(), // Campo para la tarjeta de destino
+                        TransactionDate = DateTime.Now,
+                        TransactionType = TransactionType.PagoTarjetaCredito, // Usando el enum
+                        Description = $"Pago a tarjeta de crédito {paymentDto.CreditCardNumber.Substring(paymentDto.CreditCardNumber.Length - 4)}"
+                    };
+                    await _transactionRepository.AddAsync(transaction);
 
-                // Verificar fondos suficientes en la cuenta origen
-                if (senderAccount.Balance < dto.Amount)
-                    throw new InvalidOperationException("Fondos insuficientes en la cuenta origen.");
+                    await _unitOfWork.CommitAsync();
+                    _logger.LogInformation($"Pago de tarjeta de crédito {paymentDto.CreditCardNumber} por {paymentDto.Amount:C} completado exitosamente.");
 
-                // Realizar la transacción
-                senderAccount.Balance -= dto.Amount;
-                creditCard.CreditLimit -= dto.Amount;
-
-                // Crear la transacción
-                var transaction = new Transaction
+                    // 6. Enviar notificación por correo
+                    var clientEmail = await _accountServiceForWebApp.GetUserEmailAsync(sourceAccount.ClientId);
+                    if (!string.IsNullOrEmpty(clientEmail))
+                    {
+                        await _emailService.SendCreditCardPaymentNotificationAsync(
+                            clientEmail,
+                            paymentDto.Amount,
+                            paymentDto.CreditCardNumber.Substring(paymentDto.CreditCardNumber.Length - 4),
+                            paymentDto.SourceAccountNumber.Substring(paymentDto.SourceAccountNumber.Length - 4),
+                            transaction.TransactionDate ?? DateTime.Now
+                        );
+                    }
+                }
+                catch (Exception ex)
                 {
-                    Amount = dto.Amount,
-                    Origin = dto.FromAccountNumber,
-                    Beneficiary = dto.CreditCardNumber,
-                    Date = DateTime.Now,
-                    Type = FrTransactionType.CreditCard.ToString(), // Usamos el enum aquí
-                    Description = $"Pago de tarjeta de crédito RD$ {dto.Amount} desde {dto.FromAccountNumber} a {dto.CreditCardNumber}.",
-                    SavingsAccountId = senderAccount.Id // Asignar el ID de la cuenta origen
-                };
-
-                // Guardar la transacción
-                await _transactionRepo.AddAsync(transaction);
-
-                // Actualizar las cuentas
-                await _savingsAccountRepo.UpdateAsync(senderAccount.Id, senderAccount);
-                await _creditCardRepo.UpdateAsync(creditCard.Id, creditCard);
-
-                // Confirmar la transacción
-                await dbTransaction.CommitAsync();
-            }
-            catch (Exception ex)
-            {
-                await dbTransaction.RollbackAsync();
-                throw new InvalidOperationException("Error ejecutando la transacción de pago de tarjeta de crédito", ex);
+                    await _unitOfWork.RollbackAsync();
+                    _logger.LogError(ex, $"Error al realizar pago de tarjeta de crédito: {ex.Message}");
+                    throw;
+                }
             }
         }
 
-        //Validacion de CreditCard
-
-        // Verificar existencia y estado activo de tarjetas de crédito
-        public async Task<bool> ValidateCreditCardExistsAndActive(string cardNumber)
+        public async Task PayLoanAsync(DTOs.Transaction.LoanPaymentDto paymentDto)
         {
-            var creditCard = await _creditCardRepo.GetByCardNumberAsync(cardNumber);
-            return creditCard != null && creditCard.IsActive;
-        }
+            _logger.LogInformation($"Iniciando pago de préstamo: Préstamo={paymentDto.LoanIdentifier}, Origen={paymentDto.SourceAccountNumber}, Monto={paymentDto.Amount}");
 
-
-        // Transacción de Pago de Préstamo
-        public async Task ExecutePayLoanTransactionAsync(PayLoanDTO dto)
-        {
-            using var dbTransaction = await _transactionRepo.BeginTransactionAsync();
-
-            try
+            using (var transactionScope = _unitOfWork.BeginTransaction())
             {
-                // Verificar existencia de cuenta y préstamo
-                var senderAccount = await _savingsAccountRepo.GetByAccountNumberAsync(dto.FromAccountNumber);
-                var loan = await _loanRepo.GetLoanByIdentifierAsync(dto.LoanCode);
-
-                if (senderAccount == null || !senderAccount.IsActive)
-                    throw new InvalidOperationException("Cuenta origen inválida o inactiva.");
-
-                if (loan == null || !loan.IsActive)
-                    throw new InvalidOperationException("Préstamo inválido o inactivo.");
-
-                // Verificar fondos
-                if (senderAccount.Balance < dto.Amount)
-                    throw new InvalidOperationException("Fondos insuficientes en la cuenta origen.");
-
-                // Realizar la transacción
-                senderAccount.Balance -= dto.Amount;
-                loan.Amount -= dto.Amount;
-
-                var transaction = new Transaction
+                try
                 {
-                    Amount = dto.Amount,
-                    Origin = dto.FromAccountNumber,
-                    Beneficiary = dto.LoanCode,
-                    Date = DateTime.Now,
-                    Type = FrTransactionType.Loan.ToString(), // Usamos el enum aquí
-                    Description = $"Pago de préstamo RD$ {dto.Amount} desde {dto.FromAccountNumber} al préstamo {dto.LoanCode}."
-                };
+                    // 1. Validar cuentas/préstamos
+                    var sourceAccount = await _savingsAccountRepository.GetByAccountNumberAsync(paymentDto.SourceAccountNumber);
+                    // Suponemos que GetLoanInfoAsync devuelve una entidad Loan o un DTO de préstamo con IsActive y Id
+                    var loan = await _accountServiceForWebApp.GetLoanInfoAsync(paymentDto.LoanIdentifier);
 
-                await _transactionRepo.AddAsync(transaction);
-                await _savingsAccountRepo.UpdateAsync(senderAccount.Id, senderAccount);
-                await _loanRepo.UpdateAsync(loan.Id, loan);
+                    if (sourceAccount == null) throw new InvalidOperationException("Cuenta de origen no encontrada.");
+                    if (loan == null) throw new InvalidOperationException("Préstamo no encontrado.");
 
-                await dbTransaction.CommitAsync();
-            }
-            catch (Exception ex)
-            {
-                await dbTransaction.RollbackAsync();
-                throw new InvalidOperationException("Error ejecutando la transacción de pago de préstamo", ex);
+                    if (!sourceAccount.IsActive) throw new InvalidOperationException("La cuenta de origen está inactiva.");
+                    // Ajusta según cómo manejes el estado de un préstamo completado/inactivo
+                    if (!loan.IsActive) throw new InvalidOperationException("El préstamo ya no está activo o está completado.");
+
+                    // 2. Verificar fondos suficientes
+                    if (sourceAccount.Balance < paymentDto.Amount)
+                    {
+                        throw new InvalidOperationException("Fondos insuficientes en la cuenta de origen.");
+                    }
+
+                    // 3. Deducir monto de la cuenta de origen
+                    sourceAccount.Balance -= paymentDto.Amount;
+                    await _savingsAccountRepository.UpdateAsync(sourceAccount);
+
+                    // 4. Aplicar pago al préstamo usando el servicio de amortización
+                    decimal amountAppliedToLoan = await _loanAmortizationService.ApplyPaymentToLoanAsync(loan.Id, paymentDto.Amount);
+
+                    // 5. Registrar la transacción
+                    var transaction = new Transaction
+                    {
+                        Amount = paymentDto.Amount, // Monto total debitado inicialmente
+                        SourceAccountId = sourceAccount.Id.ToString(),
+                        DestinationLoanId = loan.Id, // Campo para el préstamo de destino
+                        TransactionDate = DateTime.Now,
+                        TransactionType = TransactionType.PagoPrestamo, // Usando el enum
+                        Description = $"Pago de préstamo {paymentDto.LoanIdentifier}"
+                    };
+                    await _transactionRepository.AddAsync(transaction);
+
+                    await _unitOfWork.CommitAsync();
+                    _logger.LogInformation($"Pago de préstamo {paymentDto.LoanIdentifier} por {paymentDto.Amount:C} completado exitosamente.");
+
+                    // 6. Enviar notificación por correo
+                    var clientEmail = await _accountServiceForWebApp.GetUserEmailAsync(sourceAccount.ClientId);
+                    if (!string.IsNullOrEmpty(clientEmail))
+                    {
+                        await _emailService.SendLoanPaymentNotificationAsync(
+                            clientEmail,
+                            paymentDto.Amount,
+                            paymentDto.LoanIdentifier,
+                            paymentDto.SourceAccountNumber.Substring(paymentDto.SourceAccountNumber.Length - 4),
+                            transaction.TransactionDate ?? DateTime.Now
+                        );
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await _unitOfWork.RollbackAsync();
+                    _logger.LogError(ex, $"Error al realizar pago de préstamo: {ex.Message}");
+                    throw;
+                }
             }
         }
 
-
-        // Verificar existencia de préstamos
-        public async Task<bool> ValidateLoanExistsAndActive(string loanIdentifier)
-        {
-            var loan = await _loanRepo.GetLoanByIdentifierAsync(loanIdentifier);
-            return loan != null && loan.IsActive; // Asumiendo que 'IsActive' es un campo en la entidad Loan
-        }
-
-
-        //Pago de beneficiario
+        /// <summary>
+        /// Ejecuta una transacción a un beneficiario previamente registrado.
+        /// </summary>
+        /// <param name="dto">DTO con la información del pago al beneficiario.</param>
         public async Task ExecutePayBeneficiaryTransactionAsync(PayBeneficiaryDTO dto)
         {
-            using var dbTransaction = await _transactionRepo.BeginTransactionAsync();
+            _logger.LogInformation($"Iniciando pago a beneficiario: BeneficiaryId={dto.BeneficiaryId}, SourceAccount={dto.SourceAccountNumber}, Amount={dto.Amount}");
 
-            try
+            using (var transactionScope = _unitOfWork.BeginTransaction()) // Inicia la transacción de base de datos
             {
-                var senderAccount = await _savingsAccountRepo.GetByAccountNumberAsync(dto.FromAccountNumber);
-                var beneficiaryAccount = await _savingsAccountRepo.GetByAccountNumberAsync(dto.BeneficiaryAccountNumber);
-
-                if (senderAccount == null || !senderAccount.IsActive)
-                    throw new InvalidOperationException("Cuenta origen inválida o inactiva.");
-
-                if (beneficiaryAccount == null || !beneficiaryAccount.IsActive)
-                    throw new InvalidOperationException("Cuenta beneficiario inválida o inactiva.");
-
-                if (senderAccount.Balance < dto.Amount)
-                    throw new InvalidOperationException("Fondos insuficientes en la cuenta origen.");
-
-                senderAccount.Balance -= dto.Amount;
-                beneficiaryAccount.Balance += dto.Amount;
-
-                var transaction = new Transaction
+                try
                 {
-                    Amount = dto.Amount,
-                    Origin = dto.FromAccountNumber,
-                    Beneficiary = dto.BeneficiaryAccountNumber,
-                    Date = DateTime.Now,
-                    Type = FrTransactionType.Beneficiary.ToString(),
-                    Description = $"Transferencia a beneficiario RD$ {dto.Amount} desde {dto.FromAccountNumber} a {dto.BeneficiaryAccountNumber}."
-                };
+                    // 1. Obtener el beneficiario por ID del BeneficiaryService
+                    // Asumimos que GetByIdAsync está implementado en IBeneficiaryService y devuelve un BeneficiaryDTO
+                    var beneficiaryDto = await _beneficiaryService.GetById(dto.BeneficiaryId);
+                    if (beneficiaryDto == null)
+                    {
+                        _logger.LogWarning($"Beneficiario con ID {dto.BeneficiaryId} no encontrado.");
+                        throw new InvalidOperationException("Beneficiario no encontrado.");
+                    }
 
-                // Guardar la transacción
-                await _transactionRepo.AddAsync(transaction);
-                await _savingsAccountRepo.UpdateAsync(senderAccount.Id, senderAccount);
-                await _savingsAccountRepo.UpdateAsync(beneficiaryAccount.Id, beneficiaryAccount);
+                    // 2. Validar cuentas (origen y destino) y fondos
+                    var sourceAccount = await _savingsAccountRepository.GetByAccountNumberAsync(dto.SourceAccountNumber);
+                    var destinationAccount = await _savingsAccountRepository.GetByAccountNumberAsync(beneficiaryDto.BeneficiaryAccountNumber);
 
-                await dbTransaction.CommitAsync();
+                    if (sourceAccount == null) throw new InvalidOperationException("Cuenta de origen no encontrada.");
+                    if (destinationAccount == null) throw new InvalidOperationException("Cuenta de destino del beneficiario no encontrada.");
+
+                    if (!sourceAccount.IsActive) throw new InvalidOperationException("La cuenta de origen está inactiva.");
+                    if (!destinationAccount.IsActive) throw new InvalidOperationException("La cuenta de destino del beneficiario está inactiva.");
+
+                    // 2.1. Validar fondos suficientes
+                    if (sourceAccount.Balance < dto.Amount)
+                    {
+                        throw new InvalidOperationException("Fondos insuficientes en la cuenta de origen para realizar el pago al beneficiario.");
+                    }
+
+                    // 3. Realizar la transferencia (débito de origen, crédito a destino)
+                    sourceAccount.Balance -= dto.Amount;
+                    destinationAccount.Balance += dto.Amount;
+
+                    await _savingsAccountRepository.UpdateAsync(sourceAccount);
+                    await _savingsAccountRepository.UpdateAsync(destinationAccount);
+
+                    // 4. Registrar la transacción
+                    var transaction = new Transaction
+                    {
+                        Amount = dto.Amount,
+                        SourceAccountId = sourceAccount.Id.ToString(),
+                        DestinationAccountId = destinationAccount.Id.ToString(),
+                        TransactionDate = DateTime.Now,
+                        TransactionType = TransactionType.PagoBeneficiario, // Usando el nuevo tipo de transacción
+                        Description = dto.Description ?? $"Pago a beneficiario: {beneficiaryDto.Name} {beneficiaryDto.LastName}"
+                    };
+                    await _transactionRepository.AddAsync(transaction);
+
+                    await _unitOfWork.CommitAsync(); // Confirma la transacción de base de datos
+                    _logger.LogInformation($"Pago a beneficiario {beneficiaryDto.Name} {beneficiaryDto.LastName} completado exitosamente desde la cuenta {dto.SourceAccountNumber} por {dto.Amount:C}.");
+
+                    // 5. Enviar notificaciones por correo electrónico
+                    var sourceClientEmail = await _accountServiceForWebApp.GetUserEmailAsync(sourceAccount.ClientId);
+                    var destinationClientEmail = await _accountServiceForWebApp.GetUserEmailAsync(destinationAccount.ClientId); // Email del titular de la cuenta del beneficiario
+
+                    // Correo al cliente que realizó la transacción
+                    if (!string.IsNullOrEmpty(sourceClientEmail))
+                    {
+                        await _emailService.SendTransactionInitiatorNotificationAsync(
+                            sourceClientEmail,
+                            dto.Amount,
+                            beneficiaryDto.BeneficiaryAccountNumber.Substring(beneficiaryDto.BeneficiaryAccountNumber.Length - 4), // Últimos 4 dígitos del beneficiario
+                            transaction.TransactionDate ?? DateTime.Now
+                        );
+                    }
+
+                    // Correo al beneficiario
+                    if (!string.IsNullOrEmpty(destinationClientEmail) && sourceClientEmail != destinationClientEmail) // Evitar doble envío si es la misma persona
+                    {
+                        await _emailService.SendTransactionReceiverNotificationAsync(
+                            destinationClientEmail,
+                            dto.Amount,
+                            dto.SourceAccountNumber.Substring(dto.SourceAccountNumber.Length - 4), // Últimos 4 dígitos de la cuenta de origen
+                            transaction.TransactionDate ?? DateTime.Now
+                        );
+                    }
+                }
+                catch (InvalidOperationException ex)
+                {
+                    await _unitOfWork.RollbackAsync(); // Revertir si hay un error de validación
+                    _logger.LogWarning($"Validación fallida para pago a beneficiario: {ex.Message}");
+                    throw; // Re-lanzar la excepción para manejo en la capa superior (UI)
+                }
+                catch (Exception ex)
+                {
+                    await _unitOfWork.RollbackAsync(); // Revertir si hay un error inesperado
+                    _logger.LogError(ex, $"Error inesperado al ejecutar pago a beneficiario: {ex.Message}");
+                    throw;
+                }
             }
-            catch (Exception ex)
-            {
-                await dbTransaction.RollbackAsync();
-                throw new InvalidOperationException("Error ejecutando la transacción a beneficiario", ex);
-            }
         }
 
-
-        // Verificar existencia de beneficiarios
-        public async Task<bool> ValidateBeneficiaryExists(string beneficiaryAccountNumber)
+        public Task ExecuteExpressTransactionAsync(ExpressTransactionDTO dto)
         {
-            var beneficiary = await _beneficiaryRepo.GetBeneficiariesByClientIdAsync(beneficiaryAccountNumber); // Asumiendo que tienes el repositorio y método adecuado
-            return beneficiary != null;
+            throw new NotImplementedException();
         }
 
-
-        public async Task<TransactionDTO?> GetByIdAsync(int id)
+        public Task ProcessTransferAsync(TransferDTO dto)
         {
-            var transaction = await _transactionRepo.GetByIdAsync(id);
-            return _mapper.Map<TransactionDTO>(transaction);
+            throw new NotImplementedException();
         }
 
-
-        public async Task<bool> RegisterTransactionAsync(TransactionDTO transactionDto)
+        public Task ExecutePayCreditCardTransactionAsync(PayCreditCardDTO dto)
         {
-            var transaction = _mapper.Map<Transaction>(transactionDto);
-            await _transactionRepo.AddAsync(transaction);
-            return true;
+            // Podrías refactorizar para que este método llame a PayCreditCardAsync
+            throw new NotImplementedException();
         }
 
-        
+        public Task ExecutePayLoanTransactionAsync(PayLoanDTO dto)
+        {
+            // Podrías refactorizar para que este método llame a PayLoanAsync
+            throw new NotImplementedException();
+        }
 
+        // Métodos de validación que aún deben implementarse si son necesarios para otros flujos
+        public Task<bool> ValidateAccountExistsAndActive(string accountNumber)
+        {
+            throw new NotImplementedException();
+        }
 
+        public Task<bool> HasSufficientFunds(string accountNumber, decimal amount)
+        {
+            throw new NotImplementedException();
+        }
 
+        public Task<bool> ValidateCreditCardExistsAndActive(string cardNumber)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> ValidateLoanExistsAndActive(string loanIdentifier)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> ValidateBeneficiaryExists(string beneficiaryAccountNumber)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TransactionDTO?> GetByIdAsync(int id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> RegisterTransactionAsync(TransactionDTO transactionDto)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

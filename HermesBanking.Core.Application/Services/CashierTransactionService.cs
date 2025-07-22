@@ -5,7 +5,7 @@ using HermesBanking.Core.Domain.Interfaces;
 using System;
 using System.Threading.Tasks;
 
-namespace HermesBanking.Infrastructure.Application.Services
+namespace HermesBanking.Core.Application.Services
 {
     public class CashierTransactionService : ICashierTransactionService
     {
@@ -29,7 +29,7 @@ namespace HermesBanking.Infrastructure.Application.Services
             // Transacción del cajero que tiene CashierId
             var transaction = new Transaction
             {
-                SavingsAccountId = (int)transactionDto.SavingsAccountId,
+                SavingsAccountId = transactionDto.SavingsAccountId.ToString(),
                 Type = transactionDto.Type,
                 Amount = transactionDto.Amount,
                 Origin = transactionDto.Origin,
