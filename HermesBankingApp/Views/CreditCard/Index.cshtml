@@ -8,87 +8,108 @@
     }
 }
 
-<h2 class="mb-4">Gestión de Tarjetas de Crédito</h2>
-
-<div class="row mb-4 g-3 align-items-end">
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger">
-            @TempData["ErrorMessage"]
+<div class="container-fluid py-4">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h2 class="card-title mb-0"><i class="bi bi-credit-card-fill me-2"></i> @ViewData["Title"]</h2>
+            <a asp-action="SelectClient" class="btn btn-light btn-sm shadow-sm">
+                <i class="bi bi-plus-circle me-1"></i> Asignar Tarjeta de Crédito
+            </a>
         </div>
-    }
-    <div class="col-md-4">
-        <label for="cedulaSearch" class="form-label">Buscar por cédula</label>
-        <input id="cedulaSearch" class="form-control" placeholder="Ej: 00112345678" />
-    </div>
-    <div class="col-md-3">
-        <label for="statusFilter" class="form-label">Filtrar por estado</label>
-        <select id="statusFilter" class="form-select">
-            <option value="all">Todos</option>
-            <option value="active">Activas</option>
-            <option value="canceled">Canceladas</option>
-        </select>
-    </div>
-    @* <div class="col-md-2">
-        <button type="button" id="applyFilterBtn" class="btn btn-primary w-100">Filtrar</button>
-    </div> *@
-    <div class="col-md-3 text-end">
-        <a asp-action="SelectClient" class="btn btn-success w-100">Asignar tarjeta de crédito</a>
+        <div class="card-body">
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label for="cedulaSearch" class="form-label fw-bold">Buscar por Cédula</label>
+                    <input id="cedulaSearch" class="form-control form-control-sm shadow-sm" placeholder="Ej: 001-1234567-8" />
+                </div>
+                <div class="col-md-3">
+                    <label for="statusFilter" class="form-label fw-bold">Filtrar por Estado</label>
+                    <select id="statusFilter" class="form-select form-select-sm shadow-sm">
+                        <option value="all">Todos</option>
+                        <option value="active">Activas</option>
+                        <option value="canceled">Canceladas</option>
+                    </select>
+                </div>
+            </div>
+
+            @if (Model == null || !Model.Any())
+            {
+                <div class="alert alert-info text-center py-4 rounded-3 shadow-sm" role="alert" id="noCardsMessage">
+                    <h4 class="alert-heading"><i class="bi bi-info-circle-fill me-2"></i> No hay tarjetas de crédito registradas.</h4>
+                    <p>Parece que aún no se han asignado tarjetas de crédito. ¡Asigna una nueva para empezar!</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle caption-top shadow-sm rounded-3 overflow-hidden">
+                        <caption class="text-start mb-2 ps-2">Lista de todas las tarjetas de crédito registradas en el sistema.</caption>
+                        <thead class="table-dark">
+                            <tr>
+                                <th scope="col">Número de Tarjeta</th>
+                                <th scope="col">Cliente</th>
+                                <th scope="col">Límite</th>
+                                <th scope="col">Expira</th>
+                                <th scope="col">Adeudado</th>
+                                <th scope="col">Estado</th>
+                                <th scope="col" class="text-center">Acciones</th>
+                                <th scope="col" hidden>ClientIdentification</th>
+                            </tr>
+                        </thead>
+                        <tbody id="creditCardTableBody">
+                            @foreach (var card in Model)
+                            {
+                                <tr data-client-identification="@(card.ClientIdentification?.ToLower() ?? "")" data-status="@(card.IsActive ? "active" : "canceled")">
+                                    <td>@card.CardId</td>
+                                    <td>@card.ClientFullName</td>
+                                    <td>@FormatCurrency(card.CreditLimit)</td>
+                                    <td>@card.ExpirationDate.ToString("MM/yy")</td>
+                                    <td class="fw-bold text-danger">@FormatCurrency(card.TotalOwedAmount)</td>
+                                    <td>
+                                        @if (card.IsActive)
+                                        {
+                                            <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Activa</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary"><i class="bi bi-x-circle-fill me-1"></i>Cancelada</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group" aria-label="Acciones de tarjeta">
+                                            <a asp-action="Details" asp-route-id="@card.Id" class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" data-bs-placement="top" title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            @if (card.IsActive == true)
+                                            {
+                                                <a asp-action="Edit" asp-route-id="@card.Id" class="btn btn-sm btn-outline-warning" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar tarjeta">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </a>
+                                                <a asp-action="ConfirmCancel" asp-route-id="@card.Id" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Cancelar tarjeta">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td hidden>@card.ClientIdentification</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
     </div>
 </div>
-
-<table class="table table-bordered table-striped">
-    <thead class="table-dark">
-        <tr>
-            <th>Número de Tarjeta</th>
-            <th>Cliente</th>
-            <th>Límite</th>
-            <th>Expira</th>
-            <th>Adeudado</th>
-            <th>Estado</th>
-            <th class="text-center">Acciones</th>
-            <th hidden>ClientIdentification</th>
-        </tr>
-    </thead>
-    <tbody id="creditCardTableBody">
-        @if (Model != null && Model.Any())
-        {
-            @foreach (var card in Model)
-            {
-                <tr data-client-identification="@(card.ClientIdentification?.ToLower() ?? "")" data-status="@(card.IsActive ? "active" : "canceled")">
-                    <td>@card.CardId</td>
-                    <td>@card.ClientFullName</td>
-                    <td>@FormatCurrency(card.CreditLimit)</td>
-                    <td>@card.ExpirationDate.ToString("MM/yy")</td>
-                    <td>@FormatCurrency(card.TotalOwedAmount)</td>
-                    <td>@(card.IsActive ? "Activa" : "Cancelada")</td>
-                    <td class="text-center">
-                        <a asp-action="Details" asp-route-id="@card.Id" class="btn btn-sm btn-info">Detalles</a>
-                        @{
-                            if (card.IsActive == true)
-                            {
-                                <a asp-action="Edit" asp-route-id="@card.Id" class="btn btn-sm btn-warning">Editar</a>
-                                <a asp-action="ConfirmCancel" asp-route-id="@card.Id" class="btn btn-sm btn-danger">Cancelar</a>
-                            }
-                        }
-                    </td>
-                    <td hidden>@card.ClientIdentification</td>
-                </tr>
-            }
-        }
-        else
-        {
-            <tr>
-                <td colspan="7" class="text-center">No hay tarjetas encontradas.</td>
-            </tr>
-        }
-    </tbody>
-</table>
-
-<nav aria-label="Paginación">
-    <ul class="pagination justify-content-center" id="paginationControls">
-    </ul>
-</nav>
 
 @section Scripts {
     <script>
@@ -96,55 +117,66 @@
             const cedulaSearchInput = document.getElementById('cedulaSearch');
             const statusFilterSelect = document.getElementById('statusFilter');
             const creditCardTableBody = document.getElementById('creditCardTableBody');
+            const noCardsMessage = document.getElementById('noCardsMessage');
 
-            // Get all table rows initially
             const initialTableRows = Array.from(creditCardTableBody.querySelectorAll('tr'));
 
             function applyFilters() {
                 const cedulaFilter = cedulaSearchInput.value.toLowerCase().trim();
                 const statusFilter = statusFilterSelect.value.toLowerCase();
 
-                let foundCards = false; // Bandera para saber si se encontró al menos una tarjeta
+                let foundCards = 0;
 
                 initialTableRows.forEach(row => {
-                    const clientIdentification = row.dataset.clientIdentification; // Already in lowercase
-                    const cardStatus = row.dataset.status; // Already in lowercase
+                    const clientIdentification = row.dataset.clientIdentification;
+                    const cardStatus = row.dataset.status;
 
                     const matchesCedula = cedulaFilter === '' || (clientIdentification && clientIdentification.includes(cedulaFilter));
                     const matchesStatus = statusFilter === 'all' || cardStatus === statusFilter;
 
                     if (matchesCedula && matchesStatus) {
-                        row.style.display = ''; // Show the row
-                        foundCards = true;
+                        row.style.display = '';
+                        foundCards++;
                     } else {
-                        row.style.display = 'none'; // Hide the row
+                        row.style.display = 'none';
                     }
                 });
 
-                // Manejar el mensaje "No hay tarjetas encontradas."
-                const noDataRow = document.getElementById('noDataRow');
-                if (!foundCards) {
+                if (foundCards === 0) {
+                    let noDataRow = document.getElementById('noDataRow');
                     if (!noDataRow) {
-                        const newRow = creditCardTableBody.insertRow();
-                        newRow.id = 'noDataRow';
-                        const cell = newRow.insertCell(0);
-                        cell.colSpan = 7; // Ajusta el colspan según el número de columnas visibles
-                        cell.className = 'text-center';
-                        cell.textContent = 'No hay tarjetas encontradas con los filtros aplicados.';
+                        noDataRow = document.createElement('tr');
+                        noDataRow.id = 'noDataRow';
+                        const cell = document.createElement('td');
+                        cell.colSpan = 7; 
+                        cell.className = 'text-center py-3 text-muted';
+                        cell.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i> No hay tarjetas encontradas con los filtros aplicados.';
+                        noDataRow.appendChild(cell);
+                        creditCardTableBody.appendChild(noDataRow);
+                    } else {
+                        noDataRow.style.display = ''; 
                     }
+                    if (noCardsMessage) noCardsMessage.style.display = 'none'; 
                 } else {
+                    const noDataRow = document.getElementById('noDataRow');
                     if (noDataRow) {
                         noDataRow.remove();
+                    }
+                    if (noCardsMessage) {
+                        noCardsMessage.style.display = 'none';
                     }
                 }
             }
 
-            // Añadir event listeners para el filtrado dinámico
-            cedulaSearchInput.addEventListener('keyup', applyFilters); // Se dispara con cada tecla
-            statusFilterSelect.addEventListener('change', applyFilters); // Se dispara cuando cambia la selección
+            cedulaSearchInput.addEventListener('keyup', applyFilters);
+            statusFilterSelect.addEventListener('change', applyFilters);
 
-            // Aplicar filtros inicialmente al cargar la página
             applyFilters();
+
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
         });
     </script>
 }

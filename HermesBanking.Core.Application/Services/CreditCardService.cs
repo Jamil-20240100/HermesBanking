@@ -5,6 +5,8 @@ using HermesBanking.Core.Domain.Entities;
 using HermesBanking.Core.Domain.Interfaces;
 using System.Security.Cryptography;
 using System.Text;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace HermesBanking.Core.Application.Services
 {
@@ -13,6 +15,7 @@ namespace HermesBanking.Core.Application.Services
         private readonly ICreditCardRepository _repository;
         private readonly IMapper _mapper;
         private readonly IAccountServiceForWebApp _accountServiceForWebApp;
+
         public CreditCardService(ICreditCardRepository repository, IMapper mapper, IAccountServiceForWebApp accountServiceForWebApp) : base(repository, mapper)
         {
             _repository = repository;
@@ -24,45 +27,42 @@ namespace HermesBanking.Core.Application.Services
         {
             var cardsQuery = _repository.GetAllQuery().AsQueryable();
 
+            var allClientDTOs = await _accountServiceForWebApp.GetAllUser(); 
+                                                                             
+            var clientsDict = allClientDTOs.ToDictionary(u => u.Id);
+
             if (!string.IsNullOrWhiteSpace(estado))
             {
-                bool state = false;
-                if(estado == "activa")
+                bool? stateFilter = null;
+                if (estado.Equals("activa", StringComparison.OrdinalIgnoreCase))
                 {
-                    state = true;
+                    stateFilter = true;
                 }
-                else if (estado == "cancelada")
+                else if (estado.Equals("cancelada", StringComparison.OrdinalIgnoreCase))
                 {
-                    state = false;
+                    stateFilter = false;
                 }
 
-                if (state == true || state == false)
+                if (stateFilter.HasValue)
                 {
-                    cardsQuery = cardsQuery.Where(c => c.IsActive == state);
+                    cardsQuery = cardsQuery.Where(c => c.IsActive == stateFilter.Value);
                 }
             }
-
-            var allCards = cardsQuery.ToList();
 
             if (!string.IsNullOrWhiteSpace(cedula))
             {
-                var matchingClientIds = new List<string>();
+                var matchingClientIds = allClientDTOs
+                    .Where(u => u.UserId == cedula) 
+                    .Select(u => u.Id)
+                    .ToList();
 
-                foreach (var card in allCards)
-                {
-                    var user = await _accountServiceForWebApp.GetUserById(card.ClientId);
-                    if (user != null && user.UserId == cedula)
-                    {
-                        matchingClientIds.Add(card.ClientId);
-                    }
-                }
-
-                allCards = allCards.Where(c => matchingClientIds.Contains(c.ClientId)).ToList();
+                cardsQuery = cardsQuery.Where(c => matchingClientIds.Contains(c.ClientId));
             }
 
+            var allCards = await cardsQuery.ToListAsync(); 
             allCards = allCards.OrderByDescending(c => c.ExpirationDate).ToList();
 
-            int totalRegistros = allCards.Count;
+            int totalRegistros = allCards.Count();
             int totalPaginas = (int)Math.Ceiling(totalRegistros / (double)pageSize);
             pagina = Math.Clamp(pagina, 1, totalPaginas == 0 ? 1 : totalPaginas);
 
@@ -74,13 +74,18 @@ namespace HermesBanking.Core.Application.Services
             var data = new List<CreditCardDTO>();
             foreach (var card in cardsPage)
             {
-                var user = await _accountServiceForWebApp.GetUserById(card.ClientId);
+                clientsDict.TryGetValue(card.ClientId, out var user);
+
                 var dto = _mapper.Map<CreditCardDTO>(card);
 
                 if (user != null)
                 {
                     dto.ClientFullName = $"{user.Name} {user.LastName}";
                     dto.ClientIdentification = user.UserId;
+                }
+                 if (card.CreatedByAdminId != null && clientsDict.TryGetValue(card.CreatedByAdminId, out var adminUser))
+                {
+                    dto.AdminFullName = $"{adminUser.Name} {adminUser.LastName}";
                 }
 
                 data.Add(dto);
@@ -110,11 +115,8 @@ namespace HermesBanking.Core.Application.Services
                 numero = GenerateUniqueCardId();
             } while (await _repository.ExistsAsync(c => c.CardId == numero));
 
-            var client = await _accountServiceForWebApp.GetUserById(dto.ClienteId);
-
-            var card = new CreditCardDTO
+            var card = new CreditCard
             {
-                Id = 0,
                 CardId = numero,
                 ClientId = dto.ClienteId,
                 CreditLimit = dto.Limite,
@@ -123,14 +125,11 @@ namespace HermesBanking.Core.Application.Services
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 CVC = GenerateAndEncryptCVC(),
-                ClientFullName = $"{client?.Name} {client?.LastName}",
                 CreatedByAdminId = "",
-                AdminFullName = ""
+                ClientFullName = $"{cliente.Name} {cliente.LastName}"
             };
 
-            var mapped = _mapper.Map<CreditCard>(card);
-
-            await _repository.AddAsync(mapped);
+            await _repository.AddAsync(card);
         }
 
         public string GenerateUniqueCardId()
@@ -144,14 +143,13 @@ namespace HermesBanking.Core.Application.Services
                 {
                     cardId += random.Next(0, 10).ToString();
                 }
-            } while (false);
+            } while (false); 
             return cardId;
         }
 
         public string GenerateAndEncryptCVC()
         {
             Random random = new();
-
             string cvc = random.Next(100, 1000).ToString();
             byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(cvc));
 
@@ -161,6 +159,41 @@ namespace HermesBanking.Core.Application.Services
                 builder.Append(bytes[i].ToString("x2"));
             }
             return builder.ToString();
+        }
+
+        public async Task CancelCreditCardAsync(int id)
+        {
+            var card = await _repository.GetById(id);
+            if (card == null) throw new Exception("La tarjeta de crédito no existe.");
+
+            card.IsActive = false;
+
+            await _repository.UpdateAsync(card.Id, card);
+        }
+
+        public async Task<CreditCardDTO?> GetCreditCardByIdAsync(int id)
+        {
+            var card = await _repository.GetById(id);
+            if (card == null) return null;
+
+            var dto = _mapper.Map<CreditCardDTO>(card);
+
+            var user = await _accountServiceForWebApp.GetUserById(card.ClientId);
+            if (user != null)
+            {
+                dto.ClientFullName = $"{user.Name} {user.LastName}";
+                dto.ClientIdentification = user.UserId; 
+            }
+
+            if (!string.IsNullOrEmpty(card.CreatedByAdminId))
+            {
+                var admin = await _accountServiceForWebApp.GetUserById(card.CreatedByAdminId);
+                if (admin != null)
+                {
+                    dto.AdminFullName = $"{admin.Name} {admin.LastName}";
+                }
+            }
+            return dto;
         }
     }
 }

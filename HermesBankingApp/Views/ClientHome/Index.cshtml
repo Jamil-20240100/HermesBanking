@@ -3,54 +3,151 @@
     Layout = "_LayoutClient";
     var accounts = ViewBag.Accounts as List<HermesBanking.Core.Domain.Entities.SavingsAccount>;
     var transactions = ViewBag.Transactions as List<HermesBanking.Core.Domain.Entities.Transaction>;
+
+    string FormatCurrency(decimal amount)
+    {
+        return amount.ToString("C", new System.Globalization.CultureInfo("es-DO"));
+    }
 }
 
-<h2 class="mb-4">Bienvenido, @User.Identity?.Name</h2>
+<div class="container-fluid py-4">
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h2 class="card-title text-primary mb-4">
+                <i class="bi bi-person-circle me-2"></i> ¡Bienvenido, @User.Identity?.Name!
+            </h2>
+            <p class="lead text-muted">Aquí tienes un resumen rápido de tu actividad y tus cuentas.</p>
+        </div>
+    </div>
 
-<h4>Cuentas de Ahorro</h4>
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Número</th>
-            <th>Balance</th>
-            <th>Tipo</th>
-            <th>Fecha Creación</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var acc in accounts)
-        {
-            <tr>
-                <td>@acc.AccountNumber</td>
-                <td>RD$ @acc.Balance:N2</td>
-                <td>@acc.AccountType</td>
-                <td>@acc.CreatedAt.ToString("dd/MM/yyyy")</td>
-            </tr>
-        }
-    </tbody>
-</table>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h4 class="card-title mb-0"><i class="bi bi-piggy-bank-fill me-2"></i> Mis Cuentas de Ahorro</h4>
+        </div>
+        <div class="card-body">
+            @if (accounts == null || !accounts.Any())
+            {
+                <div class="alert alert-info text-center py-3 rounded-3 shadow-sm" role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i> No tienes cuentas de ahorro registradas.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle caption-top shadow-sm rounded-3 overflow-hidden">
+                        <caption class="text-start mb-2 ps-2">Tus cuentas de ahorro activas.</caption>
+                        <thead class="table-dark">
+                            <tr>
+                                <th scope="col">Número de Cuenta</th>
+                                <th scope="col">Balance</th>
+                                <th scope="col">Tipo</th>
+                                <th scope="col">Fecha Creación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var acc in accounts)
+                            {
+                                <tr>
+                                    <td>@acc.AccountNumber</td>
+                                    <td class="fw-bold text-success">@FormatCurrency(acc.Balance)</td>
+                                    <td>
+                                        @{
+                                            string typeBadgeClass = "";
+                                            string typeText = "";
+                                            if (acc.AccountType == HermesBanking.Core.Domain.Common.Enums.AccountType.Primary)
+                                            {
+                                                typeBadgeClass = "bg-primary";
+                                                typeText = "Principal";
+                                            }
+                                            else
+                                            {
+                                                typeBadgeClass = "bg-info";
+                                                typeText = "Secundaria";
+                                            }
+                                        }
+                                        <span class="badge @typeBadgeClass">@typeText</span>
+                                    </td>
+                                    <td>@acc.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
 
-<h4 class="mt-4">Últimas Transacciones</h4>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Tipo</th>
-            <th>Monto</th>
-            <th>Origen</th>
-            <th>Beneficiario</th>
-            <th>Fecha</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var t in transactions)
-        {
-            <tr>
-                <td>@t.Type</td>
-                <td>RD$ @t.Amount:N2</td>
-                <td>@t.Origin</td>
-                <td>@t.Beneficiary</td>
-                <td>@t.Date.ToString("g")</td>
-            </tr>
-        }
-    </tbody>
-</table>
+    <div class="card shadow-sm">
+        <div class="card-header bg-secondary text-white">
+            <h4 class="card-title mb-0"><i class="bi bi-clock-history me-2"></i> Últimas Transacciones</h4>
+        </div>
+        <div class="card-body">
+            @if (transactions == null || !transactions.Any())
+            {
+                <div class="alert alert-info text-center py-3 rounded-3 shadow-sm" role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i> No hay transacciones recientes para mostrar.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped align-middle caption-top shadow-sm rounded-3 overflow-hidden">
+                        <caption class="text-start mb-2 ps-2">Tus movimientos recientes.</caption>
+                        <thead class="table-dark">
+                            <tr>
+                                <th scope="col">Tipo</th>
+                                <th scope="col">Monto</th>
+                                <th scope="col">Origen</th>
+                                <th scope="col">Beneficiario</th>
+                                <th scope="col">Fecha y Hora</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var t in transactions)
+                            {
+                                <tr>
+                                    <td>
+                                        @{
+                                            string transactionTypeClass = "";
+                                            string transactionIcon = "";
+                                            switch (t.Type)
+                                            {
+                                                case "Depósito":
+                                                    transactionTypeClass = "bg-success";
+                                                    transactionIcon = "bi bi-arrow-down-circle-fill";
+                                                    break;
+                                                case "Retiro":
+                                                    transactionTypeClass = "bg-danger";
+                                                    transactionIcon = "bi bi-arrow-up-circle-fill";
+                                                    break;
+                                                case "Transferencia":
+                                                    transactionTypeClass = "bg-info";
+                                                    transactionIcon = "bi bi-arrow-left-right";
+                                                    break;
+                                                case "Pago":
+                                                    transactionTypeClass = "bg-warning text-dark";
+                                                    transactionIcon = "bi bi-wallet";
+                                                    break;
+                                                default:
+                                                    transactionTypeClass = "bg-secondary";
+                                                    transactionIcon = "bi bi-info-circle";
+                                                    break;
+                                            }
+                                        }
+                                        <span class="badge @transactionTypeClass">
+                                            <i class="@transactionIcon me-1"></i>@t.Type
+                                        </span>
+                                    </td>
+                                    <td class="fw-bold @(t.Type == "Depósito" ? "text-success" : "text-danger")">@FormatCurrency(t.Amount)</td>
+                                    <td>@t.Origin</td>
+                                    <td>@t.Beneficiary</td>
+                                    <td>@t.Date.ToString("dd/MM/yyyy HH:mm")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

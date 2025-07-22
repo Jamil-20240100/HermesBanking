@@ -1,9 +1,137 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model DashboardViewModel
+
+@{
+    ViewData["Title"] = "Dashboard de Administración";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome Admins! Time to work</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="text-center mb-5">
+    <h1 class="display-4 fw-bold text-primary">¡Bienvenido Administrador!</h1>
+    <p class="lead text-muted">Aquí tienes un resumen rápido de las métricas clave del sistema bancario.</p>
 </div>
-    
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-body text-center">
+                <i class="bi bi-credit-card-fill text-info fs-1 mb-3"></i>
+                <h4 class="card-title text-info fw-bold">Tarjetas de Crédito</h4>
+                <hr>
+                <div class="d-flex justify-content-around align-items-center mb-2">
+                    <div>
+                        <p class="mb-0 text-muted">Emitidas</p>
+                        <h3 class="fw-bold text-dark">@Model.TotalIssuedCreditCards</h3>
+                    </div>
+                    <div>
+                        <p class="mb-0 text-muted">Activas</p>
+                        <h3 class="fw-bold text-success">@Model.ActiveCreditCards</h3>
+                    </div>
+                    <div>
+                        <p class="mb-0 text-muted">Inactivas</p>
+                        <h3 class="fw-bold text-danger">@Model.InactiveCreditCards</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-body text-center">
+                <i class="bi bi-arrow-left-right text-success fs-1 mb-3"></i>
+                <h4 class="card-title text-success fw-bold">Transacciones</h4>
+                <hr>
+                <div class="d-flex justify-content-around align-items-center mb-2">
+                    <div>
+                        <p class="mb-0 text-muted">Total</p>
+                        <h3 class="fw-bold text-dark">[Cargar]</h3>
+                    </div>
+                    <div>
+                        <p class="mb-0 text-muted">Hoy</p>
+                        <h3 class="fw-bold text-dark">[Cargar]</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-body text-center">
+                <i class="bi bi-wallet-fill text-warning fs-1 mb-3"></i>
+                <h4 class="card-title text-warning fw-bold">Pagos</h4>
+                <hr>
+                <div class="d-flex justify-content-around align-items-center mb-2">
+                    <div>
+                        <p class="mb-0 text-muted">Total Acumulado</p>
+                        <h3 class="fw-bold text-dark">[Cargar]</h3>
+                    </div>
+                    <div>
+                        <p class="mb-0 text-muted">Procesados Hoy</p>
+                        <h3 class="fw-bold text-dark">[Cargar]</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-body text-center">
+                <i class="bi bi-people-fill text-primary fs-1 mb-3"></i>
+                <h4 class="card-title text-primary fw-bold">Clientes</h4>
+                <hr>
+                <div class="d-flex justify-content-around align-items-center mb-2">
+                    <div>
+                        <p class="mb-0 text-muted">Activos</p>
+                        <h3 class="fw-bold text-success">@Model.ActiveClients</h3>
+                    </div>
+                    <div>
+                        <p class="mb-0 text-muted">Inactivos</p>
+                        <h3 class="fw-bold text-danger">@Model.InactiveClients</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-body text-center">
+                <i class="bi bi-bank2 text-danger fs-1 mb-3"></i>
+                <h4 class="card-title text-danger fw-bold">Productos Financieros</h4>
+                <hr>
+                <div class="d-flex justify-content-around align-items-center mb-2">
+                    <div>
+                        <p class="mb-0 text-muted">Total Asignados</p>
+                        <h3 class="fw-bold text-dark">@(Model.ActiveLoans + Model.TotalSavingsAccounts + Model.TotalIssuedCreditCards)</h3>
+                    </div>
+                    <div>
+                        <p class="mb-0 text-muted">Préstamos Vigentes</p>
+                        <h3 class="fw-bold text-dark">@Model.ActiveLoans</h3>
+                    </div>
+                    <div>
+                        <p class="mb-0 text-muted">Cuentas de Ahorro</p>
+                        <h3 class="fw-bold text-dark">@Model.TotalSavingsAccounts</h3>
+                    </div>
+                    <div>
+                        <p class="mb-0 text-muted">Tarjetas Asignadas</p>
+                        <h3 class="fw-bold text-dark">@Model.TotalIssuedCreditCards</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Average Client Debt Metric *@
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-body text-center">
+                <i class="bi bi-currency-dollar text-secondary fs-1 mb-3"></i> @* Bootstrap icon for currency *@
+                <h4 class="card-title text-secondary fw-bold">Deuda Promedio por Cliente</h4>
+                <hr>
+                <h3 class="fw-bold text-dark">RD$ @Model.AverageClientDebt.ToString("N2")</h3>
+            </div>
+        </div>
+    </div>
+
+</div>
