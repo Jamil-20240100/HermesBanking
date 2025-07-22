@@ -14,5 +14,7 @@ namespace HermesBanking.Infrastructure.Persistence.Repositories
             return await _context.CreditCards
                 .FirstOrDefaultAsync(card => card.CardId == cardNumber);  // Cambiar 'CardNumber' por 'CardId'
         }
+
+      
     }
 }

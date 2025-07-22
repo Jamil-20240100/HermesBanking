@@ -110,6 +110,8 @@
                                         @{
                                             string transactionTypeClass = "";
                                             string transactionIcon = "";
+
+                                            // Verificar el tipo de transacción
                                             switch (t.Type)
                                             {
                                                 case "Depósito":
@@ -128,6 +130,14 @@
                                                     transactionTypeClass = "bg-warning text-dark";
                                                     transactionIcon = "bi bi-wallet";
                                                     break;
+                                                case "Pago de Préstamo":
+                                                    transactionTypeClass = "bg-primary";
+                                                    transactionIcon = "bi bi-credit-card";
+                                                    break;
+                                                case "Pago Tarjeta de Crédito":
+                                                    transactionTypeClass = "bg-info";
+                                                    transactionIcon = "bi bi-credit-card-fill";
+                                                    break;
                                                 default:
                                                     transactionTypeClass = "bg-secondary";
                                                     transactionIcon = "bi bi-info-circle";
@@ -141,7 +151,7 @@
                                     <td class="fw-bold @(t.Type == "Depósito" ? "text-success" : "text-danger")">@FormatCurrency(t.Amount)</td>
                                     <td>@t.Origin</td>
                                     <td>@t.Beneficiary</td>
-                                    <td>@t.Date.ToString()</td>
+                                    <td>@t.Date?.ToString("dd/MM/yyyy HH:mm:ss")</td> <!-- Fecha y hora formateadas -->
                                 </tr>
                             }
                         </tbody>
@@ -150,4 +160,4 @@
             }
         </div>
     </div>
-</div>
+

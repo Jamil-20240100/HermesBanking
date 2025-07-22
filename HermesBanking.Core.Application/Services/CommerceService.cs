@@ -91,6 +91,7 @@ namespace HermesBanking.Core.Application.Services
 
             await _commerceRepository.AddCommerceAsync(commerce);
 
+
             return new CommerceDTO
             {
                 Id = commerce.Id,

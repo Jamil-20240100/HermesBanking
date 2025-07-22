@@ -34,7 +34,8 @@ namespace HermesBanking.Core.Application.Services
                 Amount = transactionDto.Amount,
                 Origin = transactionDto.Origin,
                 Beneficiary = transactionDto.Beneficiary,
-                Date = DateTime.Now,
+                Date = transactionDto.Date,  // Fecha
+                TransactionDate = transactionDto.TransactionDate,  // Aquí se usa el TransactionDate
                 Description = $"Transacción de RD$ {transactionDto.Amount} tipo {transactionDto.Type}",
                 CashierId = transactionDto.CashierId
             };

@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Threading.Tasks;
 
 
@@ -47,6 +48,36 @@ namespace HermesBanking.Core.Application.Services
             _cardRepo = cardRepo;
                     }
 
+        private async Task SendTransactionEmailAsync(string accountNumber, decimal amount, string transactionType, string cashierId)
+        {
+            var account = await _accountRepo.GetByAccountNumberAsync(accountNumber);
+            if (account == null) return;
+
+            var user = await _userService.GetUserById(account.ClientId);
+            if (user == null || string.IsNullOrEmpty(user.Email)) return;
+
+            string lastFour = account.AccountNumber.Substring(account.AccountNumber.Length - 4);
+            string subject = $"{transactionType} realizado a su cuenta {lastFour}";
+            string htmlBody = $@"
+                <h3>{transactionType} exitoso</h3>
+                <p>Se ha realizado una transacción de tipo <strong>{transactionType}</strong> a su cuenta <strong>{account.AccountNumber}</strong>.</p>
+                <ul>
+                    <li><strong>Monto:</strong> RD$ {amount:N2}</li>
+                    <li><strong>Fecha:</strong> {DateTime.Now:dd/MM/yyyy}</li>
+                    <li><strong>Hora:</strong> {DateTime.Now:hh:mm tt}</li>
+                </ul>";
+
+            var email = new EmailRequestDto
+            {
+                To = user.Email,
+                Subject = subject,
+                HtmlBody = htmlBody
+            };
+
+            await _emailService.SendAsync(email);
+        }
+
+
         public async Task<bool> MakeDepositAsync(string accountNumber, decimal amount, string cashierId)
         {
             var account = await _accountRepo.GetByAccountNumberAsync(accountNumber);
@@ -63,34 +94,13 @@ namespace HermesBanking.Core.Application.Services
                 Origin = accountNumber,
                 Beneficiary = accountNumber,
                 CashierId = cashierId,
-                Date = DateTime.Now
+                Date = DateTime.Now,  // Fecha de la transacción
+                TransactionDate = DateTime.Now // Aquí se asigna también el TransactionDate
             };
 
             await _cashierTransactionService.RegisterCashierTransactionAsync(transactionDto);
 
-            var user = await _userService.GetUserById(account.ClientId);
-            if (user == null || string.IsNullOrEmpty(user.Email)) return false;
-
-            string lastFour = account.AccountNumber.Substring(account.AccountNumber.Length - 4);
-            string subject = $"Depósito realizado a su cuenta {lastFour}";
-            string htmlBody = $@"
-                <h3>Depósito exitoso</h3>
-                <p>Se ha realizado un depósito a su cuenta <strong>{account.AccountNumber}</strong>.</p>
-                <ul>
-                    <li><strong>Monto:</strong> RD$ {amount:N2}</li>
-                    <li><strong>Fecha:</strong> {DateTime.Now:dd/MM/yyyy}</li>
-                    <li><strong>Hora:</strong> {DateTime.Now:hh:mm tt}</li>
-                </ul>";
-
-            var email = new EmailRequestDto
-            {
-                To = user.Email,
-                Subject = subject,
-                HtmlBody = htmlBody
-            };
-
-            await _emailService.SendAsync(email);
-
+            await SendTransactionEmailAsync(accountNumber, amount, "Depósito", cashierId);
             return true;
         }
 
@@ -110,28 +120,8 @@ namespace HermesBanking.Core.Application.Services
 
             await _cashierTransactionService.ProcessCashierTransferAsync(sourceAccountNumber, destinationAccountNumber, amount, cashierId);
 
-            var sourceUser = await _userService.GetUserEmailAsync(sourceAccount.ClientId);
-            var destinationUser = await _userService.GetUserEmailAsync(destinationAccount.ClientId);
-
-            if (sourceUser != null)
-            {
-                await _emailService.SendAsync(new EmailRequestDto
-                {
-                    To = sourceUser,
-                    Subject = "Transferencia realizada",
-                    HtmlBody = $"Se ha transferido RD${amount:N2} desde su cuenta {sourceAccountNumber} a la cuenta {destinationAccountNumber}."
-                });
-            }
-
-            if (destinationUser != null)
-            {
-                await _emailService.SendAsync(new EmailRequestDto
-                {
-                    To = destinationUser,
-                    Subject = "Transferencia recibida",
-                    HtmlBody = $"Ha recibido RD${amount:N2} en su cuenta {destinationAccountNumber} desde la cuenta {sourceAccountNumber}."
-                });
-            }
+            await SendTransactionEmailAsync(sourceAccountNumber, amount, "Transferencia realizada", cashierId);
+            await SendTransactionEmailAsync(destinationAccountNumber, amount, "Transferencia recibida", cashierId);
 
             return true;
         }
@@ -156,12 +146,15 @@ namespace HermesBanking.Core.Application.Services
                 Type = "LOAN_PAYMENT",
                 Amount = amount,
                 Origin = accountNumber,
-                Beneficiary = loanIdentifier,
+                Beneficiary = accountNumber,
                 CashierId = cashierId,
-                Date = DateTime.Now
+                Date = DateTime.Now,  // Fecha de la transacción
+                TransactionDate = DateTime.Now // Aquí se asigna también el TransactionDate
             };
 
+
             await _cashierTransactionService.RegisterCashierTransactionAsync(transactionDto);
+            await SendTransactionEmailAsync(accountNumber, amount, "Pago de préstamo", cashierId);
             return true;
         }
 
@@ -228,10 +221,12 @@ namespace HermesBanking.Core.Application.Services
                 Origin = accountNumber,
                 Beneficiary = accountNumber,
                 CashierId = cashierId,
-                Date = DateTime.Now
+                Date = DateTime.Now,  // Fecha de la transacción
+                TransactionDate = DateTime.Now // Aquí se asigna también el TransactionDate
             };
 
             await _cashierTransactionService.RegisterCashierTransactionAsync(transactionDto);
+            await SendTransactionEmailAsync(accountNumber, amount, "Retiro", cashierId);
             return true;
         }
 
@@ -249,12 +244,16 @@ namespace HermesBanking.Core.Application.Services
                 Type = "CREDIT_CARD_PAYMENT",
                 Amount = amount,
                 Origin = accountNumber,
-                Beneficiary = cardNumber,
+                Beneficiary = accountNumber,
                 CashierId = cashierId,
-                Date = DateTime.Now
+                Date = DateTime.Now,  // Fecha de la transacción
+                TransactionDate = DateTime.Now // Aquí se asigna también el TransactionDate
             };
 
+
             await _cashierTransactionService.RegisterCashierTransactionAsync(transactionDto);
+            
+            await SendTransactionEmailAsync(accountNumber, amount, "Pago de tarjeta de crédito", cashierId);
             return true;
         }
 

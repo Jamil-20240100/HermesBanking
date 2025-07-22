@@ -10,5 +10,6 @@ namespace HermesBanking.Core.Application.ViewModels.Cashier
         public int TotalPayments { get; set; }
 
         public List<SavingsAccountViewModel> Accounts { get; set; }
+        public DateTime TransactionDate { get; set; }
     }
 }

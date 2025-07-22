@@ -34,6 +34,7 @@
         </div>
     </div>
 
+    <!-- Transacciones -->
     <div class="col-md-4">
         <div class="card shadow-sm h-100 border-0">
             <div class="card-body text-center">
@@ -43,16 +44,17 @@
                 <div class="d-flex justify-content-around align-items-center mb-2">
                     <div>
                         <p class="mb-0 text-muted">Total</p>
-                        <h3 class="fw-bold text-dark">[Cargar]</h3>
+                        <h3 class="fw-bold text-dark">@Model.TotalTransactions</h3>
                     </div>
                     <div>
                         <p class="mb-0 text-muted">Hoy</p>
-                        <h3 class="fw-bold text-dark">[Cargar]</h3>
+                        <h3 class="fw-bold text-dark">@Model.TransactionsToday</h3>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
 
     <div class="col-md-4">
         <div class="card shadow-sm h-100 border-0">
@@ -63,11 +65,11 @@
                 <div class="d-flex justify-content-around align-items-center mb-2">
                     <div>
                         <p class="mb-0 text-muted">Total Acumulado</p>
-                        <h3 class="fw-bold text-dark">[Cargar]</h3>
+                        <h3 class="fw-bold text-dark">RD$ @Model.TotalPayments.ToString("N2")</h3>
                     </div>
                     <div>
                         <p class="mb-0 text-muted">Procesados Hoy</p>
-                        <h3 class="fw-bold text-dark">[Cargar]</h3>
+                        <h3 class="fw-bold text-dark">RD$ @Model.PaymentsProcessedToday.ToString("N2")</h3>
                     </div>
                 </div>
             </div>

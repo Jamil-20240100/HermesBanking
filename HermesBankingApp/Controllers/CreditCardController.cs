@@ -2,9 +2,11 @@
 using HermesBanking.Core.Application.DTOs.CreditCard;
 using HermesBanking.Core.Application.DTOs.Email;
 using HermesBanking.Core.Application.Interfaces;
+using HermesBanking.Core.Application.Services;
 using HermesBanking.Core.Application.ViewModels.CreditCard;
 using HermesBanking.Core.Application.ViewModels.User;
 using HermesBanking.Core.Domain.Common.Enums;
+using HermesBanking.Core.Domain.Interfaces;
 using HermesBanking.Infrastructure.Identity.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +23,11 @@ namespace HermesBankingApp.Controllers
         private readonly IMapper _mapper;
         private readonly IEmailService _emailService;
         private readonly ILoanService _loanService;
-        public CreditCardController(ICreditCardService service, IMapper mapper, UserManager<AppUser> userManager, IAccountServiceForWebApp accountServiceForWebApp, IEmailService emailService, ILoanService loanService)
+        private readonly ITransactionService _transactionService;
+        private readonly ICreditCardService _creditCardService;
+        private readonly ITransactionRepository _transactionRepo;
+
+        public CreditCardController(ICreditCardService service, IMapper mapper, ITransactionRepository transactionRepository,UserManager<AppUser> userManager, IAccountServiceForWebApp accountServiceForWebApp, IEmailService emailService, ILoanService loanService, ITransactionService transactionService, ICreditCardService creditCardService)
         {
             _service = service;
             _mapper = mapper;
@@ -29,6 +35,9 @@ namespace HermesBankingApp.Controllers
             _accountServiceForWebApp = accountServiceForWebApp;
             _emailService = emailService;
             _loanService = loanService;
+            _transactionService = transactionService;
+            _creditCardService = creditCardService;
+            _transactionRepo = transactionRepository;
         }
 
         public async Task<IActionResult> Index()
@@ -316,5 +325,9 @@ namespace HermesBankingApp.Controllers
 
             return RedirectToAction("Index");
         }
+
+        
+
+
     }
 }

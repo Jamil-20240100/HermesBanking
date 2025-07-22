@@ -22,8 +22,16 @@ namespace HermesBanking.Core.Application.DTOs.Transaction
         public string Beneficiary { get; internal set; }
         public string CashierId { get; internal set; }
         public DateTime Date { get; internal set; }
+
+
+        public string MerchantName { get; set; }
+
+        public string? Status { get; set; } // Enum nullable
+
+        public string LoanCode { get; set; } // For PayLoan transactions
+        public string CreditCardNumber { get; set; } // For PayCreditCard transactions
     }
-}
+    }
 
 // HermesBanking.Core.Application.DTOs.Transaction/ExpressTransactionDTO.cs
 // This DTO seems to be an input DTO for an express transaction (like a simple transfer)

@@ -1,6 +1,7 @@
 ﻿using HermesBanking.Core.Application.DTOs.Commerce;
 using HermesBanking.Core.Application.DTOs.User;
 using HermesBanking.Core.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ namespace HermesBanking.WebApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class CommerceController : ControllerBase
     {
         private readonly ICommerceService _commerceService;

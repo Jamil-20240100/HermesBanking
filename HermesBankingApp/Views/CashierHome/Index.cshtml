@@ -5,70 +5,86 @@
     ViewData["Title"] = "Panel del Cajero";
 }
 
-<div class="container mt-5">
-    <h2>Panel del Cajero</h2>
+<div class="text-center mb-5">
+    <h1 class="display-4 fw-bold text-primary">¡Bienvenido Cajero!</h1>
+    <p class="lead text-muted">Aquí tienes un resumen rápido de las métricas clave del sistema de cajero.</p>
+</div>
 
-    <div class="row">
-        <div class="col-md-3">
-            <div class="card bg-light mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Transacciones totales</h5>
-                    <p class="card-text display-4">@Model.TotalTransactions</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-success text-white mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Depósitos</h5>
-                    <p class="card-text display-4">@Model.TotalDeposits</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-warning text-dark mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Retiros</h5>
-                    <p class="card-text display-4">@Model.TotalWithdrawals</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-info text-white mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Pagos</h5>
-                    <p class="card-text display-4">@Model.TotalPayments</p>
-                </div>
+<div class="row g-4">
+    <!-- Transacciones Totales -->
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-body text-center">
+                <i class="bi bi-wallet2 text-info fs-1 mb-3"></i>
+                <h4 class="card-title text-info fw-bold">Transacciones Totales</h4>
+                <hr>
+                <h3 class="fw-bold text-dark">@Model.TotalTransactions</h3>
             </div>
         </div>
     </div>
 
-    <hr />
+    <!-- Depósitos -->
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-body text-center">
+                <i class="bi bi-arrow-down-circle-fill text-success fs-1 mb-3"></i>
+                <h4 class="card-title text-success fw-bold">Depósitos</h4>
+                <hr>
+                <h3 class="fw-bold text-dark">@Model.TotalDeposits</h3>
+            </div>
+        </div>
+    </div>
 
-    <h3 class="mt-4">Cuentas de ahorro existentes</h3>
-    <table class="table table-striped mt-3">
-        <thead class="table-dark">
-            <tr>
-                <th>Número de cuenta</th>
-                <th>Balance</th>
-                <th>Tipo</th>
-                <th>Activo</th>
-                <th>Cliente ID</th>
-                <th>Fecha de creación</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var account in Model.Accounts)
-            {
-                <tr>
-                    <td>@account.AccountNumber</td>
-                    <td>RD$ @account.Balance:N2</td>
-                    <td>@account.AccountType</td>
-                    <td>@(account.IsActive ? "Sí" : "No")</td>
-                    <td>@account.ClientId</td>
-                    <td>@account.CreatedAt.ToString("dd/MM/yyyy")</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <!-- Retiros -->
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-body text-center">
+                <i class="bi bi-arrow-up-circle-fill text-warning fs-1 mb-3"></i>
+                <h4 class="card-title text-warning fw-bold">Retiros</h4>
+                <hr>
+                <h3 class="fw-bold text-dark">@Model.TotalWithdrawals</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagos -->
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-body text-center">
+                <i class="bi bi-credit-card-fill text-info fs-1 mb-3"></i>
+                <h4 class="card-title text-info fw-bold">Pagos</h4>
+                <hr>
+                <h3 class="fw-bold text-dark">@Model.TotalPayments</h3>
+            </div>
+        </div>
+    </div>
 </div>
+
+<hr />
+
+<h3 class="mt-4">Cuentas de Ahorro Existentes</h3>
+<table class="table table-striped mt-3">
+    <thead class="table-dark">
+        <tr>
+            <th>Número de Cuenta</th>
+            <th>Balance</th>
+            <th>Tipo</th>
+            <th>Activo</th>
+            <th>Cliente ID</th>
+            <th>Fecha de Creación</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var account in Model.Accounts)
+        {
+            <tr>
+                <td>@account.AccountNumber</td>
+                <td>RD$ @account.Balance:N2</td>
+                <td>@account.AccountType</td>
+                <td>@(account.IsActive ? "Sí" : "No")</td>
+                <td>@account.ClientId</td>
+                <td>@account.CreatedAt.ToString("dd/MM/yyyy")</td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,4 +1,4 @@
-﻿@model CreditCardTransactionsViewModel
+﻿@model CreditCardDetailsViewModel
 
 @{
     ViewData["Title"] = "Detalles de la Tarjeta de Crédito";
@@ -9,7 +9,7 @@
 <p><strong>Límite:</strong> @Model.CreditLimit</p>
 <p><strong>Adeudado:</strong> @Model.TotalOwedAmount</p>
 <p><strong>Estado:</strong> @(Model.IsActive ? "Activa" : "Cancelada")</p>
-<p><strong>Expira:</strong> @Model.ExpirationDate.ToString("MM/yy")</p>
+<p><strong>Expira:</strong> @Model.ExpirationDate.("MM/yy")</p>
 
 <h4>Transacciones Realizadas</h4>
 

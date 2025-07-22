@@ -8,5 +8,8 @@ namespace HermesBanking.Core.Application.Interfaces
         Task CreateCreditCardAsync(CreateCreditCardForApiDTO dto);
         public string GenerateUniqueCardId();
         public string GenerateAndEncryptCVC();
+
+        Task<CreditCardDTO> GetCreditCardByIdAsync(int id);
+
     }
 }
