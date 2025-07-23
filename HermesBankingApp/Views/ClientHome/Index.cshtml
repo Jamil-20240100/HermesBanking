@@ -1,13 +1,16 @@
-﻿﻿@{
-ViewData["Title"] = "Mi Cuenta";
-Layout = "_LayoutClient";
-var accounts = ViewBag.Accounts as List<HermesBanking.Core.Domain.Entities.SavingsAccount>;
-var transactions = ViewBag.Transactions as List<HermesBanking.Core.Domain.Entities.Transaction>;
+﻿@model dynamic
 
-string FormatCurrency(decimal amount)
-{
-    return amount.ToString("C", new System.Globalization.CultureInfo("es-DO"));
-}
+@{
+    ViewData["Title"] = "Mi Cuenta";
+    Layout = "_LayoutClient";
+    var accounts = ViewBag.Accounts as List<HermesBanking.Core.Domain.Entities.SavingsAccount>;
+    var savingsAccountTransactions = ViewBag.SavingsAccountTransactions as List<TransactionDTO>;
+    var otherServiceTransactions = ViewBag.OtherServiceTransactions as List<DisplayTransactionDTO>;
+
+    string FormatCurrency(decimal amount)
+    {
+        return amount.ToString("C", new System.Globalization.CultureInfo("es-DO"));
+    }
 }
 
 <div class="container-fluid py-4">
@@ -77,75 +80,200 @@ string FormatCurrency(decimal amount)
         </div>
     </div>
 
-    <div class="card shadow-sm">
+    <div class="card shadow-sm mb-4">
         <div class="card-header bg-secondary text-white">
-            <h4 class="card-title mb-0"><i class="bi bi-clock-history me-2"></i> Últimas Transacciones</h4>
+            <h4 class="card-title mb-0"><i class="bi bi-clock-history me-2"></i> Últimas Transacciones de Cuentas de Ahorro</h4>
         </div>
         <div class="card-body">
-            @if (transactions == null || !transactions.Any())
+            @if (savingsAccountTransactions == null || !savingsAccountTransactions.Any())
             {
                 <div class="alert alert-info text-center py-3 rounded-3 shadow-sm" role="alert">
-                    <i class="bi bi-info-circle-fill me-2"></i> No hay transacciones recientes para mostrar.
+                    <i class="bi bi-info-circle-fill me-2"></i> No hay transacciones recientes de cuentas de ahorro para mostrar.
                 </div>
             }
             else
             {
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped align-middle caption-top shadow-sm rounded-3 overflow-hidden">
-                        <caption class="text-start mb-2 ps-2">Tus movimientos recientes.</caption>
-                        <thead class="table-dark">
-                            <tr>
-                                <th scope="col">Tipo</th>
-                                <th scope="col">Monto</th>
-                                <th scope="col">Origen</th>
-                                <th scope="col">Beneficiario</th>
-                                <th scope="col">Fecha y Hora</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var t in transactions)
-                            {
+                <div style="max-height: 350px; overflow-y: auto;">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped align-middle caption-top shadow-sm rounded-3">
+                            <caption class="text-start mb-2 ps-2">Tus movimientos recientes de cuentas de ahorro.</caption>
+                            <thead class="table-dark sticky-top" style="z-index: 1;">
                                 <tr>
-                                    <td>
-                                        @{
-                                            string transactionTypeClass = "";
-                                            string transactionIcon = "";
-                                            switch (t.Type)
-                                            {
-                                                case "Depósito":
-                                                    transactionTypeClass = "bg-success";
-                                                    transactionIcon = "bi bi-arrow-down-circle-fill";
-                                                    break;
-                                                case "Retiro":
-                                                    transactionTypeClass = "bg-danger";
-                                                    transactionIcon = "bi bi-arrow-up-circle-fill";
-                                                    break;
-                                                case "Transferencia":
-                                                    transactionTypeClass = "bg-info";
-                                                    transactionIcon = "bi bi-arrow-left-right";
-                                                    break;
-                                                case "Pago":
-                                                    transactionTypeClass = "bg-warning text-dark";
-                                                    transactionIcon = "bi bi-wallet";
-                                                    break;
-                                                default:
-                                                    transactionTypeClass = "bg-secondary";
-                                                    transactionIcon = "bi bi-info-circle";
-                                                    break;
-                                            }
-                                        }
-                                        <span class="badge @transactionTypeClass">
-                                            <i class="@transactionIcon me-1"></i>@t.Type
-                                        </span>
-                                    </td>
-                                    <td class="fw-bold @(t.Type == "Depósito" ? "text-success" : "text-danger")">@FormatCurrency(t.Amount)</td>
-                                    <td>@t.Origin</td>
-                                    <td>@t.Beneficiary</td>
-                                    <td>@t.Date.ToString()</td>
+                                    <th scope="col">Tipo</th>
+                                    <th scope="col">Monto</th>
+                                    <th scope="col">Origen</th>
+                                    <th scope="col">Destino</th>
+                                    <th scope="col">Descripción</th>
+                                    <th scope="col">Fecha y Hora</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach (var t in savingsAccountTransactions)
+                                {
+                                    <tr>
+                                        <td>
+                                            @{
+                                                string transactionTypeClass = "";
+                                                string transactionIcon = "";
+                                                string typeDisplayText = t.TransactionType?.ToString() ?? "Desconocido";
+
+                                                switch (t.TransactionType)
+                                                {
+                                                    case HermesBanking.Core.Domain.Common.Enums.TransactionType.Deposito:
+                                                        transactionTypeClass = "bg-success";
+                                                        transactionIcon = "bi bi-arrow-down-circle-fill";
+                                                        typeDisplayText = "Depósito";
+                                                        break;
+                                                    case HermesBanking.Core.Domain.Common.Enums.TransactionType.Retiro:
+                                                        transactionTypeClass = "bg-danger";
+                                                        transactionIcon = "bi bi-arrow-up-circle-fill";
+                                                        typeDisplayText = "Retiro";
+                                                        break;
+                                                    case HermesBanking.Core.Domain.Common.Enums.TransactionType.Transferencia:
+                                                        transactionTypeClass = "bg-info";
+                                                        transactionIcon = "bi bi-arrow-left-right";
+                                                        typeDisplayText = "Transferencia";
+                                                        break;
+                                                    case HermesBanking.Core.Domain.Common.Enums.TransactionType.PagoTarjetaCredito:
+                                                        transactionTypeClass = "bg-warning text-dark";
+                                                        transactionIcon = "bi bi-credit-card";
+                                                        typeDisplayText = "Pago Tarjeta";
+                                                        break;
+                                                    case HermesBanking.Core.Domain.Common.Enums.TransactionType.PagoPrestamo:
+                                                        transactionTypeClass = "bg-primary";
+                                                        transactionIcon = "bi bi-cash-stack";
+                                                        typeDisplayText = "Pago Préstamo";
+                                                        break;
+                                                    case HermesBanking.Core.Domain.Common.Enums.TransactionType.PagoBeneficiario:
+                                                        transactionTypeClass = "bg-dark";
+                                                        transactionIcon = "bi bi-person-check";
+                                                        typeDisplayText = "Pago Beneficiario";
+                                                        break;
+                                                    default:
+                                                        transactionTypeClass = "bg-secondary";
+                                                        transactionIcon = "bi bi-info-circle";
+                                                        typeDisplayText = "Otro";
+                                                        break;
+                                                }
+                                            }
+                                            <span class="badge @transactionTypeClass">
+                                                <i class="@transactionIcon me-1"></i>@typeDisplayText
+                                            </span>
+                                        </td>
+                                        <td class="fw-bold @(t.TransactionType == HermesBanking.Core.Domain.Common.Enums.TransactionType.Deposito ? "text-success" : "text-danger")">@FormatCurrency(t.Amount)</td>
+                                        <td>
+                                            @{
+                                                string sourceDisplay = "N/A";
+                                                if (!string.IsNullOrEmpty(t.SourceAccountId))
+                                                {
+                                                    sourceDisplay = "Cta. " + t.SourceAccountId.Substring(Math.Max(0, t.SourceAccountId.Length - 4));
+                                                }
+                                                @sourceDisplay
+                                            }
+                                        </td>
+                                        <td>
+                                            @{
+                                                string destinationDisplay = "N/A";
+                                                if (!string.IsNullOrEmpty(t.DestinationAccountId))
+                                                {
+                                                    destinationDisplay = "Cta. " + t.DestinationAccountId.Substring(Math.Max(0, t.DestinationAccountId.Length - 4));
+                                                }
+                                                else if (!string.IsNullOrEmpty(t.DestinationCardId))
+                                                {
+                                                    destinationDisplay = "Tarjeta " + t.DestinationCardId.Substring(Math.Max(0, t.DestinationCardId.Length - 4));
+                                                }
+                                                else if (t.DestinationLoanId.HasValue)
+                                                {
+                                                    destinationDisplay = "Préstamo " + t.DestinationLoanId.Value;
+                                                }
+                                                @destinationDisplay
+                                            }
+                                        </td>
+                                        <td>@(string.IsNullOrEmpty(t.Description) ? "Sin descripción" : t.Description)</td>
+                                        <td>@t.TransactionDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="card-title mb-0"><i class="bi bi-credit-card-2-front-fill me-2"></i> Otras Transacciones de Servicio</h4>
+        </div>
+        <div class="card-body">
+            @if (otherServiceTransactions == null || !otherServiceTransactions.Any())
+            {
+                <div class="alert alert-info text-center py-3 rounded-3 shadow-sm" role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i> No hay otras transacciones de servicio recientes para mostrar.
+                </div>
+            }
+            else
+            {
+                <div style="max-height: 350px; overflow-y: auto;">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped align-middle caption-top shadow-sm rounded-3">
+                            <caption class="text-start mb-2 ps-2">Movimientos recientes de transferencias, pagos de tarjetas, préstamos y pagos a beneficiarios.</caption>
+                            <thead class="table-dark sticky-top" style="z-index: 1;">
+                                <tr>
+                                    <th scope="col">Tipo</th>
+                                    <th scope="col">Monto</th>
+                                    <th scope="col">Origen</th>
+                                    <th scope="col">Destino/Beneficiario</th>
+                                    <th scope="col">Descripción</th>
+                                    <th scope="col">Fecha y Hora</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var t in otherServiceTransactions)
+                                {
+                                    <tr>
+                                        <td>
+                                            @{
+                                                string serviceTransactionTypeClass = "";
+                                                string serviceTransactionIcon = "";
+                                                switch (t.Type)
+                                                {
+                                                    case "Transferencia":
+                                                        serviceTransactionTypeClass = "bg-primary";
+                                                        serviceTransactionIcon = "bi bi-arrow-left-right";
+                                                        break;
+                                                    case "Pago Tarjeta":
+                                                        serviceTransactionTypeClass = "bg-danger";
+                                                        serviceTransactionIcon = "bi bi-credit-card-fill";
+                                                        break;
+                                                    case "Pago Préstamo":
+                                                        serviceTransactionTypeClass = "bg-warning text-dark";
+                                                        serviceTransactionIcon = "bi bi-cash-stack";
+                                                        break;
+                                                    case "Pago Beneficiario":
+                                                        serviceTransactionTypeClass = "bg-info";
+                                                        serviceTransactionIcon = "bi bi-person-check-fill";
+                                                        break;
+                                                    default:
+                                                        serviceTransactionTypeClass = "bg-secondary";
+                                                        serviceTransactionIcon = "bi bi-info-circle";
+                                                        break;
+                                                }
+                                            }
+                                            <span class="badge @serviceTransactionTypeClass">
+                                                <i class="@serviceTransactionIcon me-1"></i>@t.Type
+                                            </span>
+                                        </td>
+                                        <td class="fw-bold text-danger">@FormatCurrency(t.Amount)</td>
+                                        <td>@t.OriginIdentifier</td>
+                                        <td>@t.DestinationIdentifier</td>
+                                        <td>@(string.IsNullOrEmpty(t.Description) ? "Sin descripción" : t.Description)</td>
+                                        <td>@t.Date.ToString("dd/MM/yyyy HH:mm")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             }
         </div>
