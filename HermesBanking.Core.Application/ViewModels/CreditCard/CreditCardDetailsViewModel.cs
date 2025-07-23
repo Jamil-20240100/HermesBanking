@@ -1,4 +1,5 @@
-﻿using HermesBanking.Core.Application.DTOs.Transaction;
+﻿using HermesBanking.Core.Application.DTOs.CreditCard;
+using HermesBanking.Core.Application.DTOs.Transaction;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,9 +20,11 @@ namespace HermesBanking.Core.Application.ViewModels.CreditCard
 
         // Lista de transacciones asociadas a la tarjeta de crédito
         public IEnumerable<TransactionDTO> Transactions { get; set; } // Asegúrate de mapear las transacciones a DTOs
+        public CreditCardDTO CreditCard { get; set; }
 
-        public required bool IsActive { get; set; }
 
         // Métodos adicionales si es necesario
+
+        public PaginationDTO Pagination { get; set; }
     }
 }

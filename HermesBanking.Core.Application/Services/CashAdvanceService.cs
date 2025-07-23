@@ -80,7 +80,7 @@ namespace HermesBanking.Core.Application.Services
             {
                 var creditCardTransaction = new Transaction
                 {
-                    CreditCardId = sourceCard.Id,
+                    CreditCardId = sourceCard.Id.ToString(),
                     Amount = dto.Amount,
                     Description = "AVANCE DE EFECTIVO",
                     Date = DateTime.Now,

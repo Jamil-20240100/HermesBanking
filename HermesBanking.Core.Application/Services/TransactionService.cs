@@ -58,7 +58,8 @@ namespace HermesBanking.Core.Application.Services
                 SourceAccountId = t.SourceAccountId,
                 DestinationAccountId = t.DestinationAccountId,
                 DestinationCardId = t.DestinationCardId,
-                DestinationLoanId = t.DestinationLoanId
+                DestinationLoanId = t.DestinationLoanId,
+                CreditCardId = t.CreditCardId
             }).OrderByDescending(t => t.TransactionDate).ToList();
 
             _logger.LogInformation($"Retrieved {transactionDtos.Count} transactions.");

@@ -10,7 +10,6 @@ namespace HermesBanking.Core.Domain.Entities
     {
         public int Id { get; set; } // int siempre es non-nullable, 0 es su valor por defecto.
 
-
         // Propiedades originales:
         public string? SavingsAccountId { get; set; } // Ahora nullable
         public decimal Amount { get; set; } // decimal siempre es non-nullable, 0.0m es su valor por defecto.
@@ -29,12 +28,10 @@ namespace HermesBanking.Core.Domain.Entities
         public string? Description { get; set; } // Ahora nullable
         public string? DestinationCardId { get; set; } // Ahora nullable
         public Status? Status { get; set; } // Enum nullable
-        public int? CreditCardId { get; set; } // int? es el tipo nullable para int
+        public string? CreditCardId { get; set; } // int? es el tipo nullable para int
 
         // Constructor vacío (no necesita inicializar ya que todo es nullable o tipo de valor con default)
         public Transaction() { }
-
-        public string? MerchantName { get; set; } // Ahora nullable
 
         // Si tu entidad Transaction heredaba de BaseEntity y BaseEntity ya tenía Id,
         // podrías hacer esto (pero por ahora lo dejo simple):

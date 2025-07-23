@@ -1,13 +1,13 @@
-﻿@{
-    ViewData["Title"] = "Mi Cuenta";
-    Layout = "_LayoutClient";
-    var accounts = ViewBag.Accounts as List<HermesBanking.Core.Domain.Entities.SavingsAccount>;
-    var transactions = ViewBag.Transactions as List<HermesBanking.Core.Domain.Entities.Transaction>;
+﻿﻿@{
+ViewData["Title"] = "Mi Cuenta";
+Layout = "_LayoutClient";
+var accounts = ViewBag.Accounts as List<HermesBanking.Core.Domain.Entities.SavingsAccount>;
+var transactions = ViewBag.Transactions as List<HermesBanking.Core.Domain.Entities.Transaction>;
 
-    string FormatCurrency(decimal amount)
-    {
-        return amount.ToString("C", new System.Globalization.CultureInfo("es-DO"));
-    }
+string FormatCurrency(decimal amount)
+{
+    return amount.ToString("C", new System.Globalization.CultureInfo("es-DO"));
+}
 }
 
 <div class="container-fluid py-4">
@@ -110,8 +110,6 @@
                                         @{
                                             string transactionTypeClass = "";
                                             string transactionIcon = "";
-
-                                            // Verificar el tipo de transacción
                                             switch (t.Type)
                                             {
                                                 case "Depósito":
@@ -130,14 +128,6 @@
                                                     transactionTypeClass = "bg-warning text-dark";
                                                     transactionIcon = "bi bi-wallet";
                                                     break;
-                                                case "Pago de Préstamo":
-                                                    transactionTypeClass = "bg-primary";
-                                                    transactionIcon = "bi bi-credit-card";
-                                                    break;
-                                                case "Pago Tarjeta de Crédito":
-                                                    transactionTypeClass = "bg-info";
-                                                    transactionIcon = "bi bi-credit-card-fill";
-                                                    break;
                                                 default:
                                                     transactionTypeClass = "bg-secondary";
                                                     transactionIcon = "bi bi-info-circle";
@@ -151,7 +141,7 @@
                                     <td class="fw-bold @(t.Type == "Depósito" ? "text-success" : "text-danger")">@FormatCurrency(t.Amount)</td>
                                     <td>@t.Origin</td>
                                     <td>@t.Beneficiary</td>
-                                    <td>@t.Date?.ToString("dd/MM/yyyy HH:mm:ss")</td> <!-- Fecha y hora formateadas -->
+                                    <td>@t.Date.ToString()</td>
                                 </tr>
                             }
                         </tbody>
@@ -160,4 +150,4 @@
             }
         </div>
     </div>
-
+</div>

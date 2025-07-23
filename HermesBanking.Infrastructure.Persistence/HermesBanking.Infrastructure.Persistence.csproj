@@ -15,7 +15,6 @@
 	  <ProjectReference Include="..\HermesBanking.Infrastructure.Identity\HermesBanking.Infrastructure.Identity.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-	  <Folder Include="Migrations\" />
 	  <Folder Include="Persistence\" />
 	</ItemGroup>
 </Project>

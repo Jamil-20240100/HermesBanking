@@ -326,7 +326,65 @@ namespace HermesBankingApp.Controllers
             return RedirectToAction("Index");
         }
 
-        
+        public async Task<IActionResult> Details(string cardId, int pagina = 1, int pageSize = 10)
+        {
+            if (string.IsNullOrEmpty(cardId))
+            {
+                return NotFound("Card ID is missing or invalid.");
+            }
+
+            // Obtener los detalles de la tarjeta de crédito
+            var creditCardResponse = await _creditCardService.GetCreditCardsAsync();
+            var creditCard = creditCardResponse.Data.FirstOrDefault(c => c.CardId == cardId); // Usamos cardId directamente (String)
+
+            if (creditCard == null)
+            {
+                return NotFound("Credit card not found");
+            }
+
+            // Obtener todas las transacciones asociadas a la tarjeta de crédito
+            var allTransactions = await _transactionService.GetAllTransactionsAsync();
+
+            // Filtramos las transacciones relacionadas con esta tarjeta
+            var cardTransactions = allTransactions
+                .Where(t => t.CreditCardId == cardId) // Filtramos por el cardId de las transacciones
+                .OrderByDescending(t => t.TransactionDate) // Ordenamos por fecha de transacción
+                .Skip((pagina - 1) * pageSize) // Paginación: saltamos a la página correcta
+                .Take(pageSize) // Tomamos solo los registros de la página actual
+                .ToList();
+
+            // Calculamos el total de transacciones
+            var totalTransactions = allTransactions.Count(t => t.CreditCardId == cardId);
+            var totalPages = (int)Math.Ceiling(totalTransactions / (double)pageSize);
+
+            // Preparamos la paginación
+            var pagination = new PaginationDTO
+            {
+                PaginaActual = pagina,
+                TotalPaginas = totalPages,
+                TotalRegistros = totalTransactions
+            };
+
+            // Crear un ViewModel para pasar a la vista
+            var creditCardDetailsViewModel = new CreditCardDetailsViewModel
+            {
+                CreditCardId = creditCard.Id,
+                CardId = creditCard.CardId,
+                ClientFullName = creditCard.ClientFullName,
+                CreditLimit = creditCard.CreditLimit,
+                TotalOwedAmount = creditCard.TotalOwedAmount,
+                ExpirationDate = creditCard.ExpirationDate.ToString("MM/yy"),
+                Transactions = cardTransactions, // Lista de transacciones asociadas a la tarjeta
+                Pagination = pagination, // Paginación
+                CreditCard = creditCard // Asignamos el CreditCardDTO aquí
+            };
+
+            return View(creditCardDetailsViewModel); // Pasamos el ViewModel a la vista
+        }
+
+
+
+
 
 
     }

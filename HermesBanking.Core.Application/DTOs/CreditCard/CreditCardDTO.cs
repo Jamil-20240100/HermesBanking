@@ -21,6 +21,5 @@ namespace HermesBanking.Core.Application.DTOs.CreditCard
 
         // Added for UI display in dropdowns
         public string DisplayText => $"{CardId ?? "N/A"} (Deuda: {TotalOwedAmount:C} | Límite: {CreditLimit:C})";
-
     }
 }

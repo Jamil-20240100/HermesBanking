@@ -1,15 +1,16 @@
-﻿@model CreditCardDetailsViewModel
+﻿@model HermesBanking.Core.Application.ViewModels.CreditCard.CreditCardDetailsViewModel
 
 @{
     ViewData["Title"] = "Detalles de la Tarjeta de Crédito";
 }
 
 <h2>Detalles de la Tarjeta de Crédito @Model.CardId</h2>
+
 <p><strong>Cliente:</strong> @Model.ClientFullName</p>
-<p><strong>Límite:</strong> @Model.CreditLimit</p>
-<p><strong>Adeudado:</strong> @Model.TotalOwedAmount</p>
-<p><strong>Estado:</strong> @(Model.IsActive ? "Activa" : "Cancelada")</p>
-<p><strong>Expira:</strong> @Model.ExpirationDate.("MM/yy")</p>
+<p><strong>Límite:</strong> RD$ @Model.CreditLimit:N2</p>
+<p><strong>Adeudado:</strong> RD$ @Model.TotalOwedAmount:N2</p>
+<p><strong>Estado:</strong> @(Model.CreditCard.IsActive ? "Activa" : "Cancelada")</p>
+<p><strong>Expira:</strong> @Model.ExpirationDate</p>
 
 <h4>Transacciones Realizadas</h4>
 
@@ -28,10 +29,10 @@
             @foreach (var transaction in Model.Transactions)
             {
                 <tr>
-                    <td>@transaction.Type</td>
+                    <td>@transaction.TransactionType</td>
                     <td>RD$ @transaction.Amount:N2</td>
                     <td>@transaction.Origin</td>
-                    <td>@transaction.Date.ToString("g")</td>
+                    <td>@transaction.TransactionDate.ToString("g")</td>
                 </tr>
             }
         }
@@ -43,3 +44,21 @@
         }
     </tbody>
 </table>
+
+<!-- Paginación -->
+@if (Model.Pagination != null && Model.Pagination.TotalPaginas > 1)
+{
+    <nav aria-label="Page navigation example">
+        <ul class="pagination">
+            <li class="page-item @(Model.Pagination.PaginaActual == 1 ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action("Details", new { cardId = Model.CardId, pagina = Model.Pagination.PaginaActual - 1 })">Anterior</a>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link">Página @Model.Pagination.PaginaActual de @Model.Pagination.TotalPaginas</span>
+            </li>
+            <li class="page-item @(Model.Pagination.PaginaActual == Model.Pagination.TotalPaginas ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action("Details", new { cardId = Model.CardId, pagina = Model.Pagination.PaginaActual + 1 })">Siguiente</a>
+            </li>
+        </ul>
+    </nav>
+}
