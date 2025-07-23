@@ -9,6 +9,7 @@ namespace HermesBanking.Core.Application.Interfaces
 {
     public interface ITransactionService
     {
+        Task<List<DisplayTransactionDTO>> GetClientServiceTransactionsAsync(string clientId);
         Task ExecuteExpressTransactionAsync(ExpressTransactionDTO dto);
         Task ProcessTransferAsync(TransferDTO dto);
         Task ExecutePayCreditCardTransactionAsync(PayCreditCardDTO dto);

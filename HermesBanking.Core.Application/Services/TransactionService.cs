@@ -5,7 +5,8 @@ using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Domain.Entities;
 using HermesBanking.Core.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
-using HermesBanking.Core.Domain.Common.Enums; // Para el enum de TransactionType
+using HermesBanking.Core.Domain.Common.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace HermesBanking.Core.Application.Services
 {
@@ -28,8 +29,8 @@ namespace HermesBanking.Core.Application.Services
             IAccountServiceForWebApp accountServiceForWebApp,
             ILoanAmortizationService loanAmortizationService,
             IEmailService emailService,
-            IBeneficiaryService beneficiaryService, // <-- Nuevo parámetro en el constructor
-            IUnitOfWork unitOfWork, // <-- Nuevo parámetro en el constructor
+            IBeneficiaryService beneficiaryService,
+            IUnitOfWork unitOfWork,
             ILogger<TransactionService> logger)
         {
             _savingsAccountRepository = savingsAccountRepository;
@@ -38,8 +39,8 @@ namespace HermesBanking.Core.Application.Services
             _accountServiceForWebApp = accountServiceForWebApp;
             _loanAmortizationService = loanAmortizationService;
             _emailService = emailService;
-            _beneficiaryService = beneficiaryService; // <-- Asignación
-            _unitOfWork = unitOfWork; // <-- Asignación
+            _beneficiaryService = beneficiaryService;
+            _unitOfWork = unitOfWork;
             _logger = logger;
         }
 
@@ -390,6 +391,144 @@ namespace HermesBanking.Core.Application.Services
         public Task ExecutePayCreditCardTransactionAsync(PayCreditCardDTO dto)
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<List<DisplayTransactionDTO>> GetClientServiceTransactionsAsync(string clientId)
+        {
+            _logger.LogInformation($"Attempting to retrieve service transactions for client: {clientId}.");
+
+            var allTransactions = await _transactionRepository.GetAllQuery()
+                                                              .OrderByDescending(t => t.TransactionDate)
+                                                              .ToListAsync(); 
+
+            var clientTransactions = new List<DisplayTransactionDTO>();
+
+            foreach (var t in allTransactions)
+            {
+                string sourceAccountClientId = null;
+                string destinationAccountClientId = null;
+                string destinationCardClientId = null;
+                string destinationLoanClientId = null;
+
+                if (!string.IsNullOrEmpty(t.SourceAccountId))
+                {
+                    var sourceAccount = await _savingsAccountRepository.GetById(int.Parse(t.SourceAccountId));
+                    if (sourceAccount != null) sourceAccountClientId = sourceAccount.ClientId;
+                }
+                if (!string.IsNullOrEmpty(t.DestinationAccountId))
+                {
+                    var destAccount = await _savingsAccountRepository.GetById(int.Parse(t.DestinationAccountId));
+                    if (destAccount != null) destinationAccountClientId = destAccount.ClientId;
+                }
+                if (!string.IsNullOrEmpty(t.DestinationCardId))
+                {
+                    var destCard = await _creditCardRepository.GetById(int.Parse(t.DestinationCardId));
+                    if (destCard != null) destinationCardClientId = destCard.ClientId;
+                }
+                if (t.DestinationLoanId.HasValue)
+                {
+                    var destLoan = await _accountServiceForWebApp.GetLoanInfoAsync(t.DestinationLoanId.Value.ToString());
+                    if (destLoan != null) destinationLoanClientId = destLoan.ClientId;
+                }
+
+
+                if (sourceAccountClientId == clientId ||
+                    destinationAccountClientId == clientId ||
+                    destinationCardClientId == clientId ||
+                    destinationLoanClientId == clientId)
+                {
+                    string transactionTypeString = t.TransactionType?.ToString() ?? "Desconocido";
+                    string originIdentifier = "N/A";
+                    string destinationIdentifier = "N/A";
+                    string description = t.Description;
+
+                    if (!string.IsNullOrEmpty(t.SourceAccountId))
+                    {
+                        var account = await _savingsAccountRepository.GetById(int.Parse(t.SourceAccountId));
+                        if (account != null)
+                        {
+                            originIdentifier = $"Cuenta: {account.AccountNumber.Substring(Math.Max(0, account.AccountNumber.Length - 4))}";
+                        }
+                    }
+
+                    switch (t.TransactionType)
+                    {
+                        case TransactionType.Transferencia:
+                            if (!string.IsNullOrEmpty(t.DestinationAccountId))
+                            {
+                                var account = await _savingsAccountRepository.GetById(int.Parse(t.DestinationAccountId));
+                                if (account != null)
+                                {
+                                    destinationIdentifier = $"Cuenta: {account.AccountNumber.Substring(Math.Max(0, account.AccountNumber.Length - 4))}";
+                                }
+                            }
+                            description = description ?? $"Transferencia";
+                            break;
+                        case TransactionType.PagoTarjetaCredito:
+                            if (!string.IsNullOrEmpty(t.DestinationCardId))
+                            {
+                                var card = await _creditCardRepository.GetById(int.Parse(t.DestinationCardId));
+                                if (card != null)
+                                {
+                                    destinationIdentifier = $"Tarjeta: {card.CardId.Substring(Math.Max(0, card.CardId.Length - 4))}";
+                                }
+                            }
+                            description = description ?? $"Pago de Tarjeta";
+                            break;
+                        case TransactionType.PagoPrestamo:
+                            if (t.DestinationLoanId.HasValue)
+                            {
+                                var loan = await _accountServiceForWebApp.GetLoanInfoAsync(t.DestinationLoanId.Value.ToString());
+                                if (loan != null)
+                                {
+                                    destinationIdentifier = $"Préstamo: {loan.LoanIdentifier}"; 
+                                }
+                            }
+                            description = description ?? $"Pago de Préstamo";
+                            break;
+                        case TransactionType.PagoBeneficiario:
+                            if (!string.IsNullOrEmpty(t.DestinationAccountId))
+                            {
+                                var account = await _savingsAccountRepository.GetById(int.Parse(t.DestinationAccountId));
+                                if (account != null)
+                                {
+                                    destinationIdentifier = $"Beneficiario (Cta: {account.AccountNumber.Substring(Math.Max(0, account.AccountNumber.Length - 4))})";
+                                }
+                            }
+                            description = description ?? $"Pago a Beneficiario";
+                            break;
+                        case TransactionType.Deposito:
+                            transactionTypeString = "Depósito";
+                            destinationIdentifier = originIdentifier;
+                            originIdentifier = "Externo";
+                            description = description ?? "Depósito en cuenta";
+                            break;
+                        case TransactionType.Retiro:
+                            transactionTypeString = "Retiro";
+                            destinationIdentifier = "Efectivo/Externo";
+                            description = description ?? "Retiro de efectivo";
+                            break;
+                        default:
+                            transactionTypeString = "Otro";
+                            description = description ?? "Transacción no clasificada";
+                            break;
+                    }
+
+
+                    clientTransactions.Add(new DisplayTransactionDTO
+                    {
+                        TransactionId = t.Id.ToString(),
+                        Type = transactionTypeString,
+                        Amount = t.Amount,
+                        Date = t.TransactionDate ?? DateTime.Now,
+                        OriginIdentifier = originIdentifier,
+                        DestinationIdentifier = destinationIdentifier,
+                        Description = description
+                    });
+                }
+            }
+            _logger.LogInformation($"Retrieved {clientTransactions.Count} service transactions for client: {clientId}.");
+            return clientTransactions.OrderByDescending(t => t.Date).ToList();
         }
     }
 }
