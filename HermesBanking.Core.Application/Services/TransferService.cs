@@ -46,8 +46,9 @@ namespace HermesBanking.Core.Application.Services
                 Description = $"Transferencia a cuenta {destinationAccount.AccountNumber}",
                 Origin = sourceAccount.AccountNumber,
                 Beneficiary = destinationAccount.AccountNumber,
-                DestinationAccountId = destinationAccount.AccountNumber,
+                DestinationAccountId = destinationAccount.Id.ToString(),
                 Date = DateTime.Now,
+
                 Status = Status.APPROVED,
             };
             await _transactionRepo.AddAsync(debitTransaction);

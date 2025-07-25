@@ -232,7 +232,8 @@ namespace HermesBanking.Core.Application.Services
                         // Puedes registrar que no se encontró el préstamo con ese ID
                         loanNumber = "Préstamo no encontrado";
                     }
-                } 
+                }
+                
                 if (!string.IsNullOrEmpty(t.SavingsAccountId))
                 {
                     var sNumber = await _repository.GetById(int.Parse(t.SavingsAccountId));
@@ -244,7 +245,7 @@ namespace HermesBanking.Core.Application.Services
                 {
                     string transactionTypeString = t.TransactionType?.ToString() ?? "Desconocido";
                     string saTransactionTypeString = t.TransactionType?.ToString() ?? "Desconocido";
-                    string originIdentifier = "N/A";
+                    string originIdentifier = "AVANCE";
                     string destinationIdentifier = "N/A";
                     string description = t.Description;
 
@@ -257,7 +258,7 @@ namespace HermesBanking.Core.Application.Services
                             originIdentifier = $"Cuenta: {account.AccountNumber.Substring(Math.Max(0, account.AccountNumber.Length - 4))}";
                         }
                     }
-
+                   
                     // Filtramos por tipo de transacción
                     switch (t.TransactionType)
                     {

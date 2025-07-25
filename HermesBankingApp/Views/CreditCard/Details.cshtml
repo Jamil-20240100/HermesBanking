@@ -54,16 +54,30 @@
 @if (Model.Pagination != null && Model.Pagination.TotalPaginas > 1)
 {
     <nav aria-label="Page navigation example">
-        <ul class="pagination">
-            <li class="page-item @(Model.Pagination.PaginaActual == 1 ? "disabled" : "")">
-                <a class="page-link" href="@Url.Action("Details", new { cardId = Model.CardId, pagina = Model.Pagination.PaginaActual - 1 })">Anterior</a>
-            </li>
-            <li class="page-item disabled">
-                <span class="page-link">Página @Model.Pagination.PaginaActual de @Model.Pagination.TotalPaginas</span>
-            </li>
-            <li class="page-item @(Model.Pagination.PaginaActual == Model.Pagination.TotalPaginas ? "disabled" : "")">
-                <a class="page-link" href="@Url.Action("Details", new { cardId = Model.CardId, pagina = Model.Pagination.PaginaActual + 1 })">Siguiente</a>
-            </li>
-        </ul>
-    </nav>
+    <ul class="pagination">
+        <li class="page-item @(Model.Pagination.PaginaActual == 1 ? "disabled" : "")">
+            <a class="page-link"
+               href="@Url.Action("Details", new { 
+                   cardId = Model.CreditCardId, 
+                   cardNumber = Model.CardId, 
+                   pagina = Model.Pagination.PaginaActual - 1 
+               })">
+                Anterior
+            </a>
+        </li>
+        <li class="page-item disabled">
+            <span class="page-link">Página @Model.Pagination.PaginaActual de @Model.Pagination.TotalPaginas</span>
+        </li>
+        <li class="page-item @(Model.Pagination.PaginaActual == Model.Pagination.TotalPaginas ? "disabled" : "")">
+            <a class="page-link"
+               href="@Url.Action("Details", new { 
+                   cardId = Model.CreditCardId, 
+                   cardNumber = Model.CardId, 
+                   pagina = Model.Pagination.PaginaActual + 1 
+               })">
+                Siguiente
+            </a>
+        </li>
+    </ul>
+</nav>
 }

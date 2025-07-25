@@ -74,7 +74,7 @@ namespace HermesBanking.Core.Application.Services
                 Origin = $"Avance TDC ...{sourceCard?.CardId?.Substring(sourceCard.CardId.Length - 4)}",
                 Beneficiary = destinationAccount.AccountNumber,
                 CreditCardId = sourceCard?.CardId,
-                Date = DateTime.Now,
+                TransactionDate = DateTime.Now,
                 Status = isApproved ? Status.APPROVED : Status.REJECTED,
                 Description = isApproved ? "Recepción de avance de efectivo" : "Intento fallido de avance de efectivo"
             };

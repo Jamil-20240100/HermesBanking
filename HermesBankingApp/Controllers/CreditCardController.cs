@@ -357,6 +357,10 @@ namespace HermesBankingApp.Controllers
                 .Take(pageSize) // Tomamos solo los registros de la página actual
                 .ToList();
 
+            var lastTransaction = cardTransactions
+                .OrderByDescending(t => t.TransactionDate)
+                .FirstOrDefault();
+
             // Calculamos el total de transacciones
             var totalTransactions = allTransactions.Count(t => t.DestinationCardId == cardId.ToString() || t.CreditCardId == cardNumber);
             var totalPages = (int)Math.Ceiling(totalTransactions / (double)pageSize);
@@ -377,7 +381,7 @@ namespace HermesBankingApp.Controllers
                 ClientFullName = creditCard.ClientFullName,
                 CreditLimit = creditCard.CreditLimit,
                 TotalOwedAmount = creditCard.TotalOwedAmount,
-                ExpirationDate = creditCard.ExpirationDate.ToString("MM/yy"),
+                ExpirationDate = lastTransaction?.TransactionDate.ToString("MM/yy") ?? "N/A",
                 Transactions = cardTransactions, // Lista de transacciones asociadas a la tarjeta
                 Pagination = pagination, // Paginación
                 CreditCard = creditCard // Asignamos el CreditCardDTO aquí
