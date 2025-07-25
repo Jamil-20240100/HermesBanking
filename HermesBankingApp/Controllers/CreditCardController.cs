@@ -26,8 +26,9 @@ namespace HermesBankingApp.Controllers
         private readonly ITransactionService _transactionService;
         private readonly ICreditCardService _creditCardService;
         private readonly ITransactionRepository _transactionRepo;
+        private readonly ICommerceService _commerceService;
 
-        public CreditCardController(ICreditCardService service, IMapper mapper, ITransactionRepository transactionRepository,UserManager<AppUser> userManager, IAccountServiceForWebApp accountServiceForWebApp, IEmailService emailService, ILoanService loanService, ITransactionService transactionService, ICreditCardService creditCardService)
+        public CreditCardController(ICreditCardService service,ICommerceService commerceService, IMapper mapper, ITransactionRepository transactionRepository,UserManager<AppUser> userManager, IAccountServiceForWebApp accountServiceForWebApp, IEmailService emailService, ILoanService loanService, ITransactionService transactionService, ICreditCardService creditCardService)
         {
             _service = service;
             _mapper = mapper;
@@ -38,6 +39,7 @@ namespace HermesBankingApp.Controllers
             _transactionService = transactionService;
             _creditCardService = creditCardService;
             _transactionRepo = transactionRepository;
+            _commerceService = commerceService;
         }
 
         public async Task<IActionResult> Index()
@@ -326,16 +328,16 @@ namespace HermesBankingApp.Controllers
             return RedirectToAction("Index");
         }
 
-        public async Task<IActionResult> Details(string cardId, int pagina = 1, int pageSize = 10)
+        public async Task<IActionResult> Details(int cardId, string cardNumber, int pagina = 1, int pageSize = 10)
         {
-            if (string.IsNullOrEmpty(cardId))
+            if (cardId == 0)
             {
                 return NotFound("Card ID is missing or invalid.");
             }
 
             // Obtener los detalles de la tarjeta de crédito
             var creditCardResponse = await _creditCardService.GetCreditCardsAsync();
-            var creditCard = creditCardResponse.Data.FirstOrDefault(c => c.CardId == cardId); // Usamos cardId directamente (String)
+            var creditCard = creditCardResponse?.Data?.FirstOrDefault(c => c.Id == cardId); // Usamos cardId directamente (String)
 
             if (creditCard == null)
             {
@@ -345,16 +347,18 @@ namespace HermesBankingApp.Controllers
             // Obtener todas las transacciones asociadas a la tarjeta de crédito
             var allTransactions = await _transactionService.GetAllTransactionsAsync();
 
+            //var allCommerce = await _commerceService.GetCommerceByIdAsync();
+
             // Filtramos las transacciones relacionadas con esta tarjeta
             var cardTransactions = allTransactions
-                .Where(t => t.CreditCardId == cardId) // Filtramos por el cardId de las transacciones
+                .Where(t => t.DestinationCardId == cardId.ToString() || t.CreditCardId == cardNumber) // Filtramos por el cardId de las transacciones
                 .OrderByDescending(t => t.TransactionDate) // Ordenamos por fecha de transacción
                 .Skip((pagina - 1) * pageSize) // Paginación: saltamos a la página correcta
                 .Take(pageSize) // Tomamos solo los registros de la página actual
                 .ToList();
 
             // Calculamos el total de transacciones
-            var totalTransactions = allTransactions.Count(t => t.CreditCardId == cardId);
+            var totalTransactions = allTransactions.Count(t => t.DestinationCardId == cardId.ToString() || t.CreditCardId == cardNumber);
             var totalPages = (int)Math.Ceiling(totalTransactions / (double)pageSize);
 
             // Preparamos la paginación
@@ -377,6 +381,7 @@ namespace HermesBankingApp.Controllers
                 Transactions = cardTransactions, // Lista de transacciones asociadas a la tarjeta
                 Pagination = pagination, // Paginación
                 CreditCard = creditCard // Asignamos el CreditCardDTO aquí
+                
             };
 
             return View(creditCardDetailsViewModel); // Pasamos el ViewModel a la vista

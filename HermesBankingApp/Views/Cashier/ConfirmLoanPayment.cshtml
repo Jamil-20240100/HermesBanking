@@ -21,8 +21,8 @@
 
 <p><strong>Cliente:</strong> @Model.ClientFullName</p>
 <p><strong>Préstamo:</strong> @Model.LoanIdentifier</p>
-<p><strong>Deuda actual:</strong> RD$ @Model.DeudaActual:N2</p>
-<p><strong>Monto a pagar:</strong> RD$ @Model.Amount:N2</p>
+<p><strong>Deuda actual:</strong> RD$ @(Model.DeudaActual)</p>
+<p><strong>Monto a pagar:</strong> RD$ @(Model.Amount)</p>
 
 <form asp-action="ExecuteLoanPayment" method="post">
     <input type="hidden" name="accountNumber" value="@Model.AccountNumber" />

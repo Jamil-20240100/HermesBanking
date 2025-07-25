@@ -13,10 +13,14 @@ namespace HermesBanking.Core.Application.ViewModels.CreditCard
         // Información de la tarjeta de crédito
         public int CreditCardId { get; set; }
         public string CardId { get; set; } // El número de la tarjeta
+        public string Commerce { get; set; }
         public string ClientFullName { get; set; } // Nombre completo del cliente
         public decimal CreditLimit { get; set; } // Límite de crédito
         public decimal TotalOwedAmount { get; set; } // Monto total adeudado
         public string ExpirationDate { get; set; } // Fecha de expiración (MM/AA)
+
+
+        
 
         // Lista de transacciones asociadas a la tarjeta de crédito
         public IEnumerable<TransactionDTO> Transactions { get; set; } // Asegúrate de mapear las transacciones a DTOs

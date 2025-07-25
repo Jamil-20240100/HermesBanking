@@ -35,6 +35,10 @@ namespace HermesBanking.Core.Application
             services.AddScoped<ICashierTransactionService, CashierTransactionService>();
             
             services.AddScoped<ILoanAmortizationService, LoanAmortizationService>();
+
+            services.AddScoped<ICommerceService, CommerceService>();
+
+            services.AddScoped<IHermesPayService, HermesPayService>();
             #endregion
         }
     }

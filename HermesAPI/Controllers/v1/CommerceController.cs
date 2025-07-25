@@ -55,11 +55,8 @@ namespace HermesBanking.WebApi.Controllers
             var commerceDTO = await _commerceService.CreateCommerceAsync(dto);
 
             // Asegúrate de que el nombre de la acción sea correcto.
-            return CreatedAtAction(
-                "GetCommerceByIdAsync",      // El nombre de la acción a la que redirigir.
-                new { id = commerceDTO.Id }, // Los valores de los parámetros, en este caso 'id'.
-                commerceDTO                  // El DTO a retornar.
-            );
+            return Created("", new { message = "Commerce creado correctamente"});
+
         }
 
         // 4. Actualizar comercio existente

@@ -16,5 +16,7 @@ namespace HermesBanking.Core.Domain.Interfaces
 
         Task<Commerce> GetCommerceByNameAndUserIdAsync(string name, string userId);
 
+        Task<Commerce> GetByUserIdAsync(string userId);
+
     }
 }

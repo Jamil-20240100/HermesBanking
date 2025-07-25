@@ -1,0 +1,67 @@
+﻿@model HermesBanking.Core.Application.ViewModels.SavingsAccount.SavingsAccountDetailsViewModel
+
+@{
+    ViewData["Title"] = "Detalles de la Cuenta de Ahorros";
+}
+
+<h2>Detalles de la Cuenta de Ahorros @Model.AccountNumber</h2>
+
+<p><strong>Cliente:</strong> @Model.ClientUserId</p>
+<p><strong>Saldo:</strong> @($"RD$ {@Model.Balance:N2}")</p>
+
+<h4>Transacciones Realizadas</h4>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Tipo</th>
+            <th>Monto</th>
+            <th>Origen</th>
+            <th>Fecha y Hora</th>
+            <th>Beneficiario</th>
+            <th>Estado de la Transacción</th>
+            <th>Descripción </th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Transactions != null && Model.Transactions.Any())
+        {
+            @foreach (var transaction in Model.Transactions)
+            {
+                <tr>
+                    <td>@transaction.saTransactionType</td>
+                    <td>RD$ @transaction.Amount</td>
+                    <td>@transaction.OriginIdentifier</td>
+                    <td>@transaction.Date.ToString("g")</td>
+                    <td>@transaction.Beneficiary</td>
+                    <td>@transaction.Status</td>
+                    <td>@transaction.Description</td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="4" class="text-center">No hay transacciones para esta cuenta.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Paginación -->
+@if (Model.Pagination != null && Model.Pagination.TotalPaginas > 1)
+{
+    <nav aria-label="Page navigation example">
+        <ul class="pagination">
+            <li class="page-item @(Model.Pagination.PaginaActual == 1 ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action("Details", new { savingAccountId = Model.AccountNumber, pagina = Model.Pagination.PaginaActual - 1 })">Anterior</a>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link">Página @Model.Pagination.PaginaActual de @Model.Pagination.TotalPaginas</span>
+            </li>
+            <li class="page-item @(Model.Pagination.PaginaActual == Model.Pagination.TotalPaginas ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action("Details", new { savingAccountId = Model.AccountNumber, pagina = Model.Pagination.PaginaActual + 1 })">Siguiente</a>
+            </li>
+        </ul>
+    </nav>
+}

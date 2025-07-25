@@ -9,8 +9,8 @@
 
 <p><strong>Tarjeta:</strong> @Model.CardNumber</p>
 <p><strong>Cliente:</strong> @Model.ClientFullName</p>
-<p><strong>Monto a pagar:</strong> RD$ @Model.Amount:N2</p>
-<p><strong>Deuda actual:</strong> RD$ @Model.DeudaActual:N2</p>
+<p><strong>Monto a pagar:</strong> RD$ @(Model.Amount):N2</p>
+<p><strong>Deuda actual:</strong> RD$ @(Model.DeudaActual):N2</p>
 
 <form asp-action="ExecuteCreditCardPayment" method="post">
     <input type="hidden" name="accountNumber" value="@Model.AccountNumber" />

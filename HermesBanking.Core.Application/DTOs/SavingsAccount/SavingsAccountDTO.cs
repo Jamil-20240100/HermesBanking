@@ -11,6 +11,7 @@ namespace HermesBanking.Core.Application.DTOs.SavingsAccount
         public required decimal? Balance { get; set; }
         public required AccountType AccountType { get; set; }
         public required bool IsActive { get; set; }
+        public DateTime TransactionDate { get; set; }
 
         //additional info
         public required DateTime CreatedAt { get; set; }

@@ -30,6 +30,8 @@ namespace HermesBanking.Core.Domain.Entities
         public Status? Status { get; set; } // Enum nullable
         public string? CreditCardId { get; set; } // int? es el tipo nullable para int
 
+        public int? CommerceId { get; set; }
+
         // Constructor vacío (no necesita inicializar ya que todo es nullable o tipo de valor con default)
         public Transaction() { }
 

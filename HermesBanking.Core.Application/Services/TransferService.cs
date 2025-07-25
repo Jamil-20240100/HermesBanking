@@ -42,9 +42,11 @@ namespace HermesBanking.Core.Application.Services
                 SavingsAccountId = sourceAccount.Id.ToString(),
                 Amount = dto.Amount,
                 Type = TransactionType.DEBITO.ToString(),
+                TransactionType = TransactionType.Transferencia,
                 Description = $"Transferencia a cuenta {destinationAccount.AccountNumber}",
                 Origin = sourceAccount.AccountNumber,
                 Beneficiary = destinationAccount.AccountNumber,
+                DestinationAccountId = destinationAccount.AccountNumber,
                 Date = DateTime.Now,
                 Status = Status.APPROVED,
             };

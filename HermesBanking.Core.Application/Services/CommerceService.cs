@@ -75,7 +75,7 @@ namespace HermesBanking.Core.Application.Services
             var existingCommerce = await _commerceRepository.GetCommerceByNameAndUserIdAsync(dto.Name, dto.UserId);
             if (existingCommerce != null)
             {
-                throw new Exception("El comercio ya existe.");
+                 throw new Exception("El comercio ya existe.");
             }
 
             var commerce = new Commerce
@@ -140,6 +140,21 @@ namespace HermesBanking.Core.Application.Services
 
             commerce.IsActive = dto.Status;
             await _commerceRepository.UpdateCommerceAsync(commerce);
+
+            // Si el comercio tiene un UserId asociado, buscamos al usuario
+            if (!string.IsNullOrWhiteSpace(commerce.UserId))
+            {
+                // Obtener usuario asociado desde el servicio de cuentas
+                var user = await _accountServiceForWebApi.GetUserByIdAsync(commerce.UserId);
+                if (user != null && !dto.Status) // Solo desactivar si el comercio se desactiva
+                {
+                    user.IsActive = false;
+                    await _accountServiceForWebApi.UpdateUserAsync(user);
+                }
+
+                // Nota: Si el comercio se activa, el usuario permanece inactivo.
+            }
+
             return true;
         }
 

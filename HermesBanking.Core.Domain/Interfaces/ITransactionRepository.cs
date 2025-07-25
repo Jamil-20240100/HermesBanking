@@ -11,8 +11,12 @@ namespace HermesBanking.Core.Domain.Interfaces
         Task<Transaction> GetByIdAsync(int transactionId);
         Task<IEnumerable<Transaction>> GetAllAsync();
         Task<IEnumerable<Transaction>> GetByConditionAsync(Expression<Func<Transaction, bool>> expression);
+        Task<IEnumerable<Transaction>> GetByCashierId(string cashierId, DateTime? today);
 
         // 🆕 Para manejar transacciones manuales
         Task<IDbContextTransaction> BeginTransactionAsync();
+
+        Task<List<Transaction>> GetByConditionAsyncForHermesPay(Expression<Func<Transaction, bool>> predicate);
+
     }
 }

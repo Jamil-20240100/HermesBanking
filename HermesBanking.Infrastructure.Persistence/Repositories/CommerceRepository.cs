@@ -74,5 +74,12 @@ namespace HermesBanking.Infrastructure.Persistence.Repositories
             return await _context.Commerces
                                  .FirstOrDefaultAsync(c => c.Name == name && c.UserId == userId);
         }
+
+        // Obtener un comercio por su UserId
+        public async Task<Commerce> GetByUserIdAsync(string userId)
+        {
+            return await _context.Commerces.FirstOrDefaultAsync(c => c.UserId == userId);
+        }
+
     }
 }

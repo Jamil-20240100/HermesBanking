@@ -117,13 +117,13 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="btn-group" role="group" aria-label="Acciones de cuenta">
-                                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" data-bs-placement="top" title="Ver detalles">
+                                            <a asp-action="Details" asp-route-id="@item.AccountNumber" class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" data-bs-placement="top" title="Ver detalles">
                                                 <i class="bi bi-eye"></i>
                                             </a>
 
                                             @if (item.AccountType == HermesBanking.Core.Domain.Common.Enums.AccountType.Secondary && item.IsActive == true)
                                             {
-                                                <a asp-action="ConfirmCancel" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Cancelar cuenta">
+                                                <a asp-action="ConfirmCancel" asp-route-id="@item.AccountNumber" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Cancelar cuenta">
                                                     <i class="bi bi-slash-circle"></i>
                                                 </a>
                                             }

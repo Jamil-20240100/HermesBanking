@@ -86,7 +86,7 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="btn-group" role="group" aria-label="Acciones de tarjeta">
-                                            <a asp-action="Details" asp-route-cardId="@card.CardId" class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" data-bs-placement="top" title="Ver detalles">
+                                            <a asp-action="Details" asp-route-cardId="@card.Id" asp-route-cardNumber="@card.CardId" class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" data-bs-placement="top" title="Ver detalles">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             @if (card.IsActive == true)

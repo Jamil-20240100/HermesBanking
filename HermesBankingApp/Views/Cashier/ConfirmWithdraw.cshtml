@@ -18,5 +18,5 @@
     <input type="hidden" name="amount" value="@Model.Amount" />
 
     <button type="submit" class="btn btn-danger">Confirmar</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    <a asp-controller="Cashier" asp-action="Withdraw" class="btn btn-secondary">Cancelar</a>
 </form>

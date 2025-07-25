@@ -3,12 +3,15 @@ using HermesBanking.Core.Application.DTOs.Cashier;
 using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Application.ViewModels.Cashier;
 using HermesBanking.Core.Application.ViewModels.Loan;
+using HermesBanking.Core.Domain.Entities;
 using HermesBanking.Infrastructure.Identity.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Security.Claims;
+
 
 namespace HermesBankingApp.Controllers
 {
@@ -18,12 +21,19 @@ namespace HermesBankingApp.Controllers
         private readonly ICashierService _cashierService;
         private readonly UserManager<AppUser> _userManager;
         private readonly IMapper _mapper;
+        private readonly IAccountServiceForWebApp _accountServiceForWebApp;
 
-        public CashierController(ICashierService cashierService, UserManager<AppUser> userManager, IMapper mapper)
+        public CashierController(ICashierService cashierService, UserManager<AppUser> userManager, IAccountServiceForWebApp accountServiceForWebApp, IMapper mapper)
         {
             _cashierService = cashierService;
             _userManager = userManager;
             _mapper = mapper;
+            _accountServiceForWebApp = accountServiceForWebApp;
+        }
+
+        private string GetCurrentUserId()
+        {
+            return User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         }
 
         private async Task<List<SelectListItem>> GetActiveSavingsAccounts(string? excludeAccountNumber = null)
@@ -61,11 +71,6 @@ namespace HermesBankingApp.Controllers
         [HttpPost]
         public async Task<IActionResult> Deposit(DepositViewModel vm)
         {
-            if (!ModelState.IsValid)
-            {
-                vm.SavingsAccount = await GetActiveSavingsAccounts(); // Recarga lista si hay error
-                return View(vm);
-            }
 
             var cashierId = _userManager.GetUserId(User)!;
             var success = await _cashierService.MakeDepositAsync(vm.AccountNumber, vm.Amount, cashierId);
@@ -73,7 +78,7 @@ namespace HermesBankingApp.Controllers
             if (!success)
             {
                 ModelState.AddModelError("", "Cuenta no encontrada o inactiva.");
-                vm.SavingsAccount = await GetActiveSavingsAccounts(); // Recarga lista si hay error
+                //vm.SavingsAccount = await GetActiveSavingsAccounts(); // Recarga lista si hay error
                 return View(vm);
             }
 
@@ -186,6 +191,9 @@ namespace HermesBankingApp.Controllers
             return RedirectToAction("Index", "CashierHome");
         }
 
+
+
+
         [HttpGet]
         public async Task<IActionResult> ThirdPartyTransfer()
         {
@@ -195,7 +203,7 @@ namespace HermesBankingApp.Controllers
             var items = accounts.Select(a => new SelectListItem
             {
                 Value = a.AccountNumber,
-                Text = $"{a.AccountNumber} - RD$ {a.Balance:N2}"
+                Text = $"{a.AccountNumber} - RD$ {@a.Balance:N2}"
             }).ToList();
 
             var viewModel = new ThirdPartyTransferViewModel
@@ -217,7 +225,7 @@ namespace HermesBankingApp.Controllers
                 var items = accounts.Select(a => new SelectListItem
                 {
                     Value = a.AccountNumber,
-                    Text = $"{a.AccountNumber} - RD$ {a.Balance:N2}"
+                    Text = $"{a.AccountNumber} - RD$ {@a.Balance:N2}"
                 }).ToList();
 
                 vm.SourceAccounts = items;
@@ -382,11 +390,18 @@ namespace HermesBankingApp.Controllers
         [HttpGet]
         public async Task<IActionResult> LoanPayment()
         {
-            var vm = new PagoPrestamoViewModel
+            var userId = GetCurrentUserId();
+            var accounts = await _accountServiceForWebApp.GetSavingsAccountsByUserIdAsync(userId);
+            var loans = await _accountServiceForWebApp.GetLoansByUserIdAsync(userId);
+
+            var model = new LoanPaymentByCashierDto
             {
-                SavingsAccount = await GetActiveSavingsAccounts() // Añadido 'await' aquí
+                AvailableAccounts = accounts.Where(a => a.IsActive).ToList(),
+                AvailableLoans = loans.Where(l => l.IsActive).ToList() // Filtra solo préstamos activos
             };
-            return View(vm);
+            ViewBag.SourceAccounts = new SelectList(model.AvailableAccounts, "AccountNumber", "DisplayText");
+            ViewBag.Loans = new SelectList(model.AvailableLoans, "LoanIdentifier", "DisplayText");
+            return View(model);
         }
 
         [HttpPost]
@@ -424,48 +439,103 @@ namespace HermesBankingApp.Controllers
                 DeudaActual = debt
             };
 
-            TempData["Debug"] = "Entró a ConfirmLoanPayment";  // Esto es solo para depuración
+
             return View("ConfirmLoanPayment", confirmVm);
         }
 
+        [HttpPost]
+        public async Task<IActionResult> LoanPayment(string loanIdentifier, string sourceAccountNumber, decimal amount)
+        {
+            var userId = GetCurrentUserId();
+            var cashierId = _userManager.GetUserId(User)!;
+            var accounts = await _cashierService.GetSavingsAccountByNumber(sourceAccountNumber);
+            var loans = await _cashierService.GetLoanInfoAsync(loanIdentifier);
+
+
+
+            if (accounts == null)
+            {
+                TempData["Error"] = "La cuenta ingresada no es válida o está inactiva.";
+                return RedirectToAction("LoanPayment", new { loanIdentifier });
+            }
+
+            if (loans.loan == null)
+            {
+                TempData["Error"] = "El préstamo no existe o ya fue completado.";
+                return RedirectToAction("LoanPayment", new { loanIdentifier });
+            }
+
+            // Desestructuración de la tupla para obtener los valores
+            var clientFullName = loans.clientFullName;  // Obtén el nombre del cliente
+            var remainingDebt = loans.remainingDebt;    // Obtén la deuda restante
+
+            var confirmVm = new ConfirmPagoPrestamoViewModel
+            {
+                AccountNumber = sourceAccountNumber,
+                LoanIdentifier = loanIdentifier,
+                Amount = amount,
+                ClientFullName = clientFullName, // Asumiendo que ya tienes el nombre del cliente
+                DeudaActual = remainingDebt // Lo que sea que tienes como deuda actual
+            };
+
+
+
+            return View("ConfirmLoanPayment", confirmVm);  // Asegúrate de que el nombre de la vista es correcto
+        }
+
+        [HttpPost]
         [HttpPost]
         public async Task<IActionResult> ExecuteLoanPayment(string loanIdentifier, string accountNumber, decimal amount)
         {
             var cashierId = _userManager.GetUserId(User)!;
 
-            var (account, _) = await _cashierService.GetAccountWithClientNameAsync(accountNumber);
-            var (loan, _, _) = await _cashierService.GetLoanInfoAsync(loanIdentifier);
+            // Obtener la cuenta y el préstamo
+            var account = await _cashierService.GetSavingsAccountByNumber(accountNumber);
+            var (loan, _, _) = await _cashierService.GetLoanInfoAsync(loanIdentifier); // Desestructuración de la tupla
 
+            // Validar cuenta
             if (account == null || !account.IsActive)
             {
                 TempData["Error"] = "La cuenta ingresada no es válida o está inactiva.";
-                return RedirectToAction("LoanDetails", new { loanIdentifier });
+                return RedirectToAction("LoanPayment", new { loanIdentifier });
             }
 
-            if (loan == null || !loan.IsActive)
+            // Validar préstamo
+            if (loan == null || !loan.IsActive)  // Aquí accedes a la propiedad IsActive de loan
             {
                 TempData["Error"] = "El préstamo no existe o ya fue completado.";
-                return RedirectToAction("LoanDetails", new { loanIdentifier });
+                return RedirectToAction("LoanPayment", new { loanIdentifier });
             }
 
+            // Validar fondos
             if (account.Balance < amount)
             {
                 TempData["Error"] = "El monto excede el saldo disponible en la cuenta.";
-                return RedirectToAction("LoanDetails", new { loanIdentifier });
+                return RedirectToAction("LoanPayment", new { loanIdentifier });
             }
 
-            var result = await _cashierService.MakeLoanPaymentAsync(loanIdentifier, accountNumber, amount, cashierId);
+            // Crear el DTO con la información necesaria
+            var paymentDto = new LoanPaymentByCashierDto
+            {
+                LoanIdentifier = loanIdentifier,
+                SourceAccountNumber = accountNumber,
+                Amount = amount,
+                CashierId = cashierId
+            };
+
+            // Llamar al servicio para realizar el pago
+            var result = await _cashierService.MakeLoanPaymentAsync(paymentDto);
 
             if (!result)
             {
                 TempData["Error"] = "No se pudo completar el pago. Intente de nuevo.";
-                return RedirectToAction("LoanDetails", new { loanIdentifier });
+                return RedirectToAction("LoanPayment", new { loanIdentifier });
             }
 
             TempData["Success"] = "Pago aplicado correctamente.";
             return RedirectToAction("Index", "CashierHome");
         }
-
-
     }
-}
+    }
+
+

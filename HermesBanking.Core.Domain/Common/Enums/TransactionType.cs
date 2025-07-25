@@ -10,6 +10,7 @@ namespace HermesBanking.Core.Domain.Common.Enums
         PagoPrestamo = 5,
         PagoBeneficiario = 6,
         DesembolsoPrestamo = 7,
+        AVANCE = 8,
         CREDITO,
         DEBITO
     }

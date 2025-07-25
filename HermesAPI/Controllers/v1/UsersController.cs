@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using HermesBanking.Core.Domain.Interfaces;
 
 namespace HermesAPI.Controllers.v1
 {
@@ -19,12 +20,14 @@ namespace HermesAPI.Controllers.v1
         private readonly IAccountServiceForWebApi _accountServiceForWebApi;
         private readonly UserManager<AppUser> _userManager;
         private readonly ISavingsAccountService _savingsAccountService;
+        private readonly ICommerceRepository _commerceRepository;
 
-        public UsersController(IAccountServiceForWebApi accountService, UserManager<AppUser> user, ISavingsAccountService savingsAccountService)
+        public UsersController(IAccountServiceForWebApi accountService, ICommerceRepository CommerceRepository, UserManager<AppUser> user, ISavingsAccountService savingsAccountService)
         {
             _accountServiceForWebApi = accountService;
             _userManager = user;
             _savingsAccountService = savingsAccountService;
+            _commerceRepository = CommerceRepository;
         }
 
         [HttpGet]
@@ -68,41 +71,53 @@ namespace HermesAPI.Controllers.v1
             return Created("", new { message = "Usuario creado exitosamente." });
         }
 
-        [HttpPost("commerce/{commerceId}")]
-        public async Task<IActionResult> CreateCommerceUser([FromRoute] string commerceId, [FromBody] SaveUserDto dto)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var alreadyHasUser = await _accountServiceForWebApi.CommerceHasUserAsync(commerceId);
-            if (alreadyHasUser)
-                return BadRequest($"El comercio con ID {commerceId} ya tiene un usuario asignado.");
-
-            var userExists = await _userManager.FindByNameAsync(dto.UserName) != null;
-            var emailExists = await _userManager.FindByEmailAsync(dto.Email) != null;
-
-            if (userExists || emailExists)
+            [HttpPost("commerce/{commerceId}")]
+            public async Task<IActionResult> CreateCommerceUser([FromRoute] string commerceId, [FromBody] SaveUserDto dto)
             {
-                return Conflict(new
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var alreadyHasUser = await _accountServiceForWebApi.CommerceHasUserAsync(commerceId);
+                if (alreadyHasUser)
+                    return BadRequest($"El comercio con ID {commerceId} ya tiene un usuario asignado.");
+
+                var userExists = await _userManager.FindByNameAsync(dto.UserName) != null;
+                var emailExists = await _userManager.FindByEmailAsync(dto.Email) != null;
+
+                if (userExists || emailExists)
                 {
-                    Errors = new List<string?>
-            {
-                userExists ? "El nombre de usuario ya está registrado." : null,
-                emailExists ? "El correo ya está registrado." : null
-            }.Where(e => e != null)
-                });
+                    return Conflict(new
+                    {
+                        Errors = new List<string?>
+                {
+                    userExists ? "El nombre de usuario ya está registrado." : null,
+                    emailExists ? "El correo ya está registrado." : null
+                }.Where(e => e != null)
+                    });
+                }
+
+                dto.Role = Roles.Commerce.ToString();
+                dto.CommerceId = commerceId;
+
+                var result = await _accountServiceForWebApi.CreateCommerceUserAsync(dto);
+
+                if (result.HasError)
+                    return BadRequest(new { Errors = result.Errors });
+
+                if (result.HasError)
+                    return BadRequest(new { Errors = result.Errors });
+
+                // Ahora asociamos el CommerceId con el UserId para registrarlo en el comercio
+                var commerce = await _commerceRepository.GetCommerceByIdAsync(int.Parse(commerceId));  // Asumimos que tienes este repositorio
+                if (commerce != null)
+                {
+                    commerce.UserId = dto.UserId;  // Asigna el UserId al comercio
+                    await _commerceRepository.UpdateCommerceAsync(commerce);  // Guarda la relación
+                }
+
+
+                return Created("", null);
             }
-
-            dto.Role = Roles.Commerce.ToString();
-            dto.CommerceId = commerceId;
-
-            var result = await _accountServiceForWebApi.CreateCommerceUserAsync(dto);
-
-            if (result.HasError)
-                return BadRequest(new { Errors = result.Errors });
-
-            return Created("", null);
-        }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser([FromRoute] string id, [FromBody] SaveUserDto dto)

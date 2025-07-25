@@ -79,7 +79,7 @@
         {
             <tr>
                 <td>@account.AccountNumber</td>
-                <td>RD$ @account.Balance:N2</td>
+                <td>@($"RD$ {@account.Balance:N2}")</td>
                 <td>@account.AccountType</td>
                 <td>@(account.IsActive ? "Sí" : "No")</td>
                 <td>@account.ClientId</td>

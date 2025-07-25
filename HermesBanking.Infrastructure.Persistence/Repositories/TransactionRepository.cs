@@ -35,10 +35,38 @@ namespace HermesBanking.Infrastructure.Persistence.Repositories
             return await _context.Transactions.Where(expression).ToListAsync();
         }
 
+        public async Task<IEnumerable<Transaction>> GetByCashierId(string cashierId, DateTime? today)
+        {
+            if (today != null)
+            {
+                var start = today.Value.Date;
+                var end = start.AddDays(1);
+
+                return await _context.Transactions
+                    .Where(t => t.CashierId == cashierId && t.TransactionDate >= start && t.TransactionDate < end)
+                    .ToListAsync();
+            }
+            else
+            {
+                return await _context.Transactions
+                    .Where(t => t.CashierId == cashierId)
+                    .ToListAsync();
+            }
+        }
+
         // 🆕 Implementación para control transaccional manual
         public async Task<IDbContextTransaction> BeginTransactionAsync()
         {
             return await _context.Database.BeginTransactionAsync();
+        }
+
+
+        //HERMES PAY 
+        public async Task<List<Transaction>> GetByConditionAsyncForHermesPay(Expression<Func<Transaction, bool>> predicate)
+        {
+            return await _context.Transactions
+                                 .Where(predicate)
+                                 .ToListAsync();
         }
     }
 }

@@ -345,5 +345,39 @@ namespace HermesBanking.Infrastructure.Identity.Services
         }
 
         #endregion
+
+        public async Task<UserDto> GetUserByIdAsync(string userId)
+        {
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+            if (user == null) return null;
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var role = roles.FirstOrDefault() ?? "Unknown"; // Por si no tiene asignado rol
+
+            return new UserDto
+            {
+                Id = user.Id,
+                Name = user.Name,
+                LastName = user.LastName,
+                Email = user.Email,
+                UserName = user.UserName,
+                Role = role,
+                UserId = user.UserId,
+                IsActive = user.IsActive,
+                InitialAmount = user.InitialAmount,        // opcional
+                TotalDebt = null,                          // o calcula si tienes deuda
+                isVerified = null                          // si no manejas esto aún
+            };
+        }
+
+        public async Task UpdateUserAsync(UserDto userDto)
+        {
+            var user = await _userManager.FindByIdAsync(userDto.Id);
+            if (user != null)
+            {
+                user.IsActive = userDto.IsActive;
+                await _userManager.UpdateAsync(user);
+            }
+        }
     }
 }

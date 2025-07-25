@@ -1,4 +1,5 @@
 ﻿@model HermesBanking.Core.Application.ViewModels.CreditCard.CreditCardDetailsViewModel
+@using HermesBanking.Core.Domain.Common.Enums
 
 @{
     ViewData["Title"] = "Detalles de la Tarjeta de Crédito";
@@ -7,8 +8,8 @@
 <h2>Detalles de la Tarjeta de Crédito @Model.CardId</h2>
 
 <p><strong>Cliente:</strong> @Model.ClientFullName</p>
-<p><strong>Límite:</strong> RD$ @Model.CreditLimit:N2</p>
-<p><strong>Adeudado:</strong> RD$ @Model.TotalOwedAmount:N2</p>
+<p><strong>Límite:</strong> @($"RD$ {@Model.CreditLimit:N2}")</p> 
+<p><strong>Adeudado:</strong> @($"RD$ {@Model.TotalOwedAmount:N2}")</p>
 <p><strong>Estado:</strong> @(Model.CreditCard.IsActive ? "Activa" : "Cancelada")</p>
 <p><strong>Expira:</strong> @Model.ExpirationDate</p>
 
@@ -17,10 +18,10 @@
 <table class="table table-bordered table-striped">
     <thead class="table-dark">
         <tr>
-            <th>Tipo</th>
-            <th>Monto</th>
-            <th>Origen</th>
-            <th>Fecha</th>
+            <th>Fecha de Consumo</th>
+            <th>Monto Consumido</th>
+            <th>Comercio</th>
+            <th>Estado del Consumo</th>
         </tr>
     </thead>
     <tbody>
@@ -29,10 +30,14 @@
             @foreach (var transaction in Model.Transactions)
             {
                 <tr>
-                    <td>@transaction.TransactionType</td>
-                    <td>RD$ @transaction.Amount:N2</td>
-                    <td>@transaction.Origin</td>
-                    <td>@transaction.TransactionDate.ToString("g")</td>
+                    <td>@transaction?.TransactionDate.ToString("g")</td>
+                    <td>@($"RD$ {@transaction.Amount:N2}")</td>
+                    <td>
+                        @(transaction.TransactionType == TransactionType.AVANCE
+                                        ? transaction.TransactionType.ToString()
+                                        : transaction.Commerce?.Name)
+            </td>
+            <td>@(transaction.Status == Status.APPROVED ? Status.APPROVED.ToString() : Status.REJECTED.ToString())</td>
                 </tr>
             }
         }

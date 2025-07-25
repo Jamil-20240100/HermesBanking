@@ -1,4 +1,5 @@
-﻿@model HermesBanking.Core.Application.ViewModels.Cashier.PagoPrestamoViewModel
+﻿@model HermesBanking.Core.Application.DTOs.Cashier.LoanPaymentByCashierDto
+
 
 @{
     Layout = "_LayoutCashier";
@@ -22,17 +23,17 @@
     </div>
 }
 
-<form asp-action="PayLoan" method="post">
+<form asp-action="LoanPayment" method="post">
     <div class="form-group">
-        <label asp-for="AccountNumber"></label>
-        <input asp-for="AccountNumber" class="form-control" />
-        <span asp-validation-for="AccountNumber" class="text-danger"></span>
+        <label asp-for="SourceAccountNumber"></label>
+        <input asp-for="SourceAccountNumber" class="form-control" />
+        <span asp-validation-for="SourceAccountNumber" class="text-danger"></span>
     </div>
 
     <div class="form-group">
-        <label asp-for="LoanNumber"></label>
-        <input asp-for="LoanNumber" class="form-control" />
-        <span asp-validation-for="LoanNumber" class="text-danger"></span>
+        <label asp-for="LoanIdentifier"></label>
+        <input asp-for="LoanIdentifier" class="form-control" />
+        <span asp-validation-for="LoanIdentifier" class="text-danger"></span>
     </div>
 
     <div class="form-group">

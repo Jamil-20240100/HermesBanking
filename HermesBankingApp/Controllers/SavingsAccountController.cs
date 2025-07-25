@@ -5,6 +5,7 @@ using HermesBanking.Core.Application.Services;
 using HermesBanking.Core.Application.ViewModels.SavingsAccount;
 using HermesBanking.Core.Application.ViewModels.User;
 using HermesBanking.Core.Domain.Common.Enums;
+using HermesBanking.Core.Domain.Interfaces;
 using HermesBanking.Infrastructure.Identity.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -20,14 +21,20 @@ namespace HermesBankingApp.Controllers
         private readonly ISavingsAccountService _service;
         private readonly IMapper _mapper;
         private readonly ILoanService _loanService;
+        private readonly ITransactionService _transactionservice;
+        private readonly ITransactionRepository _transactionRepo;
+        private readonly ISavingsAccountRepository _repository;
 
-        public SavingsAccountController(ISavingsAccountService service, IMapper mapper, UserManager<AppUser> userManager, IAccountServiceForWebApp accountServiceForWebApp, ILoanService loanService)
+        public SavingsAccountController(ISavingsAccountService service, ISavingsAccountRepository savingsAccountRepository, ITransactionRepository transactionRepository, IMapper mapper,ITransactionService transactionService, UserManager<AppUser> userManager, IAccountServiceForWebApp accountServiceForWebApp, ILoanService loanService)
         {
             _service = service;
             _mapper = mapper;
             _userManager = userManager;
             _accountServiceForWebApp = accountServiceForWebApp;
             _loanService = loanService;
+            _transactionservice = transactionService;
+            _transactionRepo = transactionRepository;
+            _repository = savingsAccountRepository;
         }
 
         public async Task<IActionResult> Index()
@@ -185,6 +192,54 @@ namespace HermesBankingApp.Controllers
             }
 
             return RedirectToAction("Index");
+        }
+
+
+        public async Task<IActionResult> Details(string Id, int pagina = 1, int pageSize = 10)
+        {
+            if (Id == "0")
+            {
+                return NotFound("Saving account ID is missing or invalid.");
+            }
+
+            // Obtener los detalles de la cuenta de ahorros desde el servicio
+            var savingAccount = await _repository.GetByAccountNumberAsync(Id);
+
+            if (savingAccount == null)
+            {
+                return NotFound("Saving account not found.");
+            }
+
+            // Obtener las transacciones asociadas a esta cuenta de ahorros utilizando el servicio
+            var savingAccountTransactions = await _service.GetSavingAccountTransactionsAsync(Id);
+
+            // Paginación: calcular el total de transacciones y el número total de páginas
+            var totalTransactions = savingAccountTransactions.Count();
+            var totalPages = (int)Math.Ceiling(totalTransactions / (double)pageSize);
+
+            var pagedTransactions = savingAccountTransactions
+                .Skip((pagina - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            // Crear el ViewModel para pasar los datos a la vista
+            var savingAccountDetailsViewModel = new SavingsAccountDetailsViewModel
+            {
+                Id = savingAccount.Id.ToString(),
+                AccountNumber = savingAccount.AccountNumber,
+                ClientUserId = savingAccount.ClientFullName,
+                Balance = savingAccount.Balance,
+                Transactions = pagedTransactions,
+                Pagination = new PaginationDTO
+                   {
+                       PaginaActual = pagina,
+                       TotalPaginas = totalPages,
+                       TotalRegistros = totalTransactions
+                   }
+                };
+
+            // Pasar la información a la vista
+            return View(savingAccountDetailsViewModel);
         }
 
     }

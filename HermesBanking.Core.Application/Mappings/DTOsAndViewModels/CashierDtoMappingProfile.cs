@@ -11,14 +11,14 @@ namespace HermesBanking.Core.Application.Mappings.DTOsAndViewModels
             CreateMap<DepositViewModel, DepositDto>().ReverseMap();
             CreateMap<WithdrawViewModel, WithdrawDto>().ReverseMap();
             CreateMap<ThirdPartyTransferViewModel, ThirdPartyTransferDto>().ReverseMap();
-            CreateMap<PagoPrestamoViewModel, LoanPaymentDto>().ReverseMap();
+            CreateMap<PagoPrestamoViewModel, LoanPaymentByCashierDto>().ReverseMap();
             CreateMap<PagoTarjetaCreditoViewModel, CreditCardPaymentDto>().ReverseMap();
 
             // Confirmaciones
             CreateMap<ConfirmDepositViewModel, DepositDto>();
             CreateMap<ConfirmWithdrawViewModel, WithdrawDto>();
             CreateMap<ConfirmThirdPartyTransferViewModel, ThirdPartyTransferDto>();
-            CreateMap<ConfirmPagoPrestamoViewModel, LoanPaymentDto>();
+            CreateMap<ConfirmPagoPrestamoViewModel, LoanPaymentByCashierDto>();
             CreateMap<ConfirmPagoTarjetaCreditoViewModel, CreditCardPaymentDto>();
         }
     }

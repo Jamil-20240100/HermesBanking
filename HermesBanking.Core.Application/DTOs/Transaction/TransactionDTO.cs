@@ -1,5 +1,6 @@
 ﻿// HermesBanking.Core.Application.DTOs.Transaction/TransactionDTO.cs (General DTO for display)
 using HermesBanking.Core.Domain.Common.Enums;
+using HermesBanking.Core.Application.DTOs.Commerce;
 using System;
 
 namespace HermesBanking.Core.Application.DTOs.Transaction
@@ -10,6 +11,7 @@ namespace HermesBanking.Core.Application.DTOs.Transaction
         public decimal Amount { get; set; }
         public DateTime TransactionDate { get; set; } // Matches entity
         public TransactionType? TransactionType { get; set; } // Matches entity
+        public CommerceDTO? Commerce { get; set; }
 
         public string SourceAccountId { get; set; } = string.Empty;
         public string? DestinationAccountId { get; set; }
@@ -17,12 +19,13 @@ namespace HermesBanking.Core.Application.DTOs.Transaction
         public string? CreditCardId { get; set; }
         public int? DestinationLoanId { get; set; }
         public string? Description { get; set; } // Matches entity
-        public int SavingsAccountId { get; internal set; }
-        public string Type { get; internal set; }
-        public string Origin { get; internal set; }
-        public string Beneficiary { get; internal set; }
-        public string CashierId { get; internal set; }
-        public DateTime Date { get; internal set; }
+        public int SavingsAccountId { get;set; }
+        public string Type { get; set; }
+        public string Origin { get;  set; }
+        public string Beneficiary { get;  set; }
+        public string CashierId { get;  set; }
+        public DateTime Date { get;  set; }
+        public Status? Status { get; set; }
     }
 }
 

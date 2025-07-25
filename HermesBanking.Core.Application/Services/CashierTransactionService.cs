@@ -2,8 +2,7 @@
 using HermesBanking.Core.Domain.Entities;
 using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Domain.Interfaces;
-using System;
-using System.Threading.Tasks;
+using HermesBanking.Core.Domain.Common.Enums;
 
 namespace HermesBanking.Core.Application.Services
 {
@@ -31,13 +30,16 @@ namespace HermesBanking.Core.Application.Services
             {
                 SavingsAccountId = transactionDto.SavingsAccountId.ToString(),
                 Type = transactionDto.Type,
+                TransactionType = transactionDto.TransactionType,  // Asignar el tipo de transacción
                 Amount = transactionDto.Amount,
                 Origin = transactionDto.Origin,
                 Beneficiary = transactionDto.Beneficiary,
                 Date = transactionDto.Date,  // Fecha
                 TransactionDate = transactionDto.TransactionDate,  // Aquí se usa el TransactionDate
-                Description = $"Transacción de RD$ {transactionDto.Amount} tipo {transactionDto.Type}",
-                CashierId = transactionDto.CashierId
+                Status = Status.APPROVED,
+                Description = $"Transacción de RD$ {transactionDto.Amount} tipo {transactionDto.TransactionType}",
+                CashierId = transactionDto.CashierId,
+                DestinationLoanId = transactionDto.DestinationLoanId,
             };
 
             // Agregar la transacción a la base de datos

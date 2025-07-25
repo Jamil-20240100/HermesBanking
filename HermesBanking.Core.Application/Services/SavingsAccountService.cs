@@ -1,24 +1,42 @@
 ﻿using AutoMapper;
 using HermesBanking.Core.Application.DTOs.SavingsAccount;
+using HermesBanking.Core.Application.DTOs.Transaction;
 using HermesBanking.Core.Application.Interfaces;
 using HermesBanking.Core.Domain.Common.Enums;
 using HermesBanking.Core.Domain.Entities;
 using HermesBanking.Core.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace HermesBanking.Core.Application.Services
 {
     public class SavingsAccountService : GenericService<SavingsAccount, SavingsAccountDTO>, ISavingsAccountService
     {
         private readonly ISavingsAccountRepository _repository;
+        private readonly ILoanRepository _loanRepository;
+        private readonly ICreditCardRepository _ctRepository;
         private readonly IAccountServiceForWebApp _accountServiceForWebApp;
         private readonly IMapper _mapper;
+        private readonly ILogger<TransactionService> _logger;
+        private readonly ITransactionRepository _transactionRepository;
 
-
-        public SavingsAccountService(ISavingsAccountRepository repository, IMapper mapper, IAccountServiceForWebApp accountServiceForWebApp) : base(repository, mapper)
+        public SavingsAccountService(
+            ISavingsAccountRepository repository,
+            ITransactionRepository transactionRepository,
+            ILoanRepository loanRepository,
+            ICreditCardRepository ctRepository,
+            IMapper mapper,
+            IAccountServiceForWebApp accountServiceForWebApp,
+            ILogger<TransactionService> logger
+        ) : base(repository, mapper)
         {
             _mapper = mapper;
             _repository = repository;
+            _loanRepository = loanRepository;
+            _ctRepository = ctRepository;
             _accountServiceForWebApp = accountServiceForWebApp;
+            _logger = logger;
+            _transactionRepository = transactionRepository;
         }
 
         public async Task<List<SavingsAccountDTO>> GetAllSavingsAccountsOfClients()
@@ -153,5 +171,152 @@ namespace HermesBanking.Core.Application.Services
 
             return dto;
         }
+
+        public async Task<List<DisplayTransactionDTO>> GetSavingAccountTransactionsAsync(string savingAccountId)
+        {
+            _logger.LogInformation($"Attempting to retrieve transactions for saving account: {savingAccountId}.");
+
+            // Obtener todas las transacciones
+            var allTransactions = await _transactionRepository.GetAllQuery()
+                                                              .OrderByDescending(t => t.TransactionDate)
+                                                              .ToListAsync();
+
+            var savingAccountTransactions = new List<DisplayTransactionDTO>();
+
+            foreach (var t in allTransactions)
+            {
+                string sourceAccountSavingId = "";
+                string destinationAccountSavingId = "";
+                string savingsAccountId = "";
+                var hasDestinationAccount = !string.IsNullOrEmpty(t.DestinationAccountId);
+                var destinationAccount = "";
+                var creditCardId = "";
+                var hasCt = !string.IsNullOrEmpty(t.DestinationCardId);
+                var hasLoan = t.DestinationLoanId.HasValue;
+                var loanNumber = "";
+                var saNumber = "";
+                //string destinationLoanId = "";
+                //string destinationCardId = "";
+
+
+                // Comprobamos si la transacción está asociada a la cuenta de ahorros (SourceAccountId o DestinationAccountId)
+                if (!string.IsNullOrEmpty(t.SourceAccountId))
+                {
+                    var sourceAccount = await _repository.GetById(int.Parse(t.SourceAccountId));
+                    if (sourceAccount != null) sourceAccountSavingId = sourceAccount.AccountNumber;
+                }
+                if (!string.IsNullOrEmpty(t.SavingsAccountId))
+                {
+                    var sourceAccount = await _repository.GetById(int.Parse(t.SavingsAccountId));
+                    if (sourceAccount != null) savingsAccountId = sourceAccount.AccountNumber;
+                }
+                if (hasDestinationAccount)
+                {
+                    var destAccount = await _repository.GetById(int.Parse(t.DestinationAccountId));
+                    if (destAccount != null) destinationAccountSavingId = destAccount.AccountNumber;
+                }
+                if (hasCt)
+                {
+                    var ctNumber = await _ctRepository.GetById(int.Parse(t.DestinationCardId));
+                    if (ctNumber != null) creditCardId = ctNumber.CardId; 
+                }
+                if (hasLoan)
+                {
+                    var lNumber = await _loanRepository.GetById(t.DestinationLoanId.Value);
+                    if (lNumber != null)
+                    {
+                        loanNumber = lNumber.LoanIdentifier;
+                    }
+                    else
+                    {
+                        // Puedes registrar que no se encontró el préstamo con ese ID
+                        loanNumber = "Préstamo no encontrado";
+                    }
+                } 
+                if (!string.IsNullOrEmpty(t.SavingsAccountId))
+                {
+                    var sNumber = await _repository.GetById(int.Parse(t.SavingsAccountId));
+                    if (sNumber != null) saNumber = sNumber.AccountNumber;
+                }
+
+                // Si la transacción está relacionada con la cuenta de ahorros proporcionada, la agregamos a la lista
+                if (sourceAccountSavingId == savingAccountId.ToString() || destinationAccountSavingId.ToString() == savingAccountId.ToString() || savingsAccountId.ToString() == savingAccountId.ToString())
+                {
+                    string transactionTypeString = t.TransactionType?.ToString() ?? "Desconocido";
+                    string saTransactionTypeString = t.TransactionType?.ToString() ?? "Desconocido";
+                    string originIdentifier = "N/A";
+                    string destinationIdentifier = "N/A";
+                    string description = t.Description;
+
+                    // Si la transacción tiene cuenta origen, obtenemos su número (últimos 4 dígitos)
+                    if (!string.IsNullOrEmpty(t.SourceAccountId))
+                    {
+                        var account = await _repository.GetById(int.Parse(t.SourceAccountId));
+                        if (account != null)
+                        {
+                            originIdentifier = $"Cuenta: {account.AccountNumber.Substring(Math.Max(0, account.AccountNumber.Length - 4))}";
+                        }
+                    }
+
+                    // Filtramos por tipo de transacción
+                    switch (t.TransactionType)
+                    {
+                        case TransactionType.Transferencia:
+                            if (!string.IsNullOrEmpty(t.DestinationAccountId))
+                            {
+                                var account = await _repository.GetById(int.Parse(t.DestinationAccountId));
+                                if (account != null)
+                                {
+                                    destinationIdentifier = $"Cuenta: {account.AccountNumber.Substring(Math.Max(0, account.AccountNumber.Length - 4))}";
+                                }
+                            }
+                            description = description ?? "Transferencia";
+                            saTransactionTypeString = TransactionType.DEBITO.ToString();
+                            break;
+
+                        case TransactionType.Deposito:
+                            transactionTypeString = "Depósito";
+                            saTransactionTypeString = TransactionType.CREDITO.ToString();
+                            destinationIdentifier = originIdentifier;
+                            originIdentifier = "Deposito";
+                            description = description ?? "Depósito en cuenta";
+                            break;
+
+                        case TransactionType.Retiro:
+                            transactionTypeString = "Retiro";
+                            saTransactionTypeString = TransactionType.DEBITO.ToString();
+                            destinationIdentifier = "Efectivo/Externo";
+                            description = description ?? "Retiro de efectivo";
+                            break;
+
+                        default:
+                            transactionTypeString = "Otro";
+                            saTransactionTypeString = TransactionType.DEBITO.ToString(); 
+                            description = description ?? "Transacción no clasificada";
+                            break;
+                    }
+
+                    var beneficiario = hasDestinationAccount ? destinationAccountSavingId : hasCt ? creditCardId?.Substring(creditCardId.Length - 4) : hasLoan ? loanNumber : t.TransactionType == TransactionType.Retiro ? "RETIRO" : saNumber;
+                    // Añadimos la transacción a la lista de resultados
+                    savingAccountTransactions.Add(new DisplayTransactionDTO
+                    {
+                        TransactionId = t.Id.ToString(),
+                        Type = transactionTypeString,
+                        saTransactionType = saTransactionTypeString,
+                        Amount = t.Amount,
+                        Date = t.TransactionDate ?? DateTime.Now,
+                        OriginIdentifier = originIdentifier,
+                        DestinationIdentifier = destinationIdentifier,
+                        Beneficiary = beneficiario,
+                        Status = t.Status == Status.APPROVED ? "APROBADO" : t.Status == Status.REJECTED ? "RECHAZADO" : "PENDING",
+                        Description = description
+                    });
+                }
+            }
+
+            _logger.LogInformation($"Retrieved {savingAccountTransactions.Count} transactions for saving account: {savingAccountId}.");
+            return savingAccountTransactions.OrderByDescending(t => t.Date).ToList();
+        }
+
     }
 }
