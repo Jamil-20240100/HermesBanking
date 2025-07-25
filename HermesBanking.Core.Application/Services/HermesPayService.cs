@@ -146,11 +146,11 @@ public class HermesPayService : IHermesPayService
             );
         }
 
-        // Notificar al comercio
-        if (!string.IsNullOrEmpty(comercio.Email))
+        var savingsAccountOwnerEmail = await _accountServiceForWebApp.GetUserEmailAsync(cuentaPrincipal.ClientId);
+        if (!string.IsNullOrEmpty(savingsAccountOwnerEmail))
         {
             await _emailService.SendCreditCardPaymentNotificationAsync(
-                comercio.Email,
+                savingsAccountOwnerEmail,
                 request.Ammount ?? 0m,
                 request.CardNumber[^4..],
                 cuentaPrincipal.AccountNumber[^4..],

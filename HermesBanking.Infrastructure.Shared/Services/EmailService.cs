@@ -129,6 +129,23 @@ namespace HermesBanking.Infrastructure.Shared.Services
             await SendEmailAsync(clientEmail, subject, message);
         }
 
+        public async Task SendCreditCardPaymentNotificationToCommerceAsync(string commerceEmail, decimal amount, string creditCardNumberLastFourDigits, string toAccountNumberLastFourDigits, DateTime transactionDate)
+        {
+            string subject = $"Notificación de Pago Recibido - HermesBanking";
+            string message = $"Estimado comercio,\n\n" +
+                             $"Ha recibido un pago a través de una transacción con tarjeta de crédito.\n\n" +
+                             $"Detalles del pago:\n" +
+                             $"- Monto Recibido: {amount:C}\n" +
+                             $"- Tarjeta de Crédito (últimos 4 dígitos): ****{creditCardNumberLastFourDigits}\n" +
+                             $"- Cuenta Receptora (últimos 4 dígitos): ****{toAccountNumberLastFourDigits}\n" +
+                             $"- Fecha y Hora: {transactionDate:G}\n\n" +
+                             $"Gracias por formar parte del ecosistema de Hermes Banking.\n\n" +
+                             $"Atentamente,\nEl equipo de Hermes Banking";
+
+            await SendEmailAsync(commerceEmail, subject, message);
+        }
+
+
         public async Task SendLoanPaymentNotificationAsync(string clientEmail, decimal amount, string loanIdentifier, string fromAccountNumberLastFourDigits, DateTime transactionDate)
         {
             string subject = $"Confirmación de Pago de Préstamo - HermesBanking";
