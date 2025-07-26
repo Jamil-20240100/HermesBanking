@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.12.35707.178
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Source", "Source", "{23D35849-8CB3-4D4F-9C9B-30237FE4B31E}"
+	ProjectSection(SolutionItems) = preProject
+		MIEMBROS DEL GRUPO.txt = MIEMBROS DEL GRUPO.txt
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentation", "Presentation", "{F4035028-F480-416A-8A3A-E030B2586A5C}"
 EndProject
